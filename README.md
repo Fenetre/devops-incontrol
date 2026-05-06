@@ -31,7 +31,7 @@ Runs locally on your Windows PC — no cloud hosting needed.
 | Prerequisite | How to get it |
 |---|---|
 | **Windows 10/11** | You're probably already on it. |
-| **.NET 8 SDK** | Download from [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0). Pick the **SDK** installer (not Runtime). |
+| **.NET 8.0+ SDK** | Download from [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0). Pick the **SDK** installer (not Runtime). |
 | **Node.js 18+** | Download from [nodejs.org](https://nodejs.org). Pick the **LTS** version. |
 | **Azure DevOps PAT** | See [Create a PAT](#create-a-personal-access-token-pat) below. |
 
@@ -39,7 +39,7 @@ To check if you already have them, open **PowerShell** and run:
 
 ```powershell
 dotnet --version   # should print 8.x.x or higher
-node --version     # should print v18.x.x or higher
+node --version     # should print v18.x.x or higher, tested on v18 and v22
 ```
 
 ---
