@@ -1,5 +1,5 @@
 # DevOps InControl
-A control and management application for Microsoft Azure Devops
+A control and management application for Microsoft Azure Devops made by Berend and AI Technocore.
 
 Made with love by our Scrum Master Berend using our AI knowledge.
 
@@ -94,7 +94,7 @@ After setup, the dashboard is ready. Bookmark **http://localhost:8080** for next
 7. Under **Scopes**, select:
 - **Code (Read)** — pull request monitoring
 - **Graph (Read)** — group membership resolution
-- **dentity (Read)** — permission checks
+- **Identity (Read)** — permission checks
 - **Project and Team (Read)** — project and team listing
 - **Security (Manage)** — repo & area permission audits
 - **Wiki (Read)** — wiki permission checks
