@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DB Monitor — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html" class="active">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; DB Monitor</div>
+
+  <h1>DB Monitor</h1>
+  <p>The DB Monitor shows all databases discovered on your configured database servers. It gives you a quick inventory of what exists and forms the starting point for <a href="db-project.html">database cleanup tracking</a>.</p>
+
+  <img src="screenshots/db-monitor.png" alt="Screenshot of the DB Monitor showing a grid of discovered databases" class="screenshot">
+  <p class="screenshot-caption">All discovered databases from your configured servers.</p>
+
+  <h2>Prerequisites</h2>
+  <p>Before you can use the DB Monitor, you need to configure at least one database server in <a href="settings.html">Settings</a>. DevOps InControl supports SQL Server and PostgreSQL.</p>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>Open <span class="ui">DB Monitor</span> from the sidebar.</li>
+    <li>The screen shows all databases found on your configured servers as a grid.</li>
+    <li>The total database count is displayed at the top.</li>
+    <li>Click <span class="ui">Refresh</span> to re-scan the servers.</li>
+  </ol>
+
+  <h2>DB Projects</h2>
+  <p>To track which databases can be cleaned up, you create <em>DB Projects</em>. Each DB Project focuses on a subset of databases (filtered by name) and checks whether the linked Azure DevOps tickets are still active. See <a href="db-project.html">DB Project — Cleanup Tracking</a> for details.</p>
+
+  <h2>What You Can Change</h2>
+  <table class="config">
+    <tr><th>Setting</th><th>Where to Find It</th></tr>
+    <tr><td>Database server connections</td><td><a href="settings.html">Settings</a> &rarr; <span class="ui">Database Servers</span> section (up to 3 servers).</td></tr>
+    <tr><td>DB Projects</td><td>Managed from the DB Monitor screen itself — click <span class="ui">Add DB Project</span>.</td></tr>
+  </table>
+
+  <div class="callout note">
+    <strong>Note</strong>
+    The DB Monitor only requires read-only access to the database server. It lists database names but does not access any data inside them.
+  </div>
+</main>
+
+</body>
+</html>

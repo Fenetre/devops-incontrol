@@ -1,0 +1,275 @@
+/* DevOps InControl End-User Documentation – shared styles */
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --sidebar-bg: #1e293b;
+  --sidebar-text: #cbd5e1;
+  --sidebar-hover: #334155;
+  --sidebar-active: #3b82f6;
+  --body-bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --tip-bg: #eff6ff;
+  --tip-border: #3b82f6;
+  --note-bg: #f1f5f9;
+  --note-border: #94a3b8;
+  --important-bg: #fffbeb;
+  --important-border: #f59e0b;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --gray: #94a3b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: var(--body-bg);
+  line-height: 1.6;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---- Sidebar navigation ---- */
+.sidebar {
+  width: 260px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  padding: 1.5rem 0;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.sidebar h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.sidebar h2 a { color: #fff; text-decoration: none; }
+.sidebar h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  padding: 0.75rem 1.25rem 0.35rem;
+}
+.sidebar a {
+  display: block;
+  padding: 0.4rem 1.25rem;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.sidebar a:hover {
+  background: var(--sidebar-hover);
+}
+.sidebar a.active {
+  background: var(--sidebar-hover);
+  border-left-color: var(--sidebar-active);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---- Main content area ---- */
+.content {
+  margin-left: 260px;
+  flex: 1;
+  padding: 2.5rem 3rem;
+  max-width: 900px;
+}
+.content h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+.content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.35rem;
+}
+.content h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.content p, .content li {
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
+}
+.content ul, .content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.content ol li { margin-bottom: 0.5rem; }
+
+/* Breadcrumb */
+.breadcrumb {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.breadcrumb a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.breadcrumb a:hover { text-decoration: underline; }
+
+/* Screenshot placeholder */
+.screenshot {
+  display: block;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin: 1.25rem 0;
+  background: #e2e8f0;
+  min-height: 200px;
+  object-fit: contain;
+}
+.screenshot-caption {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: -0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ---- Legend / color table ---- */
+table.legend {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+table.legend th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: var(--sidebar-bg);
+  color: #fff;
+  font-weight: 600;
+}
+table.legend td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+table.legend .swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+.swatch-green  { background: var(--green); }
+.swatch-red    { background: var(--red); }
+.swatch-amber  { background: var(--amber); }
+.swatch-gray   { background: var(--gray); }
+.swatch-blue   { background: var(--primary); }
+.swatch-white  { background: #fff; border: 2px solid var(--border); }
+
+/* ---- Config table ---- */
+table.config {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+table.config th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  background: #f1f5f9;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+}
+table.config td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+/* ---- Callout boxes ---- */
+.callout {
+  border-left: 4px solid;
+  border-radius: 0 6px 6px 0;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.callout strong { display: block; margin-bottom: 0.25rem; }
+.callout.tip      { background: var(--tip-bg);       border-color: var(--tip-border); }
+.callout.note     { background: var(--note-bg);      border-color: var(--note-border); }
+.callout.important { background: var(--important-bg); border-color: var(--important-border); }
+
+/* Bold UI references */
+.ui { font-weight: 600; }
+
+/* Inline key styling */
+kbd {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.82rem;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .sidebar { width: 220px; }
+  .content { margin-left: 220px; padding: 1.5rem; }
+}
+@media (max-width: 640px) {
+  body { flex-direction: column; }
+  .sidebar { position: relative; width: 100%; padding: 1rem 0; }
+  .content { margin-left: 0; padding: 1.25rem; }
+}
+
+/* ---- Index page cards ---- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: var(--primary);
+}
+.card h4 {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+.card h4 a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.card h4 a:hover { text-decoration: underline; }
+.card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}

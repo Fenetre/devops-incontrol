@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viewing Flagged Issues — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html" class="active">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; <a href="dashboard.html">Dashboard</a> &rsaquo; Viewing Flagged Issues</div>
+
+  <h1>Viewing Flagged Issues</h1>
+  <p>When you click on a check badge on the <a href="dashboard.html">Dashboard</a>, you are taken to a detailed list of all the work items flagged by that check. This screen helps you review and act on each item.</p>
+
+  <img src="screenshots/issue-detail.png" alt="Screenshot of the issue detail screen showing a table of flagged work items" class="screenshot">
+  <p class="screenshot-caption">A list of flagged work items for the Orphan Check.</p>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>The header shows the check type and how many items were flagged.</li>
+    <li>Use the <span class="ui">Search</span> bar to filter by ID, title, type, or assignee.</li>
+    <li>Click a column header to sort the table.</li>
+    <li>Click a work item ID to open it directly in Azure DevOps.</li>
+  </ol>
+
+  <h2>Available Actions</h2>
+  <table class="config">
+    <tr><th>Action</th><th>When Available</th><th>What It Does</th></tr>
+    <tr><td><span class="ui">Copy parent done items</span></td><td>Orphan Check</td><td>Copies a list of items whose parent is Done, for easy pasting into a message.</td></tr>
+    <tr><td><span class="ui">Copy all items with links</span></td><td>Orphan Check</td><td>Copies all flagged items with clickable Azure DevOps links.</td></tr>
+    <tr><td><span class="ui">Send email</span></td><td>Missing Estimate Check</td><td>Sends a reminder email to the assigned person asking them to add an estimate.</td></tr>
+  </table>
+
+  <h2>Tagging Items</h2>
+  <p>You can add tags to work items directly from this screen to help you track them. Tags are saved back to Azure DevOps. See <a href="tags.html">Working with Tags</a> for more details.</p>
+
+  <h2>What the Table Columns Mean</h2>
+  <table class="config">
+    <tr><th>Column</th><th>Description</th></tr>
+    <tr><td>ID</td><td>The Azure DevOps work item number. Click to open it.</td></tr>
+    <tr><td>Title</td><td>The name of the work item.</td></tr>
+    <tr><td>Type</td><td>Task, Bug, User Story, etc.</td></tr>
+    <tr><td>Assigned To</td><td>Who is responsible for this item.</td></tr>
+    <tr><td>State</td><td>The current workflow state (New, Active, Resolved, etc.).</td></tr>
+    <tr><td>Iteration</td><td>Which sprint this item belongs to.</td></tr>
+    <tr><td>Created</td><td>When the item was created.</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    Use the breadcrumb navigation at the top to quickly jump back to the Dashboard or to other checks for the same project.
+  </div>
+</main>
+
+</body>
+</html>

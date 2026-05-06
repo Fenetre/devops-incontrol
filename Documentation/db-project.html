@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DB Project — Cleanup Tracking — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html" class="active">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; <a href="db-monitor.html">DB Monitor</a> &rsaquo; DB Project</div>
+
+  <h1>DB Project — Cleanup Tracking</h1>
+  <p>A DB Project monitors a group of databases and tells you which ones can safely be cleaned up. It works by looking for Azure DevOps ticket numbers in database names and checking whether those tickets are still active.</p>
+
+  <img src="screenshots/db-project.png" alt="Screenshot of DB Project view showing databases in green, gray, and red with a legend" class="screenshot">
+  <p class="screenshot-caption">Database cleanup status — red databases are linked to closed tickets and can likely be removed.</p>
+
+  <h2>How It Works</h2>
+  <p>Many teams include an Azure DevOps ticket number in their database names. For example, a database might be called <code>ProjectX_12345_staging</code> or <code>test_67890</code>. DevOps InControl automatically detects these ticket numbers and looks them up in Azure DevOps.</p>
+  <ul>
+    <li>If the ticket is still active (e.g. New, Active, Resolved), the database is fine — it is highlighted in <strong>green</strong>.</li>
+    <li>If the ticket is <strong>Done</strong>, <strong>Closed</strong>, or <strong>Removed</strong>, the database is highlighted in <strong>red</strong> — this means the work is finished and the database can probably be cleaned up.</li>
+    <li>If no ticket number is found in the database name, it appears in <strong>gray</strong>.</li>
+    <li>If a database is on the <strong>allowlist</strong>, it has a white border and is skipped during checks — useful for permanent databases.</li>
+  </ul>
+
+  <h2>What the Colours Mean</h2>
+  <table class="legend">
+    <tr><th>Colour</th><th>Meaning</th></tr>
+    <tr><td><span class="swatch swatch-green"></span> Green</td><td>Linked ticket is still active — database is in use.</td></tr>
+    <tr><td><span class="swatch swatch-red"></span> Red</td><td>Linked ticket is Done or Closed — database can probably be cleaned up.</td></tr>
+    <tr><td><span class="swatch swatch-gray"></span> Gray</td><td>No ticket number found in the database name.</td></tr>
+    <tr><td><span class="swatch swatch-white"></span> White border</td><td>Database is on the allowlist (intentionally kept, not checked).</td></tr>
+  </table>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>Open a DB Project from the <a href="db-monitor.html">DB Monitor</a> screen.</li>
+    <li>Click <span class="ui">Check Rules</span> to scan the databases and look up their linked tickets.</li>
+    <li>Review the coloured grid. Red databases are candidates for cleanup.</li>
+    <li>Click <span class="ui">Copy All Closed</span> to copy a list of all red databases to your clipboard — handy for sending to a DBA or creating a cleanup task.</li>
+    <li>Hover over a database and click the <span class="ui">copy</span> icon to copy a single database name.</li>
+  </ol>
+
+  <h2>The Allowlist</h2>
+  <p>Some databases should never be flagged for cleanup, even if their ticket is closed. You can add these to the <em>allowlist</em>. Allowlisted databases appear with a white border and are skipped during rule checks.</p>
+
+  <h2>What You Can Change</h2>
+  <table class="config">
+    <tr><th>Setting</th><th>Where to Find It</th></tr>
+    <tr><td>DB Project name</td><td>Edit the DB Project from the <a href="db-monitor.html">DB Monitor</a> screen.</td></tr>
+    <tr><td>Name filter</td><td>Filter which databases are included based on a keyword in their name (e.g. "staging" to only show staging databases).</td></tr>
+    <tr><td>Database server</td><td>Choose which configured server this project reads from (1, 2, or 3).</td></tr>
+    <tr><td>Allowlist</td><td>Add or remove databases from the allowlist directly on this screen.</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    The <span class="ui">Copy All Closed</span> button is a quick way to create a cleanup request. Paste the list into an email or a new work item.
+  </div>
+
+  <div class="callout note">
+    <strong>Note</strong>
+    Ticket numbers are detected automatically if they appear anywhere in the database name as a 5 or 6-digit number. For example, <code>myapp_12345_test</code> links to ticket #12345.
+  </div>
+</main>
+
+</body>
+</html>

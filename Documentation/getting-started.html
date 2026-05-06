@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>First-Time Setup — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html" class="active">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; First-Time Setup</div>
+
+  <h1>First-Time Setup</h1>
+  <p>When you open DevOps InControl for the first time, you are guided through a five-step setup wizard. This wizard helps you connect to your Azure DevOps organisation and configure your first project.</p>
+
+  <img src="screenshots/getting-started.png" alt="Screenshot of the setup wizard welcome screen" class="screenshot">
+  <p class="screenshot-caption">The setup wizard welcome screen.</p>
+
+  <h2>The Five Steps</h2>
+  <ol>
+    <li>
+      <strong>Welcome</strong> — A brief introduction explaining what DevOps InControl does. Simply click <span class="ui">Next</span> to continue.
+    </li>
+    <li>
+      <strong>Set a Password (API Key)</strong> — Choose a password that protects your dashboard. You will need this password each time you open DevOps InControl from a new browser or after clearing your cookies.
+      <div class="callout tip">
+        <strong>Tip</strong>
+        Pick a password you can remember. If you lose it, it can only be reset from the server.
+      </div>
+    </li>
+    <li>
+      <strong>Connect to Azure DevOps (PAT)</strong> — Enter your Azure DevOps <em>Personal Access Token</em> (PAT) and your organisation name.
+      <p>A PAT is like a special password that allows DevOps InControl to read data from Azure DevOps on your behalf. Here is how to create one:</p>
+      <ol>
+        <li>Go to your Azure DevOps portal and click your profile picture in the top-right corner.</li>
+        <li>Select <span class="ui">Personal access tokens</span>.</li>
+        <li>Click <span class="ui">New Token</span>.</li>
+        <li>Give it a name (e.g. "DevOps InControl"), set an expiration date, and grant at least these permissions:
+          <ul>
+            <li><strong>Project and Team</strong> — Read</li>
+            <li><strong>Work Items</strong> — Read &amp; Write</li>
+            <li><strong>Code</strong> — Read</li>
+          </ul>
+        </li>
+        <li>Click <span class="ui">Create</span> and copy the token.</li>
+      </ol>
+      <div class="callout important">
+        <strong>Important</strong>
+        Your PAT is stored securely on the server using Windows encryption. It is never visible in plain text after you save it.
+      </div>
+    </li>
+    <li>
+      <strong>Add Your First Project</strong> — Select your Azure DevOps organisation and project from the dropdown lists. Choose which checks you want to enable (you can change these later).
+    </li>
+    <li>
+      <strong>Done!</strong> — Setup is complete. Click <span class="ui">Go to Dashboard</span> to start monitoring.
+    </li>
+  </ol>
+
+  <h2>What You Can Change Later</h2>
+  <table class="config">
+    <tr><th>Setting</th><th>Where to Find It</th></tr>
+    <tr><td>Password (API Key)</td><td>Click the <span class="ui">gear icon</span> in the top-right corner to open Settings.</td></tr>
+    <tr><td>Azure DevOps connection (PAT)</td><td>Settings &rarr; <span class="ui">Azure DevOps Connection</span> section.</td></tr>
+    <tr><td>Projects and checks</td><td><span class="ui">Configuration</span> screen in the sidebar menu.</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    You can re-run the setup wizard at any time by navigating to the <code>/setup</code> URL in your browser.
+  </div>
+</main>
+
+</body>
+</html>

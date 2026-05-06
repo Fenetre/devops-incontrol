@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velocity &amp; Capacity — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html" class="active">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Velocity &amp; Capacity</div>
+
+  <h1>Velocity &amp; Capacity</h1>
+  <p>This screen helps you plan sprint capacity and track your team's velocity. You can view and edit each team member's available hours, mark days off, and see how much work the team can take on.</p>
+
+  <img src="screenshots/velocity.png" alt="Screenshot of the Velocity screen showing the capacity table with team members and a sprint calendar" class="screenshot">
+  <p class="screenshot-caption">The Capacity tab with team member hours and a day-off calendar.</p>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>Open <span class="ui">Velocity</span> from the sidebar.</li>
+    <li>Select your <span class="ui">Project</span>, <span class="ui">Team</span>, and <span class="ui">Sprint</span> from the dropdowns at the top.</li>
+    <li>The <span class="ui">Capacity</span> tab shows a table of team members with their hours per day.</li>
+  </ol>
+
+  <h2>Capacity Tab</h2>
+
+  <h3>Editing Capacity</h3>
+  <ul>
+    <li>Each row shows a team member with their activity (Development, Testing, Design, etc.) and capacity per day.</li>
+    <li>Click on a value to edit it directly.</li>
+    <li>Use the day-off calendar to toggle individual days off for each person. Click a day to mark it as a day off; click again to remove it.</li>
+    <li>Use the weekday checkboxes to set standard days off (e.g. every Friday off).</li>
+  </ul>
+
+  <h3>Handy Buttons</h3>
+  <table class="config">
+    <tr><th>Button</th><th>What It Does</th></tr>
+    <tr><td><span class="ui">Copy from previous sprint</span></td><td>Copies the capacity settings from the previous sprint. Useful when your team stays the same.</td></tr>
+    <tr><td><span class="ui">Reload from DevOps</span></td><td>Refreshes the capacity data from Azure DevOps, discarding any unsaved local changes.</td></tr>
+    <tr><td><span class="ui">Save to DevOps</span></td><td>Sends your capacity changes back to Azure DevOps. You will be asked to confirm before saving.</td></tr>
+    <tr><td><span class="ui">Add member</span></td><td>Add a team member to the capacity table.</td></tr>
+  </table>
+
+  <h2>Metrics Tab</h2>
+  <p>The Metrics tab shows how many story points were completed in recent sprints. This helps you understand your team's velocity — how much work you typically complete per sprint — so you can plan the next sprint more accurately.</p>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    <strong>Velocity ratio</strong> = story points completed in the last sprint ÷ total capacity hours. DevOps InControl uses this to estimate how many points the team can handle in the upcoming sprint.
+  </div>
+
+  <div class="callout important">
+    <strong>Important</strong>
+    When you click <span class="ui">Save to DevOps</span>, the changes are written directly to Azure DevOps. Make sure the figures are correct before saving.
+  </div>
+</main>
+
+</body>
+</html>

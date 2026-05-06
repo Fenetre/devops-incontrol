@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint Populator — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html" class="active">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Sprint Populator</div>
+
+  <h1>Sprint Populator</h1>
+  <p>The Sprint Populator helps you set up a new sprint by automatically copying template user stories and their tasks from a previous sprint. If your team has recurring sprint tasks (like "Sprint Planning", "Retrospective", or "Deploy to Production"), you only need to create them once as templates. Templates can come from the same project as your sprint or from a different configured project.</p>
+
+  <img src="screenshots/sprint-populator.png" alt="Screenshot of the Sprint Populator wizard showing template preview" class="screenshot">
+  <p class="screenshot-caption">Previewing sprint templates before cloning into a new sprint.</p>
+
+  <h2>How Templates Work</h2>
+  <p>A template is simply a User Story in Azure DevOps that has the tag <strong>sprint template</strong>. All child tasks under that story are included as part of the template.</p>
+  <p>When you use the Sprint Populator, it clones these template stories (and their tasks) into your target sprint.</p>
+  <p>You can optionally select a different <strong>source project</strong> for template lookup. This is useful when one project acts as your template library for multiple delivery projects.</p>
+
+  <h3>Automatic Title Replacement</h3>
+  <p>If a template title contains the letter <strong>X</strong> as a standalone word, it is replaced with the target sprint number. For example:</p>
+  <ul>
+    <li>"Sprint X Planning" becomes "Sprint 15 Planning" (if your target is Sprint 15).</li>
+    <li>"Deploy Release X" becomes "Deploy Release 15".</li>
+  </ul>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>Open <span class="ui">Sprint Populator</span> from the sidebar.</li>
+    <li><strong>Step 1</strong> — Select your <strong>target project</strong> (where new work items are created).</li>
+    <li><strong>Step 2</strong> — Optionally select a <strong>template source project</strong>. If you do nothing, it defaults to the target project.</li>
+    <li><strong>Step 3</strong> — Select your target team.</li>
+    <li><strong>Step 4</strong> — Select the target sprint. The sprint dates are shown to help you pick the right one.</li>
+    <li><strong>Step 5</strong> — Preview which templates will be cloned and what the new titles will look like. Check the confirmation box and click <span class="ui">Apply</span>.</li>
+  </ol>
+
+  <h2>What Gets Created</h2>
+  <ul>
+    <li>A new User Story for each template, placed in the target sprint.</li>
+    <li>All child Tasks from the template are cloned under the new story.</li>
+    <li>The <em>sprint template</em> tag is removed from cloned items so they are not treated as templates.</li>
+  </ul>
+
+  <h2>Setting Up Templates</h2>
+  <p>To create a sprint template in Azure DevOps:</p>
+  <ol>
+    <li>Create a User Story with the tasks you want to repeat every sprint.</li>
+    <li>Add the tag <strong>sprint template</strong> to the User Story.</li>
+    <li>That is it — the Sprint Populator will find it automatically.</li>
+  </ol>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    You can have multiple templates. Each one is cloned independently when you run the populator.
+  </div>
+
+  <div class="callout important">
+    <strong>Important</strong>
+    The Sprint Populator creates real work items in Azure DevOps. Double-check the preview before clicking Apply.
+  </div>
+</main>
+
+</body>
+</html>

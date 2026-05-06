@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR Monitor — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html" class="active">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; PR Monitor</div>
+
+  <h1>PR Monitor</h1>
+  <p>The PR Monitor gives you a bird's-eye view of all active pull requests across your projects. Each project is shown as a card with coloured flag badges so you can spot problems at a glance.</p>
+
+  <img src="screenshots/pr-monitor.png" alt="Screenshot of the PR Monitor overview showing project cards with flag badges" class="screenshot">
+  <p class="screenshot-caption">PR Monitor overview with flag badges per project.</p>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>Open <span class="ui">PR Monitor</span> from the sidebar.</li>
+    <li>Each card shows a project name, the number of active PRs, and flag badges.</li>
+    <li>Click a project card to see the full list of pull requests (see <a href="pr-details.html">PR Details</a>).</li>
+  </ol>
+
+  <h2>What the Flag Badges Mean</h2>
+  <table class="legend">
+    <tr><th>Badge</th><th>Meaning</th></tr>
+    <tr><td><span class="swatch swatch-red"></span> No reviewer</td><td>A PR has no reviewers assigned — someone needs to be added.</td></tr>
+    <tr><td><span class="swatch swatch-red"></span> Rejected</td><td>A reviewer has rejected the PR — changes are needed.</td></tr>
+    <tr><td><span class="swatch swatch-amber"></span> Stale</td><td>A PR has had no activity (no comments, no code pushes) for the configured number of days.</td></tr>
+    <tr><td><span class="swatch swatch-blue"></span> Ready to approve</td><td>All required approvals are in place — the PR can be completed.</td></tr>
+    <tr><td><span class="swatch swatch-green"></span> All clear</td><td>No flags — everything looks fine.</td></tr>
+  </table>
+
+  <h2>What You Can Change</h2>
+  <table class="config">
+    <tr><th>Setting</th><th>Where to Find It</th></tr>
+    <tr><td>Which projects appear</td><td><a href="managing-projects.html">Configuration</a> — enable at least one PR check for a project.</td></tr>
+    <tr><td>Stale days threshold</td><td><a href="managing-projects.html">Configuration</a> — edit the project, find the Stale PR Check, and change the <span class="ui">Stale days</span> value.</td></tr>
+    <tr><td>Ignored reviewers</td><td><a href="managing-projects.html">Configuration</a> — edit the project, find the Unreviewed PR Check, and add names to <span class="ui">Ignore reviewers</span>.</td></tr>
+    <tr><td>Repository filter</td><td><a href="managing-projects.html">Configuration</a> — set a specific repository on any PR check to limit its scope.</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    Draft pull requests are excluded from most flags — they are only shown for informational purposes.
+  </div>
+</main>
+
+</body>
+</html>

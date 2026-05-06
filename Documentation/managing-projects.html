@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Managing Projects — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html" class="active">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Managing Projects &amp; Checks</div>
+
+  <h1>Managing Projects &amp; Checks</h1>
+  <p>The Configuration screen is where you decide which Azure DevOps projects to monitor and which checks to run for each one. Open it from the <span class="ui">Configuration</span> link in the sidebar menu.</p>
+
+  <img src="screenshots/configuration.png" alt="Screenshot of the Configuration screen with the project form expanded" class="screenshot">
+  <p class="screenshot-caption">Adding a new project with checks enabled.</p>
+
+  <h2>Adding a Project</h2>
+  <ol>
+    <li>Click <span class="ui">Add Project</span> at the top of the page.</li>
+    <li>Select your <span class="ui">Organisation</span> and <span class="ui">Project</span> from the dropdowns.</li>
+    <li>Optionally set an <span class="ui">Area Path</span> to monitor only a specific part of the project (e.g. only your team's area).</li>
+    <li>Enable the checks you want to run (see the table below).</li>
+    <li>Click <span class="ui">Save</span>.</li>
+  </ol>
+
+  <h2>Available Checks</h2>
+  <p>Each check looks for a specific type of issue in your backlog or pull requests. You can enable or disable them individually for each project.</p>
+
+  <table class="config">
+    <tr><th>Check</th><th>What It Flags</th></tr>
+    <tr><td>Orphan Check</td><td>Work items that have no parent, or whose parent is already Done / Closed.</td></tr>
+    <tr><td>Stale Sprint Check</td><td>Unfinished items still sitting in sprints that ended a long time ago.</td></tr>
+    <tr><td>Missing Estimate Check</td><td>Tasks or bugs in the current sprint that have no time estimate.</td></tr>
+    <tr><td>Unassigned Check</td><td>Items in the current sprint that are not assigned to anyone.</td></tr>
+    <tr><td>Release PR Check</td><td>Done bugs that are missing a required release pull request.</td></tr>
+    <tr><td>Resolved PR Check</td><td>Items marked "Resolved" where all required PRs are completed — ready to move to Done.</td></tr>
+    <tr><td>Tag Overview</td><td>Shows all tags used in the project and how many items have each tag (informational).</td></tr>
+    <tr><td>PR Approval Check</td><td>Pull requests that have all required approvals but have not been completed yet.</td></tr>
+    <tr><td>Stale PR Check</td><td>Active pull requests with no activity for a configurable number of days.</td></tr>
+    <tr><td>Unreviewed PR Check</td><td>Active pull requests that have no reviewers assigned.</td></tr>
+  </table>
+
+  <h2>Per-Check Options</h2>
+  <p>Some checks have additional options you can adjust when enabling them:</p>
+
+  <table class="config">
+    <tr><th>Option</th><th>Applies To</th><th>What It Does</th></tr>
+    <tr><td>Repository</td><td>PR checks</td><td>Limit the check to pull requests in a specific repository.</td></tr>
+    <tr><td>Stale days</td><td>Stale PR Check</td><td>How many days of inactivity before a PR is flagged (default: 14).</td></tr>
+    <tr><td>Ignore reviewers</td><td>Unreviewed PR Check</td><td>Names to skip when counting reviewers (e.g. "Build Service"). The PR is only flagged if no <em>real</em> reviewers remain.</td></tr>
+    <tr><td>Check for missing</td><td>Missing Estimate Check</td><td>Choose which fields to check: both Original Estimate &amp; Remaining Work (default), Original Estimate only, or Remaining Work only.</td></tr>
+  </table>
+
+  <h2>Ignore Patterns</h2>
+  <p>You can tell DevOps InControl to skip certain work items based on their title:</p>
+  <ul>
+    <li><span class="ui">Ignore title contains</span> — Skip items whose title contains any of these words or phrases.</li>
+    <li><span class="ui">Ignore parent title contains</span> — Skip items whose <em>parent's</em> title contains any of these words or phrases.</li>
+  </ul>
+  <p>Separate multiple patterns with commas.</p>
+
+  <h2>Editing or Removing a Project</h2>
+  <ul>
+    <li>Click the <span class="ui">Edit</span> button on a project card to change its settings.</li>
+    <li>Click the <span class="ui">Delete</span> button to stop monitoring that project entirely.</li>
+  </ul>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    Changes take effect immediately. The next time you run checks from the <a href="dashboard.html">Dashboard</a>, the new settings will be used.
+  </div>
+</main>
+
+</body>
+</html>

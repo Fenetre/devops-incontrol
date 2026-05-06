@@ -1,0 +1,42 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboard", "dashboard", "{2360F3E6-04C8-649D-5938-B5231601C01C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend-dotnet", "backend-dotnet", "{5DFBD629-3513-8220-D143-16F0D609F8CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DashboardApi", "dashboard\backend-dotnet\DashboardApi.csproj", "{0D5C1BEA-6E94-058B-4D6D-6F27A6071A5D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend-dotnet-tests", "backend-dotnet-tests", "{A1B2C3D4-1234-5678-9ABC-DEF012345678}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DashboardApi.Tests", "dashboard\backend-dotnet-tests\DashboardApi.Tests.csproj", "{B2C3D4E5-2345-6789-ABCD-EF0123456789}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0D5C1BEA-6E94-058B-4D6D-6F27A6071A5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D5C1BEA-6E94-058B-4D6D-6F27A6071A5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D5C1BEA-6E94-058B-4D6D-6F27A6071A5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D5C1BEA-6E94-058B-4D6D-6F27A6071A5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-2345-6789-ABCD-EF0123456789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-2345-6789-ABCD-EF0123456789}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-2345-6789-ABCD-EF0123456789}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-2345-6789-ABCD-EF0123456789}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5DFBD629-3513-8220-D143-16F0D609F8CD} = {2360F3E6-04C8-649D-5938-B5231601C01C}
+		{0D5C1BEA-6E94-058B-4D6D-6F27A6071A5D} = {5DFBD629-3513-8220-D143-16F0D609F8CD}
+		{A1B2C3D4-1234-5678-9ABC-DEF012345678} = {2360F3E6-04C8-649D-5938-B5231601C01C}
+		{B2C3D4E5-2345-6789-ABCD-EF0123456789} = {A1B2C3D4-1234-5678-9ABC-DEF012345678}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C36CB954-BE6D-4A45-848E-18C4844AA75F}
+	EndGlobalSection
+EndGlobal

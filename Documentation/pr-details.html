@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR Details — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html" class="active">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; <a href="pr-monitor.html">PR Monitor</a> &rsaquo; PR Details</div>
+
+  <h1>PR Details</h1>
+  <p>When you click a project card on the <a href="pr-monitor.html">PR Monitor</a>, you see the full list of active pull requests for that project. Use this screen to filter, sort, and inspect individual PRs.</p>
+
+  <img src="screenshots/pr-details.png" alt="Screenshot of the PR project detail view showing a table of pull requests with flags" class="screenshot">
+  <p class="screenshot-caption">Pull request list with flag columns.</p>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>Use the <span class="ui">Search</span> bar to find PRs by title, repository, or author.</li>
+    <li>Click the flag filter buttons at the top to show only PRs with a specific flag (e.g. only <span class="ui">Stale</span> or only <span class="ui">Unreviewed</span>).</li>
+    <li>Click a column header to sort the table (e.g. by days inactive).</li>
+    <li>Click a PR number to open it directly in Azure DevOps.</li>
+  </ol>
+
+  <h2>What the Table Columns Mean</h2>
+  <table class="config">
+    <tr><th>Column</th><th>Description</th></tr>
+    <tr><td>PR ID</td><td>The pull request number. Click to open in Azure DevOps.</td></tr>
+    <tr><td>Title</td><td>The PR title. A <span class="ui">Draft</span> badge appears for draft PRs.</td></tr>
+    <tr><td>Repository</td><td>Which Git repository the PR belongs to.</td></tr>
+    <tr><td>Author</td><td>Who created the pull request.</td></tr>
+    <tr><td>Days inactive</td><td>How many days since the last activity (comment or code push). Higher values stand out more.</td></tr>
+    <tr><td>Flags</td><td>Coloured labels indicating issues (see <a href="pr-monitor.html">PR Monitor</a> for colour meanings).</td></tr>
+  </table>
+
+  <h2>Features</h2>
+  <ul>
+    <li><span class="ui">Refresh</span> — Click to reload the pull request list from Azure DevOps.</li>
+    <li><span class="ui">Pagination</span> — Use the page controls at the bottom if there are many PRs.</li>
+  </ul>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    "Days inactive" counts calendar days since the most recent action on the PR — this could be its creation, the last code push, or the last comment, whichever is most recent.
+  </div>
+</main>
+
+</body>
+</html>

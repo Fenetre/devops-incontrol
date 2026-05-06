@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Working with Tags — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html" class="active">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Working with Tags</div>
+
+  <h1>Working with Tags</h1>
+  <p>Tags are labels you can attach to work items in Azure DevOps. DevOps InControl lets you view, add, rename, and remove tags directly from the dashboard without switching to Azure DevOps.</p>
+
+  <img src="screenshots/tags.png" alt="Screenshot of the tag detail view showing work items with a specific tag" class="screenshot">
+  <p class="screenshot-caption">Viewing all items with a specific tag.</p>
+
+  <h2>How to View Tag Items</h2>
+  <ol>
+    <li>If the <span class="ui">Tag Overview</span> check is enabled for a project, the Dashboard shows a list of all tags used in that project.</li>
+    <li>Click a tag name to see all work items that carry that tag.</li>
+    <li>The tag detail view shows the tag name, item count, and a table of all matching items.</li>
+  </ol>
+
+  <h2>Tag Actions</h2>
+  <table class="config">
+    <tr><th>Action</th><th>What It Does</th></tr>
+    <tr><td><span class="ui">Remove tag</span></td><td>Removes the tag from a specific work item (or from all items in bulk).</td></tr>
+    <tr><td><span class="ui">Rename tag</span></td><td>Changes the tag name across all items that have it.</td></tr>
+  </table>
+
+  <div class="callout important">
+    <strong>Important</strong>
+    Tag changes are saved directly to Azure DevOps. Renaming or removing a tag affects the items in your real project, not just in DevOps InControl.
+  </div>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    Tags that look like version numbers (e.g. "1.2.3") are automatically hidden from the Tag Overview to reduce clutter.
+  </div>
+</main>
+
+</body>
+</html>

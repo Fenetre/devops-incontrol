@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+*.egg
+
+# Config & secrets
+dashboard/data/config.json
+dashboard/data/config.json.bak
+start.log
+
+# .NET
+dashboard/backend-dotnet/bin/
+dashboard/backend-dotnet/obj/
+dashboard/backend-dotnet-tests/bin/
+dashboard/backend-dotnet-tests/obj/
+
+# Node / Frontend
+dashboard/frontend/node_modules/
+dashboard/frontend/dist/
+
+# Temporary local build output
+.tmpbuild/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+dashboard/data/config.json.bak

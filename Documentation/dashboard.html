@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html" class="active">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permission-check.html">Permission Overview</a>
+  <a href="check-permissions.html">Permission Audit</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines</a>
+  <a href="releases.html">Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Dashboard</div>
+
+  <h1>Dashboard</h1>
+  <p>The Dashboard is your central overview. It shows all your monitored projects and highlights any issues that need attention. Think of it as a quick health check for your Azure DevOps backlog.</p>
+
+  <img src="screenshots/dashboard.png" alt="Screenshot of the main dashboard showing project cards with coloured badges" class="screenshot">
+  <p class="screenshot-caption">The main dashboard with project cards.</p>
+
+  <h2>How to Use It</h2>
+  <ol>
+    <li>Click <span class="ui">Run Checks</span> (top of the page) to scan all your projects. DevOps InControl will query Azure DevOps and show the results.</li>
+    <li>Each project appears as a card. Coloured badges on the card indicate how many issues were found per check type.</li>
+    <li>Click a badge or the project name to see the full list of flagged items (see <a href="issue-detail.html">Viewing Flagged Issues</a>).</li>
+  </ol>
+
+  <h2>What the Colours Mean</h2>
+  <table class="legend">
+    <tr><th>Colour</th><th>Meaning</th></tr>
+    <tr><td><span class="swatch swatch-red"></span> Red</td><td>Issues found that likely need action (e.g. orphan items, stale work).</td></tr>
+    <tr><td><span class="swatch swatch-amber"></span> Amber</td><td>Warnings — items that may need attention soon.</td></tr>
+    <tr><td><span class="swatch swatch-blue"></span> Blue</td><td>Informational — items ready for the next step (e.g. PRs ready to approve).</td></tr>
+    <tr><td><span class="swatch swatch-green"></span> Green</td><td>All clear — no issues found for this check.</td></tr>
+  </table>
+
+  <h2>Features</h2>
+
+  <h3>Auto-Refresh</h3>
+  <p>Use the refresh dropdown in the top-right to have the dashboard re-run checks automatically at a set interval (1, 5, 10, or 30 minutes). Select <span class="ui">Off</span> to refresh only when you click the button.</p>
+
+  <h3>Hide Clean Projects</h3>
+  <p>Toggle <span class="ui">Hide projects without issues</span> to focus only on projects that have flagged items. Projects with a clean bill of health are temporarily hidden.</p>
+
+  <h3>Database Monitor Summary</h3>
+  <p>If you have database monitoring configured, a summary section at the bottom shows the rule check results across your DB projects.</p>
+
+  <h2>What You Can Change</h2>
+  <table class="config">
+    <tr><th>Setting</th><th>Where to Find It</th></tr>
+    <tr><td>Which projects appear</td><td><a href="managing-projects.html">Configuration</a> screen — add or remove projects.</td></tr>
+    <tr><td>Which checks run per project</td><td><a href="managing-projects.html">Configuration</a> screen — enable or disable individual checks.</td></tr>
+    <tr><td>Auto-refresh interval</td><td>Dropdown on the Dashboard itself (top-right).</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    The timestamp below the title shows when checks were last run. If it looks outdated, click <span class="ui">Run Checks</span> to get fresh results.
+  </div>
+</main>
+
+</body>
+</html>
