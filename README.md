@@ -71,13 +71,13 @@ That's it. Installation is done.
 .\start.ps1
 ```
 
-Your browser will open to **http://localhost:8080** with a setup wizard that walks you through:
+Your browser will open to **http://localhost:5172** with a setup wizard that walks you through:
 
 1. **Set an API Key** — choose a password to protect the dashboard.
 2. **Enter your Azure DevOps organization name and PAT** — the wizard verifies they work.
 3. **Pick your first project** — select which Azure DevOps project to monitor.
 
-After setup, the dashboard is ready. Bookmark **http://localhost:8080** for next time.
+After setup, the dashboard is ready. Bookmark **http://localhost:5172** for next time.
 
 > **Tip:** If you enabled auto-start during installation, the app starts silently every time you log into Windows. Just open the bookmark.
 
@@ -136,5 +136,5 @@ git pull
 | Build fails with "file is locked" | Another instance is running. Run `Get-Process -Name DashboardApi \| Stop-Process` first, then try again. |
 | Browser shows raw HTML text | Run `.\install.ps1` again to rebuild, then `.\start.ps1`. |
 | "Execution of scripts is disabled" | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` and try again. |
-| Port 8080 already in use | Run `.\start.ps1 -Port 9090` to use a different port. |
+| Port 5172  already in use | Run f.e. `.\start.ps1 -Port 9090` to use a different port. |
 
