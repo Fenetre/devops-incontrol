@@ -1,5 +1,5 @@
 # DevOps InControl
-A control and management application for Microsoft Azure Devops made by Berend and AI Technocore.
+A control and management application for Microsoft Azure DevOps made by Berend and the AI Technocore.
 
 Made with love by our Scrum Master Berend using our AI knowledge.
 
