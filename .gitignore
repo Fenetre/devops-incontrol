@@ -38,3 +38,4 @@ dashboard/frontend/dist/
 Thumbs.db
 .DS_Store
 dashboard/data/config.json.bak
+rewrite-author.py
