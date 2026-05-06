@@ -5,7 +5,7 @@ Made with love by our Scrum Master Berend using our AI knowledge.
 
 ## DevOps InControl Key Features
 
--  Sprint Populator/Templates– Save time by cloning sprint templates and common tasks into active sprints with a single click.
+-  Sprint Populator/Templates – Save time by cloning sprint templates and common tasks into active sprints with a single click.
 -  Automated Project Health Checks – Instantly flag missing estimates, orphaned tasks, and stale work items that clutter your backlog.
 -  Unified PR Monitor – Track pull requests across all organizations and repositories in one view; identify unreviewed, rejected, or stagnant PRs at a glance.
 -  One-Click Notifications – Send automated email reminders to assignees directly from the dashboard for missing estimates or overdue tasks.
