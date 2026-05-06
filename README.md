@@ -90,11 +90,17 @@ After setup, the dashboard is ready. Bookmark **http://localhost:8080** for next
 3. Click **+ New Token**.
 4. Give it a name (e.g. "DevOps InControl").
 5. Set the expiration to the maximum your organization allows.
-6. Under **Scopes**, select:
-   - **Work Items** → Read
-   - **Code** → Read
-   - **Project and Team** → Read
-7. Click **Create** and **copy the token** — you won't see it again.
+6. Click 'Show all scopes'
+7. Under **Scopes**, select:
+- **Code (Read)** — pull request monitoring
+- **Graph (Read)** — group membership resolution
+- **dentity (Read)** — permission checks
+- **Project and Team (Read)** — project and team listing
+- **Security (Manage)** — repo & area permission audits
+- **Wiki (Read)** — wiki permission checks
+- **Work Items (Read & Write)** — tag management
+
+8. Click **Create** and **Copy the token** — you won't see it again.
 
 Paste this token into the setup wizard when prompted.
 
