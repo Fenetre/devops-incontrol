@@ -152,3 +152,21 @@ git pull
 | "Execution of scripts is disabled" | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` and try again. |
 | Port 5172  already in use | Run f.e. `.\start.ps1 -Port 9090` to use a different port. |
 
+## Contributions
+
+We are not accepting external pull requests for this repository at this time.
+
+This repository is maintained by Fenêtre BV. Issues, suggestions, or questions may still be shared through the appropriate communication channels, but unsolicited pull requests may be closed without review.
+
+Thank you for your understanding.
+
+## Follow Us
+
+<p>
+  <a href="https://www.facebook.com/fenetrebv" target="_blank"><img src="https://cdn.simpleicons.org/facebook/00aeef" alt="Fenêtre on Facebook" title="Fenêtre on Facebook" height="24"></a>&nbsp;&nbsp;
+  <a href="https://twitter.com/FenetreBV" target="_blank"><img src="https://cdn.simpleicons.org/x/00aeef" alt="Fenêtre on X" title="Fenêtre on X" height="24"></a>&nbsp;&nbsp;
+  <a href="https://www.linkedin.com/company/fenetre-online-solutions/" target="_blank"><img src="https://api.iconify.design/simple-icons:linkedin.svg?color=%2300aeef" alt="Fenêtre on LinkedIn" title="Fenêtre on LinkedIn" height="24" width="24px"></a>&nbsp;&nbsp;
+  <a href="https://www.instagram.com/fenetrebv/" target="_blank"><img src="https://cdn.simpleicons.org/instagram/00aeef" alt="Fenêtre on Instagram" title="Fenêtre on Instagram" height="24"></a>&nbsp;&nbsp;
+  <a href="https://www.youtube.com/FenetreBV" target="_blank"><img src="https://cdn.simpleicons.org/youtube/00aeef" alt="Fenêtre on YouTube" title="Fenêtre on YouTube" height="24"></a>&nbsp;&nbsp;
+  <a href="https://github.com/Fenetre" target="_blank"><img src="https://cdn.simpleicons.org/github/00aeef" alt="Fenêtre on GitHub" title="Fenêtre on GitHub" height="24"></a>
+</p>
