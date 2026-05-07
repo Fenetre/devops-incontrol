@@ -1,7 +1,21 @@
-# DevOps InControl
-A control and management application for Microsoft Azure DevOps made by Berend and the AI Technocore.
+[![DevOps InControl](https://www.fenetre.nl/media/skan3fog/devopsincontrol-banner-github.png)](https://www.devopsincontrol.com)
 
-Made with love by our Scrum Master Berend using our AI knowledge.
+# DevOps InControl
+A control and management application for Microsoft Azure DevOps made by scrummaster Berend and the AI Technocore.
+
+<p>
+  <a href="https://github.com/Fenetre/devops-incontrol/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/Fenetre/devops-incontrol?color=%2317c495">
+  </a>
+
+  <a href="https://github.com/Fenetre/devops-incontrol/network/members">
+    <img alt="GitHub forks" src="https://img.shields.io/github/forks/Fenetre/devops-incontrol?color=%2317c495">
+  </a>
+
+  <a href="https://github.com/Fenetre/devops-incontrol/blob/main/LICENSE">
+    <img alt="license" src="https://img.shields.io/github/license/Fenetre/devops-incontrol?color=%2317c495">
+  </a>
+</p>
 
 ## DevOps InControl Key Features
 
