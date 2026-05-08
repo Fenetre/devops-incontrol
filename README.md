@@ -1,4 +1,4 @@
-[![DevOps InControl](https://www.fenetre.nl/media/skan3fog/devopsincontrol-banner-github_2.png)](https://www.devopsincontrol.com)
+[![DevOps InControl](https://www.fenetre.nl/media/skan3fog/devopsincontrol-banner-github_v2.png)](https://www.devopsincontrol.com)
 
 # DevOps InControl
 A control and management application for Microsoft Azure DevOps made by scrummaster Berend and the AI Technocore.
