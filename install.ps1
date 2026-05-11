@@ -98,7 +98,7 @@ Write-Host "  Backend built." -ForegroundColor Green
 if (-not $SkipAutoStart) {
     Write-Host "[5/5] Auto-start registration..." -ForegroundColor Yellow
     Write-Host ""
-    $answer = Read-Host "  Register DevOps InControl to start automatically at Windows logon? (Y/n)"
+    $answer = Read-Host "  Register DevOps InControl to start automatically at Windows logon? (y/n)"
     if ($answer -match '^(y|Y|yes|)$') {
         $regScript = Join-Path $root "Register-StartupTask.ps1"
         Start-Process pwsh -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$regScript`"" -Verb RunAs -Wait
@@ -123,7 +123,7 @@ Write-Host "  The dashboard will open at http://localhost:5172" -ForegroundColor
 Write-Host "  A setup wizard will guide you through the first-time configuration." -ForegroundColor Cyan
 Write-Host ""
 
-$startNow = Read-Host "  Start DevOps InControl now? (Y/n)"
+$startNow = Read-Host "  Start DevOps InControl now? (y/n)"
 if ($startNow -match '^(y|Y|yes|)$') {
     & (Join-Path $root "start.ps1")
 }

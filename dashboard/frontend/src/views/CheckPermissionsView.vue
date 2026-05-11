@@ -55,8 +55,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
+            v-autofocus
             v-model="personFilter"
-            @focus="dropdownOpen = true"
+            @focus="handleDropdownFocus"
             type="text"
             placeholder="Search for a person…"
             class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 outline-none"
@@ -66,8 +67,8 @@
             class="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
             <button v-for="p in filteredPeople" :key="p.descriptor"
               @click="selectPerson(p)"
-              class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
-              :class="selectedPerson?.descriptor === p.descriptor ? 'bg-primary-50 dark:bg-primary-900/20' : ''">
+              class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:bg-primary-50 dark:hover:bg-primary-800/60 transition-colors"
+              :class="selectedPerson?.descriptor === p.descriptor ? 'bg-primary-100 dark:bg-primary-800/80 font-semibold border-l-3 border-primary-500' : ''">
               <div class="truncate">
                 <span class="font-medium text-gray-900 dark:text-gray-100">{{ p.display_name }}</span>
                 <span v-if="p.unique_name" class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ p.unique_name }}</span>
@@ -276,11 +277,7 @@
           </div>
           <p v-else class="text-xs text-gray-400 italic">No group connections configured yet.</p>
           <div v-if="availableGroupsForMatrix.length" class="mt-3 flex items-center gap-2">
-            <select v-model="newGroupForMatrix"
-              class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">Add group…</option>
-              <option v-for="g in availableGroupsForMatrix" :key="g" :value="g">{{ g }}</option>
-            </select>
+            <SelectMenu v-model="newGroupForMatrix" :options="matrixGroupOptions" placeholder="Add group…" size="sm" class="w-64" />
             <button v-if="newGroupForMatrix" @click="addGroupToMatrix"
               class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">Add</button>
           </div>
@@ -319,11 +316,7 @@
             </div>
             <div v-if="!customerDenyRules.length" class="text-xs text-gray-400 italic px-3 py-1">No customer deny rules configured.</div>
             <div class="flex items-center gap-2 mt-2">
-              <select v-model="newCustomerDenyGroup"
-                class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none">
-                <option value="">Add customer deny rule…</option>
-                <option v-for="g in availableCustomerDenyGroups" :key="g" :value="g">{{ g }}</option>
-              </select>
+              <SelectMenu v-model="newCustomerDenyGroup" :options="customerDenyGroupOptions" placeholder="Add customer deny rule…" size="sm" class="w-64" />
               <button v-if="newCustomerDenyGroup" @click="addRule('customer_deny', newCustomerDenyGroup); newCustomerDenyGroup = ''"
                 class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">Add</button>
             </div>
@@ -346,11 +339,7 @@
             </div>
             <div v-if="!mandatoryGroupRules.length" class="text-xs text-gray-400 italic px-3 py-1">No mandatory group rules configured.</div>
             <div class="flex items-center gap-2 mt-2">
-              <select v-model="newMandatoryGroup"
-                class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none">
-                <option value="">Add mandatory group rule…</option>
-                <option v-for="g in availableMandatoryGroups" :key="g" :value="g">{{ g }}</option>
-              </select>
+              <SelectMenu v-model="newMandatoryGroup" :options="mandatoryGroupOptions" placeholder="Add mandatory group rule…" size="sm" class="w-64" />
               <button v-if="newMandatoryGroup" @click="addRule('mandatory_group', newMandatoryGroup); newMandatoryGroup = ''"
                 class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">Add</button>
             </div>
@@ -365,12 +354,7 @@
 
       <!-- Audit summary + filter -->
       <div v-if="displayAuditResults && displayAuditResults.projects.length > 0" class="flex items-center gap-3 mb-4">
-        <select v-model="auditFilter"
-          class="text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-2 focus:ring-2 focus:ring-primary-500 outline-none">
-          <option value="all">All projects</option>
-          <option value="issues">With issues only</option>
-          <option value="ok">Passed only</option>
-        </select>
+        <SelectMenu v-model="auditFilter" :options="auditFilterOptions" size="sm" class="w-40" />
         <span class="text-xs text-gray-500 dark:text-gray-400">
           {{ filteredAuditProjects.length }} of {{ displayAuditResults.projects.length }} projects
         </span>
@@ -569,6 +553,7 @@ import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useDemoMode, anonName, anonEmail, anonOrg, anonProject } from '../composables/useDemoMode.js'
 import { transformPeopleList, transformPersonGroups, transformPermissionAudit, transformAuditProjects } from '../composables/demoTransform.js'
+import SelectMenu from '../components/SelectMenu.vue'
 
 const store = useMonitorStore()
 const { isDemoMode } = useDemoMode()
@@ -589,6 +574,11 @@ const localRules = ref([])
 const newGroupForMatrix = ref('')
 const newCustomerDenyGroup = ref('')
 const newMandatoryGroup = ref('')
+const auditFilterOptions = [
+  { value: 'all', label: 'All projects' },
+  { value: 'issues', label: 'With issues only' },
+  { value: 'ok', label: 'Passed only' },
+]
 
 const mandatoryGroupNames = computed(() =>
   localRules.value
@@ -640,6 +630,13 @@ const displaySelectedPerson = computed(() => {
     organization: anonOrg(selectedPerson.value.organization),
   }
 })
+
+function handleDropdownFocus() {
+  if (selectedPerson.value) {
+    personFilter.value = ''
+  }
+  dropdownOpen.value = true
+}
 
 async function selectPerson(person) {
   selectedPerson.value = person
@@ -826,6 +823,16 @@ const availableMandatoryGroups = computed(() => {
   const existing = new Set(mandatoryGroupRules.value.map(r => r.group_name))
   return allKnownGroups.value.filter(g => !existing.has(g))
 })
+
+const matrixGroupOptions = computed(() =>
+  availableGroupsForMatrix.value.map(g => ({ value: g, label: g }))
+)
+const customerDenyGroupOptions = computed(() =>
+  availableCustomerDenyGroups.value.map(g => ({ value: g, label: g }))
+)
+const mandatoryGroupOptions = computed(() =>
+  availableMandatoryGroups.value.map(g => ({ value: g, label: g }))
+)
 
 async function persistConfig() {
   await store.saveAuditConfig({

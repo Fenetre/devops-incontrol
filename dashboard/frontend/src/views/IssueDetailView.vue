@@ -133,6 +133,7 @@
         @delete-tag="onDeleteTag"
         @remove-tag="onBulkRemoveTag"
         @rename-tag="onBulkRenameTag"
+        @assign-parent="onAssignParent"
       />
     </div>
 
@@ -172,11 +173,102 @@
         </div>
       </div>
     </div>
+    <!-- Assign parent dialog -->
+    <div v-if="showParentDialog" class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center" @click.self="closeParentDialog">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-[75vw] max-h-[90vh] mx-4 overflow-hidden">
+        <div class="px-6 py-4 border-b border-primary-200 dark:border-gray-700 bg-primary-50 dark:bg-transparent">
+          <h3 class="text-lg font-semibold text-primary-900 dark:text-gray-100">
+            {{ isParentDoneItem ? 'Change' : 'Assign' }} Parent for #{{ parentAssignItem?.id }}
+            <span class="font-normal text-primary-600 dark:text-gray-100 ml-2">{{ parentAssignItem?.title }}</span>
+          </h3>
+        </div>
+
+        <!-- Confirmation sub-view -->
+        <div v-if="selectedParentCandidate" class="px-6 py-5 space-y-4">
+          <p class="text-sm text-gray-400 dark:text-gray-400">Link the following parent:</p>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4 space-y-3">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-primary-500 dark:text-primary-400">Parent</span>
+              <p class="text-base font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{{ selectedParentCandidate.title }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ selectedParentCandidate.work_item_type }} #{{ selectedParentCandidate.id }}</p>
+            </div>
+            <div class="flex items-center gap-2 text-gray-400">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            </div>
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-primary-500 dark:text-primary-400">Child</span>
+              <p class="text-base font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{{ parentAssignItem?.title }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ parentAssignItem?.work_item_type }} #{{ parentAssignItem?.id }}</p>
+            </div>
+          </div>
+          <p v-if="parentAssignError" class="text-xs text-red-600 dark:text-red-400">{{ parentAssignError }}</p>
+          <div class="flex justify-end gap-3 pt-1">
+            <button @click="selectedParentCandidate = null; parentAssignError = ''" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+              Back
+            </button>
+            <button @click="confirmAssignParent" :disabled="assigningParent" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">
+              {{ assigningParent ? 'Assigning…' : 'Confirm' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Candidate list -->
+        <div v-else>
+          <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input
+                ref="parentSearchInput"
+                v-model="parentSearch"
+                type="text"
+                placeholder="Filter candidates…"
+                class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
+              />
+            </div>
+          </div>
+          <div class="max-h-[30rem] overflow-y-auto">
+            <div v-if="loadingCandidates" class="flex items-center gap-2 px-6 py-8 justify-center text-sm text-gray-500">
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Loading candidates…
+            </div>
+            <div v-else-if="filteredCandidates.length === 0" class="px-6 py-8 text-center text-sm text-gray-400">
+              No candidate parents found.
+            </div>
+            <div v-else>
+              <button
+                v-for="c in filteredCandidates" :key="c.id"
+                @click="selectedParentCandidate = c"
+                class="w-full text-left px-5 py-2.5 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors grid items-center gap-x-3"
+                style="grid-template-columns: 4.5rem 5.5rem 1fr auto auto"
+              >
+                <span class="text-xs text-gray-500 dark:text-gray-400">#{{ c.id }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ c.work_item_type }}</span>
+                <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ c.title }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ c.state }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">{{ formatCandidateArea(c.area_path) }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="!selectedParentCandidate" class="px-6 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <span class="text-xs text-gray-500 dark:text-gray-400">Press <kbd class="px-1 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">Esc</kbd> to close</span>
+          <button @click="closeParentDialog" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useApi } from '../composables/useApi.js'
 import { useDemoMode } from '../composables/useDemoMode.js'
@@ -377,6 +469,93 @@ async function onBulkRemoveTag(tagName) {
   } finally {
     operationLoading.value = false
     operationMessage.value = ''
+  }
+}
+
+// --- Assign parent ---
+const showParentDialog = ref(false)
+const parentAssignItem = ref(null)
+const parentCandidates = ref([])
+const loadingCandidates = ref(false)
+const parentSearch = ref('')
+const parentSearchInput = ref(null)
+const selectedParentCandidate = ref(null)
+const assigningParent = ref(false)
+const parentAssignError = ref('')
+
+function onEsc(e) {
+  if (e.key === 'Escape' && showParentDialog.value) closeParentDialog()
+}
+watch(showParentDialog, (open) => {
+  if (open) document.addEventListener('keydown', onEsc)
+  else document.removeEventListener('keydown', onEsc)
+})
+onUnmounted(() => document.removeEventListener('keydown', onEsc))
+
+const filteredCandidates = computed(() => {
+  if (!parentSearch.value) return parentCandidates.value
+  const q = parentSearch.value.toLowerCase()
+  return parentCandidates.value.filter(c =>
+    String(c.id).includes(q) ||
+    c.title.toLowerCase().includes(q) ||
+    c.work_item_type.toLowerCase().includes(q)
+  )
+})
+
+const isParentDoneItem = computed(() =>
+  (parentAssignItem.value?.work_item_type || '').toLowerCase().includes('[parent done]')
+)
+
+function formatCandidateArea(areaPath) {
+  if (!areaPath) return ''
+  const parts = areaPath.split('\\')
+  return parts[parts.length - 1]
+}
+
+async function onAssignParent(item) {
+  parentAssignItem.value = item
+  parentCandidates.value = []
+  parentSearch.value = ''
+  selectedParentCandidate.value = null
+  parentAssignError.value = ''
+  showParentDialog.value = true
+  loadingCandidates.value = true
+  try {
+    const cleanType = (item.work_item_type || '').replace(/\s*\[.*\]$/, '')
+    const res = await store.fetchCandidateParents(props.projectId, item.id, cleanType)
+    parentCandidates.value = res.candidates || []
+  } catch (e) {
+    parentCandidates.value = []
+    parentAssignError.value = e.message || 'Failed to load candidates'
+  } finally {
+    loadingCandidates.value = false
+    nextTick(() => parentSearchInput.value?.focus())
+  }
+}
+
+function closeParentDialog() {
+  showParentDialog.value = false
+  parentAssignItem.value = null
+  selectedParentCandidate.value = null
+  parentAssignError.value = ''
+}
+
+async function confirmAssignParent() {
+  if (!parentAssignItem.value || !selectedParentCandidate.value) return
+  assigningParent.value = true
+  parentAssignError.value = ''
+  try {
+    await store.assignParent(props.projectId, parentAssignItem.value.id, selectedParentCandidate.value.id)
+    if (checkData.value) {
+      const idx = checkData.value.flagged_items.findIndex(i => i.id === parentAssignItem.value.id)
+      if (idx !== -1) checkData.value.flagged_items.splice(idx, 1)
+    }
+    closeParentDialog()
+    operationSuccess.value = `Parent assigned: #${selectedParentCandidate.value.id} → #${parentAssignItem.value.id}`
+  } catch (e) {
+    parentAssignError.value = e.message || 'Failed to assign parent'
+  } finally {
+    assigningParent.value = false
   }
 }
 

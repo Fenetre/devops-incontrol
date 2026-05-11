@@ -20,7 +20,7 @@ public partial class ProjectsController(ConfigStore configStore) : ControllerBas
         ["unassigned_check"] = ("Unassigned Items", "Items in the current sprint with no assignee."),
         ["release_pr_check"] = ("Release PR Issues", "Done bugs in the current sprint missing required release pull requests."),
         ["resolved_pr_check"] = ("Resolved PR Ready", "Resolved tasks/bugs with all required PRs completed — ready to move to Done."),
-        ["tag_overview_check"] = ("Tag Overview", "Lists all tags in use across the project and how many times each is used."),
+        ["tag_overview_check"] = ("Tag Management", "Lists all tags in use across the project and how many times each is used."),
         ["pr_approval_check"] = ("PR Approval Ready", "Active PRs that have all required approvals but are not yet completed."),
         ["stale_pr_check"] = ("Stale PRs", "Active PRs with no activity (pushes or comments) in a configurable number of days."),
         ["unreviewed_pr_check"] = ("Unreviewed PRs", "Active PRs that have no reviewers assigned."),

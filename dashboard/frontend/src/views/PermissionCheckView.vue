@@ -39,34 +39,29 @@
     <!-- ================================================================ -->
     <div v-if="simpleMode">
       <div class="flex items-center gap-3 mb-4 flex-wrap">
-        <button @click="loadSimpleData(true)" :disabled="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
-          :class="(store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-          <svg v-if="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
-          {{ (store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) ? 'Loading…' : 'Refresh' }}
-        </button>
-
         <!-- Repo selector -->
         <div class="flex items-center gap-1.5">
           <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Repo:</label>
-          <select v-model="selectedRepoId"
-            class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none max-w-[220px]">
-            <option v-for="r in repoOptions" :key="r.id" :value="r.id">{{ r.name }}</option>
-          </select>
+          <SelectMenu v-model="selectedRepoId" :options="repoSelectOptions" placeholder="Select repo…" size="sm" class="w-56" />
         </div>
 
         <!-- Area selector -->
         <div class="flex items-center gap-1.5">
           <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Area:</label>
-          <select v-model="selectedAreaId"
-            class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none max-w-[280px]">
-            <option v-for="a in areaOptions" :key="a.id" :value="a.id">{{ a.name }}</option>
-          </select>
+          <SelectMenu v-model="selectedAreaId" :options="areaSelectOptions" placeholder="Select area…" size="sm" class="w-72" />
         </div>
 
-        <input v-model="simpleSearch" type="text" placeholder="Search members…"
+        <input v-autofocus v-model="simpleSearch" type="text" placeholder="Search members…"
           class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-64" />
+
+        <button @click="loadSimpleData(true)" :disabled="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
+          :class="(store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
+          <svg v-if="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
+          {{ (store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) ? 'Loading…' : 'Refresh permissions' }}
+        </button>
+
         <span v-if="teamData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-500 ml-auto">
           Fetched: {{ new Date(teamData.fetched_at).toLocaleString() }}
         </span>
@@ -285,6 +280,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useDemoMode, anonAreaPath, anonRepo } from '../composables/useDemoMode.js'
 import { transformPermissionMatrix, transformRepoPermissions, transformAreaPermissions } from '../composables/demoTransform.js'
+import SelectMenu from '../components/SelectMenu.vue'
 
 const props = defineProps({ projectId: { type: String, required: true } })
 
@@ -393,6 +389,13 @@ const areaOptions = computed(() => {
   if (!list) return []
   return list.map(a => ({ id: a.id, name: isDemoMode.value ? anonAreaPath(a.name) : a.name }))
 })
+
+const repoSelectOptions = computed(() =>
+  repoOptions.value.map(r => ({ value: r.id, label: r.name }))
+)
+const areaSelectOptions = computed(() =>
+  areaOptions.value.map(a => ({ value: a.id, label: a.name }))
+)
 
 // Auto-select first repo/area when data arrives
 watch(repoOptions, (opts) => {

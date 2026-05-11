@@ -68,6 +68,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
+            v-autofocus
             v-model="search"
             type="text"
             placeholder="Filter by title, repo, author…"
@@ -111,10 +112,10 @@
     <!-- PR Table -->
     <div v-if="projectData && projectData.prs.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
           <thead>
             <tr class="text-left border-b border-gray-200 dark:border-gray-700">
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-20 cursor-pointer select-none" @click="toggleSort('pr_id')">
+              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('pr_id')">
                 ID
                 <span v-if="sortKey === 'pr_id'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
               </th>
@@ -122,19 +123,19 @@
                 Title
                 <span v-if="sortKey === 'title'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-36 cursor-pointer select-none" @click="toggleSort('repository')">
+              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('repository')">
                 Repository
                 <span v-if="sortKey === 'repository'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-40 cursor-pointer select-none" @click="toggleSort('created_by')">
+              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('created_by')">
                 Author
                 <span v-if="sortKey === 'created_by'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-24 cursor-pointer select-none" @click="toggleSort('days_inactive')">
+              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('days_inactive')">
                 Stale
                 <span v-if="sortKey === 'days_inactive'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-52">
+              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">
                 Flags
               </th>
             </tr>
@@ -150,7 +151,7 @@
                   #{{ pr.pr_id }}
                 </a>
               </td>
-              <td class="px-4 py-3 text-gray-800 dark:text-gray-200">
+              <td class="px-4 py-3 text-gray-800 dark:text-gray-200 !whitespace-normal">
                 <a :href="pr.url" target="_blank" rel="noopener noreferrer" class="hover:text-primary-600 hover:underline">
                   <span v-if="pr.is_draft" class="inline-block mr-1.5 px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Draft</span>
                   {{ pr.title }}
@@ -165,7 +166,7 @@
                 <span v-else class="text-xs text-gray-400">—</span>
               </td>
               <td class="px-4 py-3">
-                <div class="flex flex-wrap gap-1">
+                <div class="flex gap-1">
                   <span
                     v-for="flag in pr.flags"
                     :key="flag.key"

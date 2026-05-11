@@ -33,7 +33,7 @@
           <div class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
             <div class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
               <span class="flex-shrink-0 w-6 h-6 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-              <div><strong class="text-gray-900 dark:text-gray-100">Set an API Key</strong> — protects your dashboard with a password.</div>
+              <div><strong class="text-gray-900 dark:text-gray-100">Set a Password</strong> — protects your dashboard.</div>
             </div>
             <div class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
               <span class="flex-shrink-0 w-6 h-6 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 rounded-full flex items-center justify-center text-xs font-bold">2</span>
@@ -46,15 +46,16 @@
           </div>
         </div>
 
-        <!-- Step 2: API Key -->
+        <!-- Step 2: Password -->
         <div v-if="step === 2" class="p-8">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">Set your API Key</h2>
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">Set your Password</h2>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">This password protects your dashboard. You'll need it every time you open DevOps InControl.</p>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
               <input
+                v-autofocus
                 v-model="apiKey"
                 type="password"
                 placeholder="Choose a strong password"
@@ -63,7 +64,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm API Key</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
               <input
                 v-model="apiKeyConfirm"
                 type="password"
@@ -75,7 +76,7 @@
             <p v-if="apiKeyError" class="text-sm text-red-600 dark:text-red-400">{{ apiKeyError }}</p>
             <p v-if="apiKeyDone" class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              API key saved.
+              Password saved.
             </p>
           </div>
         </div>
@@ -88,28 +89,28 @@
             <a href="https://dev.azure.com" target="_blank" class="text-primary-600 dark:text-primary-400 underline">Azure DevOps</a>
             → User Settings → Personal Access Tokens with these scopes:
           </p>
-          <div class="mb-6 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <p class="font-medium text-gray-700 dark:text-gray-300">Required:</p>
+          <div class="mb-6 text-sm text-gray-600 dark:text-gray-400">
             <ul class="ml-4 list-disc space-y-0.5">
               <li><strong>Work Items (Read)</strong> — backlog checks, sprint monitoring</li>
               <li><strong>Code (Read)</strong> — pull request monitoring</li>
+              <li><strong>Build (Read)</strong> — pipeline runs overview</li>
+              <li><strong>Release (Read)</strong> — release deployments overview</li>
               <li><strong>Project and Team (Read)</strong> — project and team listing</li>
               <li><strong>Identity (Read)</strong> — permission checks</li>
-            </ul>
-            <p class="font-medium text-gray-700 dark:text-gray-300 mt-2">Optional (for specific features):</p>
-            <ul class="ml-4 list-disc space-y-0.5">
               <li><strong>Work Items (Read &amp; Write)</strong> — tag management</li>
               <li><strong>Security (Manage)</strong> — repo &amp; area permission audits</li>
               <li><strong>Graph (Read)</strong> — group membership resolution</li>
               <li><strong>Wiki (Read)</strong> — wiki permission checks</li>
             </ul>
+            <p class="mt-3 px-3 py-2 text-xs font-medium text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded">💡 Click <strong>"Show all scopes"</strong> at the bottom of the PAT form to reveal all permissions.</p>
           </div>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Organization name</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Azure DevOps Organization name</label>
               <input
                 v-model="projForm.organization"
+                v-autofocus
                 type="text"
                 placeholder="e.g. MyOrganization"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
@@ -163,39 +164,29 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
               <div v-if="store.orgProjectsError" class="text-xs text-red-600 dark:text-red-400 mb-1">{{ store.orgProjectsError }}</div>
-              <div class="relative">
-                <select
-                  v-model="projForm.project"
-                  :disabled="!projForm.organization || store.loadingOrgProjects || store.orgProjects.length === 0"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400"
-                >
-                  <option value="">{{ store.loadingOrgProjects ? 'Loading projects…' : store.orgProjectsError ? 'Failed — check org name & PAT' : projForm.organization ? 'Select project…' : 'Enter organization first' }}</option>
-                  <option v-for="p in store.orgProjects" :key="p.id" :value="p.name">{{ p.name }}</option>
-                </select>
-                <svg v-if="store.loadingOrgProjects" class="absolute right-3 top-2.5 w-4 h-4 text-gray-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-              </div>
+              <SelectMenu
+                v-model="projForm.project"
+                :options="projectOptions"
+                :placeholder="projectPlaceholder"
+                :disabled="!projForm.organization || store.orgProjects.length === 0"
+                :loading="store.loadingOrgProjects"
+              />
             </div>
 
             <!-- Area Path -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area Path <span class="text-gray-500 font-normal">(optional)</span></label>
-              <div class="relative">
-                <select
-                  v-model="projForm.area_path"
-                  :disabled="!projForm.project || store.loadingAreaPaths"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400"
-                >
-                  <option value="">{{ store.loadingAreaPaths ? 'Loading areas…' : 'All areas (no filter)' }}</option>
-                  <option v-for="a in store.areaPaths" :key="a.path" :value="a.path">{{ a.path }}</option>
-                </select>
-                <svg v-if="store.loadingAreaPaths" class="absolute right-3 top-2.5 w-4 h-4 text-gray-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-              </div>
+              <SelectMenu
+                v-model="projForm.area_path"
+                :options="areaPathOptions"
+                placeholder="All areas (no filter)"
+                :disabled="!projForm.project"
+                :loading="store.loadingAreaPaths"
+              />
+              <label v-if="projForm.area_path" class="inline-flex items-center gap-2 mt-2 cursor-pointer">
+                <input type="checkbox" v-model="projForm.include_child_areas" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                <span class="text-sm text-gray-700 dark:text-gray-300">Include child areas</span>
+              </label>
             </div>
 
             <!-- Checks -->
@@ -301,19 +292,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMonitorStore } from '../stores/monitor.js'
+import SelectMenu from '../components/SelectMenu.vue'
 
 const store = useMonitorStore()
 const router = useRouter()
 
 const totalSteps = 5
-const stepTitles = ['Welcome', 'API Key', 'Personal Access Token', 'First Project', 'Done']
+const stepTitles = ['Welcome', 'Password', 'Personal Access Token', 'First Project', 'Done']
 const step = ref(1)
 const saving = ref(false)
 
-// Step 2 — API Key
+// Step 2 — Password
 const apiKey = ref('')
 const apiKeyConfirm = ref('')
 const apiKeyError = ref('')
@@ -327,10 +319,23 @@ const patValidating = ref(false)
 const patValidationStep = ref('')
 
 // Step 4 — First Project
-const projForm = reactive({ organization: '', project: '', area_path: '' })
+const projForm = reactive({ organization: '', project: '', area_path: '', include_child_areas: true })
 const selectedChecks = ref([])
 const projectError = ref('')
 const projectDone = ref(false)
+
+const projectOptions = computed(() =>
+  store.orgProjects.map(p => ({ value: p.name, label: p.name }))
+)
+const projectPlaceholder = computed(() => {
+  if (store.orgProjectsError) return 'Failed — check org name & PAT'
+  if (projForm.organization) return 'Select project…'
+  return 'Enter organization first'
+})
+const areaPathOptions = computed(() => [
+  { value: '', label: 'All areas (no filter)' },
+  ...store.areaPaths.map(a => ({ value: a.path, label: a.path }))
+])
 
 // When entering step 4, projects are already loaded (validated in step 3)
 // Just load check types
@@ -360,18 +365,18 @@ watch(() => projForm.project, (newProject) => {
 })
 
 async function saveApiKey() {
-  if (apiKeyDone.value) { step.value++; return }
+  if (apiKeyDone.value) { if (step.value === 2) step.value++; return }
   apiKeyError.value = ''
-  if (!apiKey.value.trim()) { apiKeyError.value = 'Please enter an API key.'; return }
-  if (apiKey.value.length < 6) { apiKeyError.value = 'API key must be at least 6 characters.'; return }
+  if (!apiKey.value.trim()) { apiKeyError.value = 'Please enter a password.'; return }
+  if (apiKey.value.length < 6) { apiKeyError.value = 'Password must be at least 6 characters.'; return }
   if (apiKey.value !== apiKeyConfirm.value) { apiKeyError.value = 'Keys do not match.'; return }
   saving.value = true
   try {
     await store.saveApiKey(apiKey.value.trim())
     apiKeyDone.value = true
-    setTimeout(() => step.value++, 600)
+    step.value++
   } catch (e) {
-    apiKeyError.value = e.message || 'Failed to save API key.'
+    apiKeyError.value = e.message || 'Failed to save password.'
   } finally {
     saving.value = false
   }
@@ -439,6 +444,7 @@ async function saveProject() {
       organization: projForm.organization,
       project: projForm.project,
       area_path: projForm.area_path,
+      include_child_areas: projForm.include_child_areas,
       ignore_title_contains: [],
       ignore_parent_title_contains: [],
       checks: selectedChecks.value.map(ct => ({

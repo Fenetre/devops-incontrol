@@ -300,6 +300,18 @@ export const useMonitorStore = defineStore('monitor', {
       return await api.post(`/api/checks/send-mail/${encodeURIComponent(projectId)}/${encodeURIComponent(checkType)}`, body)
     },
 
+    async fetchParentTypeHierarchy(projectId) {
+      return await api.get(`/api/checks/parent-type-hierarchy/${encodeURIComponent(projectId)}`)
+    },
+
+    async fetchCandidateParents(projectId, workItemId, workItemType) {
+      return await api.get(`/api/checks/candidate-parents/${encodeURIComponent(projectId)}?work_item_id=${workItemId}&work_item_type=${encodeURIComponent(workItemType)}`)
+    },
+
+    async assignParent(projectId, workItemId, parentId) {
+      return await api.post(`/api/checks/assign-parent/${encodeURIComponent(projectId)}`, { work_item_id: workItemId, parent_id: parentId })
+    },
+
     async fetchKnownOrganizations() {
       try {
         this.organizations = await api.get('/api/devops/organizations')
@@ -889,10 +901,11 @@ export const useMonitorStore = defineStore('monitor', {
       }
     },
 
-    async calculateVelocity(projectId, team, lastIterationId, targetIterationId, overridePoints = null) {
+    async calculateVelocity(projectId, team, lastIterationId, targetIterationId, overridePoints = null, includeUnassigned = false) {
       try {
         let url = `/api/velocity/${encodeURIComponent(projectId)}/calculate?team=${encodeURIComponent(team)}&lastIterationId=${encodeURIComponent(lastIterationId)}&targetIterationId=${encodeURIComponent(targetIterationId)}`
         if (overridePoints !== null) url += `&overridePoints=${overridePoints}`
+        if (includeUnassigned) url += `&includeUnassigned=true`
         return await api.get(url)
       } catch (e) {
         console.error('Failed to calculate velocity', e)
@@ -911,6 +924,15 @@ export const useMonitorStore = defineStore('monitor', {
         throw e
       } finally {
         this.loadingVelocity = false
+      }
+    },
+
+    async fetchReleaseNotes() {
+      try {
+        return await api.get('/api/release-notes')
+      } catch (e) {
+        console.error('Failed to fetch release notes', e)
+        return []
       }
     },
   },

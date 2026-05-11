@@ -17,15 +17,14 @@ public partial class TagOverviewCheck : ICheckCase
     private static async Task<CaseResult> CheckProjectAsync(DevOpsProjectConfig projectCfg, string pat)
     {
         var client = new AzureDevOpsClient(projectCfg.Organization, projectCfg.Project, pat, projectCfg.ApiVersion);
-        var header = $"Tag Overview — {projectCfg.Project}";
+        var header = $"Tag Management — {projectCfg.Project}";
 
-        var areaFilter = !string.IsNullOrEmpty(projectCfg.AreaPath)
-            ? $" AND [System.AreaPath] UNDER '{Helpers.EscapeWiql(projectCfg.AreaPath)}'" : "";
+        var areaFilter = Helpers.BuildAreaFilter(projectCfg.AreaPath, projectCfg.IncludeChildAreas).Trim();
 
         var wiql =
             "SELECT [System.Id] FROM WorkItems " +
             $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(projectCfg.Project)}'" +
-            areaFilter +
+            (areaFilter.Length > 0 ? $" {areaFilter}" : "") +
             " AND [System.State] NOT IN ('Removed','Closed')";
 
         List<System.Text.Json.JsonElement> rawItems;

@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using DashboardApi.Models;
 using DashboardApi.Services;
+using DashboardApi.Services.Checks;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DashboardApi.Controllers;
@@ -186,7 +187,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
 
         var doc = await JsonDocument.ParseAsync(await resp.Content.ReadAsStreamAsync());
         var members = new List<CapacityMemberEntry>();
-        double totalDev = 0, totalTest = 0;
+        double totalDev = 0, totalTest = 0, totalUnassigned = 0;
 
         if (doc.RootElement.TryGetProperty("value", out var arr))
         {
@@ -209,6 +210,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                         entry.Activities.Add(new CapacityActivity { Name = name, CapacityPerDay = cpd });
                         if (name.Equals("Development", StringComparison.OrdinalIgnoreCase)) totalDev += cpd;
                         else if (name.Equals("Testing", StringComparison.OrdinalIgnoreCase)) totalTest += cpd;
+                        else if (string.IsNullOrEmpty(name)) totalUnassigned += cpd;
                     }
                 }
 
@@ -236,6 +238,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
             Members = members,
             TotalDevelopment = totalDev,
             TotalTesting = totalTest,
+            TotalUnassigned = totalUnassigned,
         });
     }
 
@@ -360,8 +363,8 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
 
         // WIQL for completed items with story points
         var wiql = $"SELECT [System.Id] FROM WorkItems " +
-                   $"WHERE [System.TeamProject] = '{project.Project.Replace("'", "''")}' " +
-                   $"AND [System.IterationPath] UNDER '{iterPath.Replace("'", "''")}' " +
+                   $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project.Project)}' " +
+                   $"AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' " +
                    $"AND [System.State] IN ('Closed','Resolved','Done') " +
                    $"AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
 
@@ -431,6 +434,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
     public async Task<IActionResult> CalculateVelocity(string projectId,
         [FromQuery] string team, [FromQuery] string lastIterationId,
         [FromQuery] string targetIterationId, [FromQuery] double? overridePoints = null,
+        [FromQuery] bool includeUnassigned = false,
         CancellationToken cancellationToken = default)
     {
         var (pat, project) = Resolve(projectId);
@@ -453,8 +457,10 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
         // This depends on lastPath, so it must run after
         var lastPoints = overridePoints ?? await FetchSprintPointsInternal(http, orgUrl, project.Project, team, lastIterationId, lastPath);
 
-        var lastTotal = lastCapacity.TotalDevelopment + lastCapacity.TotalTesting;
-        var targetTotal = targetCapacity.TotalDevelopment + targetCapacity.TotalTesting;
+        var lastUnassigned = includeUnassigned ? lastCapacity.TotalUnassigned : 0;
+        var targetUnassigned = includeUnassigned ? targetCapacity.TotalUnassigned : 0;
+        var lastTotal = Math.Round(lastCapacity.TotalDevelopment + lastCapacity.TotalTesting + lastUnassigned, 1);
+        var targetTotal = Math.Round(targetCapacity.TotalDevelopment + targetCapacity.TotalTesting + targetUnassigned, 1);
         var ratio = lastTotal > 0 ? lastPoints / lastTotal : 0;
         var projected = ratio * targetTotal;
 
@@ -466,6 +472,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                 StoryPoints = lastPoints,
                 CapacityDev = lastCapacity.TotalDevelopment,
                 CapacityTest = lastCapacity.TotalTesting,
+                CapacityUnassigned = lastCapacity.TotalUnassigned,
                 CapacityTotal = lastTotal,
             },
             TargetSprint = new VelocitySprintInfo
@@ -473,6 +480,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                 Name = targetCapacity.IterationName,
                 CapacityDev = targetCapacity.TotalDevelopment,
                 CapacityTest = targetCapacity.TotalTesting,
+                CapacityUnassigned = targetCapacity.TotalUnassigned,
                 CapacityTotal = targetTotal,
             },
             VelocityRatio = Math.Round(ratio, 4),
@@ -589,14 +597,14 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                     var burnedTask = FetchSprintPointsInternal(http, orgUrl, proj.Project, teamName, id, path);
                     await Task.WhenAll(scopeTask, burnedTask);
 
-                    var initialScope = scopeTask.Result;
-                    var burned = burnedTask.Result;
+                    var initialScope = Math.Round(scopeTask.Result, 1);
+                    var burned = Math.Round(burnedTask.Result, 1);
                     return new VelocitySprintInfo
                     {
                         Name = name,
                         InitialScope = initialScope,
                         BurnedPoints = burned,
-                        RemainingPoints = Math.Max(0, initialScope - burned),
+                        RemainingPoints = Math.Round(Math.Max(0, initialScope - burned), 1),
                         StoryPoints = burned,
                         Timeframe = timeframe,
                     };
@@ -825,7 +833,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
         var capDoc = await JsonDocument.ParseAsync(await capResp.Content.ReadAsStreamAsync());
         if (!capDoc.RootElement.TryGetProperty("value", out var arr)) return result;
 
-        double totalDev = 0, totalTest = 0;
+        double totalDev = 0, totalTest = 0, totalUnassigned = 0;
         foreach (var cap in arr.EnumerateArray())
         {
             // Count member-specific days off
@@ -852,16 +860,18 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
             if (!cap.TryGetProperty("activities", out var acts)) continue;
             foreach (var act in acts.EnumerateArray())
             {
-                var name = act.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+                var name = (act.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "").Trim();
                 var cpd = act.TryGetProperty("capacityPerDay", out var c) ? c.GetDouble() : 0;
                 var total = cpd * effectiveDays;
                 if (name.Equals("Development", StringComparison.OrdinalIgnoreCase)) totalDev += total;
                 else if (name.Equals("Testing", StringComparison.OrdinalIgnoreCase)) totalTest += total;
+                else if (string.IsNullOrEmpty(name)) totalUnassigned += total;
             }
         }
 
-        result.TotalDevelopment = totalDev;
-        result.TotalTesting = totalTest;
+        result.TotalDevelopment = Math.Round(totalDev, 1);
+        result.TotalTesting = Math.Round(totalTest, 1);
+        result.TotalUnassigned = Math.Round(totalUnassigned, 1);
         return result;
     }
 
@@ -874,8 +884,8 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
         if (iterPath is null) return 0;
 
         var wiql = $"SELECT [System.Id] FROM WorkItems " +
-                   $"WHERE [System.TeamProject] = '{project.Replace("'", "''")}' " +
-                   $"AND [System.IterationPath] UNDER '{iterPath.Replace("'", "''")}' " +
+                   $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project)}' " +
+                   $"AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' " +
                    $"AND [System.State] NOT IN ('Removed') " +
                    $"AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
 
@@ -891,8 +901,8 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
         if (iterPath is null) return 0;
 
         var wiql = $"SELECT [System.Id] FROM WorkItems " +
-                   $"WHERE [System.TeamProject] = '{project.Replace("'", "''")}' " +
-                   $"AND [System.IterationPath] UNDER '{iterPath.Replace("'", "''")}' " +
+                   $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project)}' " +
+                   $"AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' " +
                    $"AND [System.State] IN ('Closed','Resolved','Done') " +
                    $"AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
 

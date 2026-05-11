@@ -22,7 +22,7 @@ public class OrphanCheck : ICheckCase
         var wiql = projectCfg.Wiql;
         if (!string.IsNullOrEmpty(projectCfg.AreaPath) && !wiql.Contains("System.AreaPath"))
         {
-            var areaClause = $"AND [System.AreaPath] UNDER '{Helpers.EscapeWiql(projectCfg.AreaPath)}'";
+            var areaClause = Helpers.BuildAreaFilter(projectCfg.AreaPath, projectCfg.IncludeChildAreas).TrimEnd();
             wiql = wiql.TrimEnd().TrimEnd(';') + $"\n  {areaClause}";
         }
 

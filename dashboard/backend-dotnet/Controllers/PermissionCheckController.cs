@@ -1078,6 +1078,8 @@ public class PermissionCheckController(ConfigStore configStore) : ControllerBase
             if (!string.IsNullOrEmpty(maxDate)) url += $"&maxTime={Uri.EscapeDataString(maxDate)}";
 
             var resp = await http.GetAsync(url);
+            if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized || resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                return StatusCode(403, new { detail = "Missing PAT permission: Build (Read)." });
             if (!resp.IsSuccessStatusCode)
                 return StatusCode(502, new { detail = "Failed to fetch builds." });
 
@@ -1159,6 +1161,8 @@ public class PermissionCheckController(ConfigStore configStore) : ControllerBase
             if (!string.IsNullOrEmpty(maxDate)) url += $"&maxCreatedTime={Uri.EscapeDataString(maxDate)}";
 
             var resp = await http.GetAsync(url);
+            if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized || resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                return StatusCode(403, new { detail = "Missing PAT permission: Release (Read)." });
             if (!resp.IsSuccessStatusCode)
                 return StatusCode(502, new { detail = "Failed to fetch releases." });
 

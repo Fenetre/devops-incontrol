@@ -6,12 +6,13 @@ using DashboardApi.Models;
 using DashboardApi.Services;
 using DashboardApi.Services.Checks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace DashboardApi.Controllers;
 
 [ApiController]
 [Route("api/checks")]
-public partial class ChecksController(ConfigStore configStore, ILogger<ChecksController> logger) : ControllerBase
+public partial class ChecksController(ConfigStore configStore, ILogger<ChecksController> logger, IMemoryCache memoryCache) : ControllerBase
 {
     [GeneratedRegex(@"^[a-f0-9]{1,32}$")]
     private static partial Regex ProjectIdRegex();
@@ -50,6 +51,7 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
                 ApiVersion = apiVersion,
                 Wiql = wiql,
                 AreaPath = project.AreaPath,
+                IncludeChildAreas = project.IncludeChildAreas,
                 IgnoreTitleContains = project.IgnoreTitleContains,
                 IgnoreParentTitleContains = project.IgnoreParentTitleContains,
             }],
@@ -348,13 +350,12 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
         else
         {
             var escapedTag = Helpers.EscapeWiql(tag);
-            var areaFilter = !string.IsNullOrEmpty(project.AreaPath)
-                ? $" AND [System.AreaPath] UNDER '{Helpers.EscapeWiql(project.AreaPath)}'" : "";
+            var areaFilter = Helpers.BuildAreaFilter(project.AreaPath, project.IncludeChildAreas).Trim();
 
             var wiql =
                 "SELECT [System.Id] FROM WorkItems " +
                 $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project.Project)}'" +
-                areaFilter +
+                (areaFilter.Length > 0 ? $" {areaFilter}" : "") +
                 $" AND [System.Tags] CONTAINS '{escapedTag}'";
 
             ids = await client.RunWiqlAsync(wiql);
@@ -383,13 +384,12 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
     {
         var client = new AzureDevOpsClient(project.Organization, project.Project, pat);
         var escapedTag = Helpers.EscapeWiql(tag);
-        var areaFilter = !string.IsNullOrEmpty(project.AreaPath)
-            ? $" AND [System.AreaPath] UNDER '{Helpers.EscapeWiql(project.AreaPath)}'" : "";
+        var areaFilter = Helpers.BuildAreaFilter(project.AreaPath, project.IncludeChildAreas).Trim();
 
         var wiql =
             "SELECT [System.Id] FROM WorkItems " +
             $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project.Project)}'" +
-            areaFilter +
+            (areaFilter.Length > 0 ? $" {areaFilter}" : "") +
             " AND [System.State] NOT IN ('Removed','Closed')" +
             $" AND [System.Tags] CONTAINS '{escapedTag}'";
 
@@ -498,5 +498,222 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
             logger.LogError(ex, "Failed to send mail for {CheckType}/{ProjectId}", checkType, projectId);
             return StatusCode(500, new SendMailResponse(false, "Failed to send email. Check server logs for details."));
         }
+    }
+
+    [HttpGet("parent-type-hierarchy/{projectId}")]
+    public async Task<IActionResult> GetParentTypeHierarchy(string projectId)
+    {
+        if (!ProjectIdRegex().IsMatch(projectId))
+            return BadRequest(new { detail = "Invalid project ID." });
+
+        var pat = SettingsController.GetPat(configStore);
+        if (string.IsNullOrEmpty(pat))
+            return BadRequest(new { detail = "PAT not configured." });
+
+        var project = configStore.GetProject(projectId);
+        if (project is null) return NotFound(new { detail = "Project not found" });
+
+        try
+        {
+            var client = new AzureDevOpsClient(project.Organization, project.Project, pat);
+            var hierarchy = await client.GetProcessConfigurationAsync();
+            return Ok(new ParentTypeHierarchyResponse { Hierarchy = hierarchy });
+        }
+        catch (AzureDevOpsPatScopeException ex)
+        {
+            return StatusCode(403, new { detail = ex.Message });
+        }
+    }
+
+    [HttpGet("candidate-parents/{projectId}")]
+    public async Task<IActionResult> GetCandidateParents(string projectId, [FromQuery(Name = "work_item_id")] int workItemId, [FromQuery(Name = "work_item_type")] string workItemType)
+    {
+        if (!ProjectIdRegex().IsMatch(projectId))
+            return BadRequest(new { detail = "Invalid project ID." });
+        if (string.IsNullOrWhiteSpace(workItemType))
+            return BadRequest(new { detail = "work_item_type is required." });
+
+        var pat = SettingsController.GetPat(configStore);
+        if (string.IsNullOrEmpty(pat))
+            return BadRequest(new { detail = "PAT not configured." });
+
+        var project = configStore.GetProject(projectId);
+        if (project is null) return NotFound(new { detail = "Project not found" });
+
+        var checkCfg = project.Checks.FirstOrDefault(c => c.CheckType == "orphan_check" && c.Enabled);
+        Dictionary<string, List<string>> hierarchy;
+
+        if (checkCfg?.ParentTypeMappings is { Count: > 0 })
+        {
+            hierarchy = checkCfg.ParentTypeMappings;
+        }
+        else
+        {
+            var client0 = new AzureDevOpsClient(project.Organization, project.Project, pat);
+            hierarchy = await client0.GetProcessConfigurationAsync();
+        }
+
+        if (!hierarchy.TryGetValue(workItemType, out var parentTypes) || parentTypes.Count == 0)
+            return Ok(new CandidateParentResponse());
+
+        var client = new AzureDevOpsClient(project.Organization, project.Project, pat);
+
+        var childItem = await client.GetWorkItemWithRelationsAsync(workItemId);
+        var childAreaPath = childItem.HasValue ? Helpers.GetField(childItem.Value, "System.AreaPath") : "";
+        var childIterationPath = childItem.HasValue ? Helpers.GetField(childItem.Value, "System.IterationPath") : "";
+        var childTitle = childItem.HasValue ? Helpers.GetField(childItem.Value, "System.Title") : "";
+
+        var typeFilter = string.Join(" OR ", parentTypes.Select(t => $"[System.WorkItemType] = '{Helpers.EscapeWiql(t)}'"));
+
+        var cacheKey = $"candidate-parents:{projectId}:{string.Join(",", parentTypes.OrderBy(t => t))}";
+        if (!memoryCache.TryGetValue<List<System.Text.Json.JsonElement>>(cacheKey, out var rawItems) || rawItems is null)
+        {
+            var wiql =
+                "SELECT [System.Id] FROM WorkItems " +
+                $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project.Project)}'" +
+                $" AND ({typeFilter})" +
+                " AND [System.State] NOT IN ('Removed','Closed','Done')" +
+                " ORDER BY [System.ChangedDate] DESC";
+
+            var ids = await client.RunWiqlAsync(wiql, top: 20000);
+            if (ids.Count == 0)
+                return Ok(new CandidateParentResponse());
+
+            var fields = new List<string> { "System.Title", "System.WorkItemType", "System.AreaPath", "System.IterationPath", "System.State", "System.ChangedDate" };
+            rawItems = await client.GetWorkItemsAsync(ids, fields: fields, expand: "None");
+            memoryCache.Set(cacheKey, rawItems, TimeSpan.FromMinutes(5));
+        }
+
+        var childWords = TokenizeTitle(childTitle);
+        var candidates = new List<(CandidateParentItem Item, double Score)>();
+
+        foreach (var item in rawItems)
+        {
+            var id = item.GetProperty("id").GetInt32();
+            var title = Helpers.GetField(item, "System.Title");
+            var areaPath = Helpers.GetField(item, "System.AreaPath");
+            var iterationPath = Helpers.GetField(item, "System.IterationPath");
+            var changedDate = Helpers.GetField(item, "System.ChangedDate");
+
+            double score = 0;
+
+            if (!string.IsNullOrEmpty(childAreaPath) && !string.IsNullOrEmpty(areaPath))
+            {
+                if (areaPath.Equals(childAreaPath, StringComparison.OrdinalIgnoreCase))
+                    score += 40;
+                else if (childAreaPath.StartsWith(areaPath + "\\", StringComparison.OrdinalIgnoreCase) ||
+                         areaPath.StartsWith(childAreaPath + "\\", StringComparison.OrdinalIgnoreCase))
+                    score += 20;
+                else if (GetAreaRoot(areaPath).Equals(GetAreaRoot(childAreaPath), StringComparison.OrdinalIgnoreCase))
+                    score += 5;
+            }
+
+            if (!string.IsNullOrEmpty(childIterationPath) && !string.IsNullOrEmpty(iterationPath))
+            {
+                if (iterationPath.Equals(childIterationPath, StringComparison.OrdinalIgnoreCase))
+                    score += 20;
+                else if (GetIterationParent(iterationPath).Equals(GetIterationParent(childIterationPath), StringComparison.OrdinalIgnoreCase))
+                    score += 10;
+            }
+
+            if (childWords.Count > 0)
+            {
+                var parentWords = TokenizeTitle(title);
+                var matches = childWords.Count(w => parentWords.Contains(w));
+                score += (double)matches / childWords.Count * 20;
+            }
+
+            if (!string.IsNullOrEmpty(changedDate) && DateTimeOffset.TryParse(changedDate, out var changed))
+            {
+                var daysAgo = (DateTimeOffset.UtcNow - changed).TotalDays;
+                if (daysAgo < 30) score += 10 - daysAgo / 3;
+            }
+
+            candidates.Add((new CandidateParentItem
+            {
+                Id = id,
+                Title = title,
+                WorkItemType = Helpers.GetField(item, "System.WorkItemType"),
+                AreaPath = areaPath,
+                IterationPath = iterationPath,
+                State = Helpers.GetField(item, "System.State"),
+                Url = Helpers.WorkItemUrl(project.Organization, project.Project, id),
+            }, score));
+        }
+
+        var sorted = candidates.OrderByDescending(c => c.Score)
+            .Select(c => c.Item).ToList();
+
+        return Ok(new CandidateParentResponse { Candidates = sorted });
+    }
+
+    [HttpPost("assign-parent/{projectId}")]
+    public async Task<IActionResult> AssignParent(string projectId, [FromBody] AssignParentRequest body)
+    {
+        if (!ProjectIdRegex().IsMatch(projectId))
+            return BadRequest(new { detail = "Invalid project ID." });
+
+        var pat = SettingsController.GetPat(configStore);
+        if (string.IsNullOrEmpty(pat))
+            return BadRequest(new { detail = "PAT not configured." });
+
+        var project = configStore.GetProject(projectId);
+        if (project is null) return NotFound(new { detail = "Project not found" });
+
+        try
+        {
+            var client = new AzureDevOpsClient(project.Organization, project.Project, pat);
+
+            int? existingRelIndex = null;
+            var item = await client.GetWorkItemWithRelationsAsync(body.WorkItemId);
+            if (item.HasValue && item.Value.TryGetProperty("relations", out var rels))
+            {
+                var idx = 0;
+                foreach (var rel in rels.EnumerateArray())
+                {
+                    if (rel.TryGetProperty("rel", out var relType) &&
+                        relType.GetString() == "System.LinkTypes.Hierarchy-Reverse")
+                    {
+                        existingRelIndex = idx;
+                        break;
+                    }
+                    idx++;
+                }
+            }
+
+            await client.SetWorkItemParentAsync(body.WorkItemId, body.ParentId, existingRelIndex);
+            return Ok(new AssignParentResponse { Ok = true, Message = "Parent assigned successfully." });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new AssignParentResponse { Ok = false, Message = ex.Message });
+        }
+        catch (AzureDevOpsPatScopeException ex)
+        {
+            return StatusCode(403, new AssignParentResponse { Ok = false, Message = ex.Message });
+        }
+    }
+
+    private static readonly HashSet<string> StopWords = ["the", "a", "an", "and", "or", "in", "on", "at", "to", "for", "of", "is", "as", "by", "with", "from", "it", "be", "this", "that", "de", "het", "een", "van", "en", "voor", "op", "met"];
+
+    private static HashSet<string> TokenizeTitle(string title)
+    {
+        if (string.IsNullOrEmpty(title)) return [];
+        return title.ToLowerInvariant()
+            .Split([' ', '-', '_', '/', '\\', '(', ')', '[', ']', '.', ',', ':', ';'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 1 && !StopWords.Contains(w))
+            .ToHashSet();
+    }
+
+    private static string GetAreaRoot(string areaPath)
+    {
+        var parts = areaPath.Split('\\');
+        return parts.Length >= 2 ? parts[0] + "\\" + parts[1] : parts[0];
+    }
+
+    private static string GetIterationParent(string iterationPath)
+    {
+        var lastSlash = iterationPath.LastIndexOf('\\');
+        return lastSlash > 0 ? iterationPath[..lastSlash] : iterationPath;
     }
 }

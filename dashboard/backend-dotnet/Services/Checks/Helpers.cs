@@ -47,6 +47,7 @@ public class DevOpsProjectConfig
     public string ApiVersion { get; set; } = "7.1";
     public string Wiql { get; set; } = "";
     public string AreaPath { get; set; } = "";
+    public bool IncludeChildAreas { get; set; } = true;
     public List<string> IgnoreTitleContains { get; set; } = [];
     public List<string> IgnoreParentTitleContains { get; set; } = [];
 }
@@ -100,6 +101,13 @@ public static partial class Helpers
         if (!SafeDevOpsNameRegex().IsMatch(value))
             throw new ArgumentException($"Invalid WIQL value: {value}");
         return value.Replace("'", "''");
+    }
+
+    public static string BuildAreaFilter(string areaPath, bool includeChildAreas)
+    {
+        if (string.IsNullOrEmpty(areaPath)) return "";
+        var op = includeChildAreas ? "UNDER" : "=";
+        return $"AND [System.AreaPath] {op} '{EscapeWiql(areaPath)}' ";
     }
 
     public static int? GetParentId(System.Text.Json.JsonElement item)

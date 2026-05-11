@@ -18,8 +18,7 @@ public class UnassignedCheck : ICheckCase
             return new CaseResult { Header = header };
 
         var sprintPath = currentSprint["path"]?.ToString() ?? "";
-        var areaFilter = !string.IsNullOrEmpty(projectCfg.AreaPath)
-            ? $"AND [System.AreaPath] UNDER '{Helpers.EscapeWiql(projectCfg.AreaPath)}' " : "";
+        var areaFilter = Helpers.BuildAreaFilter(projectCfg.AreaPath, projectCfg.IncludeChildAreas);
 
         var wiql =
             "SELECT [System.Id] FROM WorkItems " +

@@ -37,42 +37,20 @@
           <!-- Project -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Project</label>
-            <select v-model="capProjectId" @change="onCapProjectChange"
-              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">Choose a project…</option>
-              <option v-for="p in projects" :key="p.id" :value="p.id">
-                {{ isDemoMode ? anonProject(p.project) : p.project }}
-              </option>
-            </select>
+            <SelectMenu autofocus v-model="capProjectId" :options="projectOptions" @change="onCapProjectChange"
+              placeholder="Choose a project…" class="w-full" />
           </div>
           <!-- Team -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Team</label>
-            <div v-if="capLoadingTeams" class="flex items-center gap-2 text-sm text-gray-500 py-2">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-              Loading…
-            </div>
-            <select v-else v-model="capTeam" @change="onCapTeamChange" :disabled="!capProjectId"
-              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50">
-              <option value="">Choose a team…</option>
-              <option v-for="t in capTeams" :key="t.id" :value="t.name">{{ isDemoMode ? anonTeam(t.name) : t.name }}</option>
-            </select>
+            <SelectMenu v-model="capTeam" :options="capTeamOptions" @change="onCapTeamChange"
+              :loading="capLoadingTeams" :disabled="!capProjectId || capLoadingTeams" class="w-full" />
           </div>
           <!-- Sprint -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Sprint</label>
-            <div v-if="capLoadingIterations" class="flex items-center gap-2 text-sm text-gray-500 py-2">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-              Loading…
-            </div>
-            <select v-else v-model="capIterationId" @change="onCapSprintChange" :disabled="!capTeam"
-              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50">
-              <option value="">Choose a sprint…</option>
-              <option v-for="it in capIterations" :key="it.id" :value="it.id">
-                {{ isDemoMode ? anonIterationPath(it.name) : it.name }}
-                <template v-if="it.timeframe"> ({{ it.timeframe }})</template>
-              </option>
-            </select>
+            <SelectMenu v-model="capIterationId" :options="capIterationOptions" @change="onCapSprintChange"
+              :loading="capLoadingIterations" :disabled="!capTeam || capLoadingIterations" class="w-full" />
           </div>
         </div>
       </div>
@@ -95,14 +73,14 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
             <thead>
               <tr class="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th class="py-2 pr-4">Team Member</th>
-                <th class="py-2 pr-2 text-right w-36">Activity</th>
-                <th class="py-2 pr-4 w-28">Capacity / Day</th>
-                <th class="py-2 w-28">Days Off</th>
-                <th class="py-2 w-10"></th>
+                <th class="py-2 pr-2 text-right">Activity</th>
+                <th class="py-2 pr-4">Capacity / Day</th>
+                <th class="py-2">Days Off</th>
+                <th class="py-2"></th>
               </tr>
             </thead>
             <tbody>
@@ -113,16 +91,7 @@
                     {{ isDemoMode ? anonName(member.display_name) : cleanName(member.display_name) }}
                   </td>
                   <td class="py-2 pr-2 text-right">
-                    <select v-model="act.name"
-                      class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-                      <option value="">Unassigned</option>
-                      <option value="Development">Development</option>
-                      <option value="Testing">Testing</option>
-                      <option value="Design">Design</option>
-                      <option value="Documentation">Documentation</option>
-                      <option value="Deployment">Deployment</option>
-                      <option value="Requirements">Requirements</option>
-                    </select>
+                    <SelectMenu v-model="act.name" :options="activityOptions" size="sm" />
                   </td>
                   <td class="py-2 pr-4">
                     <input type="number" v-model.number="act.capacity_per_day" min="0" max="24" step="0.5"
@@ -211,13 +180,9 @@
 
         <!-- Add member + actions -->
         <div class="flex items-center gap-2 mt-3 flex-wrap">
-          <select v-model="capAddMemberId" :disabled="capAvailableMembers.length === 0"
-            class="flex-1 max-w-xs px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50">
-            <option value="">{{ capLoadingAllMembers ? 'Loading members…' : capAvailableMembers.length === 0 ? 'All team members added' : 'Add a team member…' }}</option>
-            <option v-for="m in capAvailableMembers" :key="m.id" :value="m.id">
-              {{ isDemoMode ? anonName(m.display_name) : cleanName(m.display_name) }}
-            </option>
-          </select>
+          <SelectMenu v-model="capAddMemberId" :options="capAddMemberOptions"
+            :loading="capLoadingAllMembers" :disabled="capAvailableMembers.length === 0 && !capLoadingAllMembers"
+            placeholder="Add a team member…" class="flex-1 max-w-xs" />
           <button @click="addMember" :disabled="!capAddMemberId"
             class="px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             + Add
@@ -273,66 +238,43 @@
           <!-- Project -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Project</label>
-            <select v-model="calcProjectId" @change="onCalcProjectChange"
-              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">Choose a project…</option>
-              <option v-for="p in projects" :key="p.id" :value="p.id">
-                {{ isDemoMode ? anonProject(p.project) : p.project }}
-              </option>
-            </select>
+            <SelectMenu v-model="calcProjectId" :options="projectOptions" @change="onCalcProjectChange"
+              placeholder="Choose a project…" class="w-full" />
           </div>
           <!-- Team -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Team</label>
-            <div v-if="calcLoadingTeams" class="flex items-center gap-2 text-sm text-gray-500 py-2">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-              Loading…
-            </div>
-            <select v-else v-model="calcTeam" @change="onCalcTeamChange" :disabled="!calcProjectId"
-              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50">
-              <option value="">Choose a team…</option>
-              <option v-for="t in calcTeams" :key="t.id" :value="t.name">{{ isDemoMode ? anonTeam(t.name) : t.name }}</option>
-            </select>
+            <SelectMenu v-model="calcTeam" :options="calcTeamOptions" @change="onCalcTeamChange"
+              :loading="calcLoadingTeams" :disabled="!calcProjectId || calcLoadingTeams" class="w-full" />
           </div>
         </div>
         <!-- Sprint selectors -->
         <div v-if="calcTeam" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Last Sprint (completed)</label>
-            <div v-if="calcLoadingIterations" class="flex items-center gap-2 text-sm text-gray-500 py-2">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-              Loading…
-            </div>
-            <select v-else v-model="calcLastIterId"
-              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">Choose…</option>
-              <option v-for="it in calcIterations" :key="it.id" :value="it.id">
-                {{ isDemoMode ? anonIterationPath(it.name) : it.name }}
-                <template v-if="it.timeframe"> ({{ it.timeframe }})</template>
-              </option>
-            </select>
+            <SelectMenu v-model="calcLastIterId" :options="calcIterationOptions"
+              :loading="calcLoadingIterations" :disabled="calcLoadingIterations" class="w-full" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Target Sprint</label>
-            <select v-model="calcTargetIterId" :disabled="calcLoadingIterations"
-              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50">
-              <option value="">Choose…</option>
-              <option v-for="it in calcIterations" :key="it.id" :value="it.id">
-                {{ isDemoMode ? anonIterationPath(it.name) : it.name }}
-                <template v-if="it.timeframe"> ({{ it.timeframe }})</template>
-              </option>
-            </select>
+            <SelectMenu v-model="calcTargetIterId" :options="calcIterationOptions"
+              :disabled="calcLoadingIterations" class="w-full" />
           </div>
         </div>
 
-        <!-- Calculate button -->
-        <div v-if="calcLastIterId && calcTargetIterId" class="mt-4">
+        <!-- Calculate button + options -->
+        <div v-if="calcLastIterId && calcTargetIterId" class="mt-4 flex items-center gap-4">
           <button @click="runCalc" :disabled="calcLoading"
             class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50"
             :class="calcLoading ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
             <svg v-if="calcLoading" class="animate-spin w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
             {{ calcLoading ? 'Calculating…' : 'Calculate Velocity' }}
           </button>
+          <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+            <input type="checkbox" v-model="calcIncludeUnassigned"
+              class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
+            Include unassigned capacity
+          </label>
         </div>
       </div>
 
@@ -340,7 +282,7 @@
       <div v-if="calcResult" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-4">
         <div class="flex items-center gap-2 mb-4">
           <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Velocity Calculation</h3>
-          <span class="text-xs text-gray-400 dark:text-gray-500">(based on Development + Testing capacity only)</span>
+          <span class="text-xs text-gray-400 dark:text-gray-500">{{ calcIncludeUnassigned ? '(including unassigned capacity)' : '(based on Development + Testing capacity only)' }}</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -351,6 +293,7 @@
             <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <div class="flex justify-between"><span>Dev capacity:</span><span class="font-medium">{{ calcResult.last_sprint.capacity_dev }}</span></div>
               <div class="flex justify-between"><span>Test capacity:</span><span class="font-medium">{{ calcResult.last_sprint.capacity_test }}</span></div>
+              <div v-if="calcIncludeUnassigned" class="flex justify-between"><span>Unassigned capacity:</span><span class="font-medium">{{ calcResult.last_sprint.capacity_unassigned }}</span></div>
               <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 pt-1"><span>Total capacity:</span><span class="font-bold">{{ calcResult.last_sprint.capacity_total }}</span></div>
               <div class="flex justify-between items-center mt-2">
                 <span>Story points:</span>
@@ -378,6 +321,7 @@
             <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <div class="flex justify-between"><span>Dev capacity:</span><span class="font-medium">{{ calcResult.target_sprint.capacity_dev }}</span></div>
               <div class="flex justify-between"><span>Test capacity:</span><span class="font-medium">{{ calcResult.target_sprint.capacity_test }}</span></div>
+              <div v-if="calcIncludeUnassigned" class="flex justify-between"><span>Unassigned capacity:</span><span class="font-medium">{{ calcResult.target_sprint.capacity_unassigned }}</span></div>
               <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 pt-1"><span>Total capacity:</span><span class="font-bold">{{ calcResult.target_sprint.capacity_total }}</span></div>
             </div>
           </div>
@@ -462,6 +406,34 @@
               </div>
             </div>
           </div>
+          <!-- Sprint filter for this project -->
+          <div class="mx-5 mb-2 rounded-lg border border-primary-200 dark:border-primary-700/50 bg-primary-50/30 dark:bg-primary-900/10 overflow-hidden">
+            <button @click="sprintFilterOpenProjects.has(proj.project_id) ? sprintFilterOpenProjects.delete(proj.project_id) : sprintFilterOpenProjects.add(proj.project_id)"
+              class="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+              <span class="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
+                Sprints
+                <span v-if="sprintExcludedCount(proj) > 0" class="ml-1 text-amber-500 dark:text-amber-400">({{ sprintExcludedCount(proj) }} hidden)</span>
+              </span>
+              <svg class="w-3.5 h-3.5 text-gray-400 transition-transform" :class="{ 'rotate-180': sprintFilterOpenProjects.has(proj.project_id) }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <div v-if="sprintFilterOpenProjects.has(proj.project_id)" class="px-3 pb-2.5 border-t border-gray-100 dark:border-gray-700/50">
+              <div class="flex items-center justify-between py-1.5">
+                <button @click="toggleAllSprints(proj)" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
+                  {{ allSprintsEnabled(proj) ? 'Deselect all' : 'Select all' }}
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <label v-for="s in proj.sprints" :key="s.name"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-colors select-none"
+                  :class="isSprintEnabled(proj.project_id, s.name)
+                    ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300'
+                    : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 line-through'">
+                  <input type="checkbox" :checked="isSprintEnabled(proj.project_id, s.name)" @change="toggleSprint(proj.project_id, s.name)" class="w-3 h-3 rounded" />
+                  {{ isDemoMode ? sprintLabel(anonIterationPath(s.name)) : sprintLabel(s.name) }}
+                </label>
+              </div>
+            </div>
+          </div>
           <div class="px-3 pb-4 h-56">
             <Bar :data="buildChartData(proj)" :options="computedChartOptions" />
           </div>
@@ -488,6 +460,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useDemoMode, anonName, anonProject, anonTeam, anonIterationPath } from '../composables/useDemoMode.js'
 import DataFreshness from '../components/DataFreshness.vue'
+import SelectMenu from '../components/SelectMenu.vue'
 import { useTheme } from '../composables/useTheme.js'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, LineController, BarController, Title, Tooltip, Legend, Filler } from 'chart.js'
@@ -513,8 +486,22 @@ const activeTab = ref('capacity')
 // Projects (shared)
 const projects = ref([])
 
+const projectOptions = computed(() =>
+  projects.value.map(p => ({ value: p.id, label: isDemoMode.value ? anonProject(p.project) : p.project }))
+)
+const activityOptions = [
+  { value: '', label: 'Unassigned' },
+  { value: 'Development', label: 'Development' },
+  { value: 'Testing', label: 'Testing' },
+  { value: 'Design', label: 'Design' },
+  { value: 'Documentation', label: 'Documentation' },
+  { value: 'Deployment', label: 'Deployment' },
+  { value: 'Requirements', label: 'Requirements' },
+]
+
 onMounted(async () => {
   loadSavedExcludedProjects()
+  loadSavedExcludedSprints()
   await store.fetchVelocityProjects()
   projects.value = store.velocityProjects
   if (projects.value.length === 1) {
@@ -545,6 +532,18 @@ const capLoadingAllMembers = ref(false)
 const capAddMemberId = ref('')
 const capExpandedDaysOff = ref(null) // member index or null
 const capStandardDaysOff = ref({}) // { member_id: Set<weekdayIndex> }
+
+const capTeamOptions = computed(() => [
+  { value: '', label: 'Choose a team…' },
+  ...capTeams.value.map(t => ({ value: t.name, label: isDemoMode.value ? anonTeam(t.name) : t.name }))
+])
+const capIterationOptions = computed(() => [
+  { value: '', label: 'Choose a sprint…' },
+  ...capIterations.value.map(it => ({
+    value: it.id,
+    label: `${isDemoMode.value ? anonIterationPath(it.name) : it.name}${it.timeframe ? ` (${it.timeframe})` : ''}`
+  }))
+])
 
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -727,6 +726,10 @@ const capAvailableMembers = computed(() => {
   const existingIds = new Set(capMembers.value.map(m => m.member_id))
   return capAllMembers.value.filter(m => !existingIds.has(m.id))
 })
+const capAddMemberOptions = computed(() => [
+  { value: '', label: capLoadingAllMembers.value ? 'Loading members…' : capAvailableMembers.value.length === 0 ? 'All team members added' : 'Add a team member…' },
+  ...capAvailableMembers.value.map(m => ({ value: m.id, label: isDemoMode.value ? anonName(m.display_name) : cleanName(m.display_name) }))
+])
 
 const capTotalDev = computed(() => {
   let total = 0
@@ -906,8 +909,7 @@ async function pushCapacity() {
   for (const m of capMembers.value) {
     const name = cleanName(m.display_name)
     for (const a of m.activities) {
-      if (!a.name) invalid.push(`${name}: activity not set`)
-      else if (!a.capacity_per_day || a.capacity_per_day <= 0) invalid.push(`${name}: capacity/day must be > 0`)
+      if (!a.capacity_per_day || a.capacity_per_day <= 0) invalid.push(`${name}: capacity/day must be > 0`)
     }
     if (m.activities.length === 0) invalid.push(`${name}: no activity`)
   }
@@ -953,6 +955,23 @@ const calcLoading = ref(false)
 const calcResult = ref(null)
 const calcError = ref('')
 const calcOverridePoints = ref(0)
+const calcIncludeUnassigned = ref(localStorage.getItem('velocity_includeUnassigned') === 'true')
+watch(calcIncludeUnassigned, v => {
+  if (v) localStorage.setItem('velocity_includeUnassigned', 'true')
+  else localStorage.removeItem('velocity_includeUnassigned')
+})
+
+const calcTeamOptions = computed(() => [
+  { value: '', label: 'Choose a team…' },
+  ...calcTeams.value.map(t => ({ value: t.name, label: isDemoMode.value ? anonTeam(t.name) : t.name }))
+])
+const calcIterationOptions = computed(() => [
+  { value: '', label: 'Choose…' },
+  ...calcIterations.value.map(it => ({
+    value: it.id,
+    label: `${isDemoMode.value ? anonIterationPath(it.name) : it.name}${it.timeframe ? ` (${it.timeframe})` : ''}`
+  }))
+])
 
 const displayRatio = computed(() => {
   if (!calcResult.value) return '—'
@@ -1016,7 +1035,7 @@ async function runCalc() {
     const override = calcResult.value && calcOverridePoints.value !== calcResult.value.last_sprint.story_points
       ? calcOverridePoints.value : null
     const data = await store.calculateVelocity(
-      calcProjectId.value, calcTeam.value, calcLastIterId.value, calcTargetIterId.value, override)
+      calcProjectId.value, calcTeam.value, calcLastIterId.value, calcTargetIterId.value, override, calcIncludeUnassigned.value)
     calcResult.value = data
     calcOverridePoints.value = data.last_sprint.story_points
   } catch (e) {
@@ -1085,6 +1104,65 @@ const visibleMetricsProjects = computed(() => {
   return metricsData.value.projects.filter(p => !metricsExcludedProjects.has(p.project_name))
 })
 
+// =============== SPRINT FILTER (per-project) ===============
+const LS_EXCLUDED_SPRINTS = 'velocity_excludedSprints'
+const metricsExcludedSprints = reactive(new Map())
+const sprintFilterOpenProjects = reactive(new Set())
+
+function loadSavedExcludedSprints() {
+  const saved = localStorage.getItem(LS_EXCLUDED_SPRINTS)
+  if (!saved) return
+  try {
+    const obj = JSON.parse(saved)
+    for (const [pid, arr] of Object.entries(obj)) {
+      if (Array.isArray(arr) && arr.length > 0) metricsExcludedSprints.set(pid, reactive(new Set(arr)))
+    }
+  } catch { /* ignore */ }
+}
+
+function saveExcludedSprints() {
+  const obj = {}
+  for (const [pid, set] of metricsExcludedSprints.entries()) {
+    if (set.size > 0) obj[pid] = [...set]
+  }
+  if (Object.keys(obj).length === 0) localStorage.removeItem(LS_EXCLUDED_SPRINTS)
+  else localStorage.setItem(LS_EXCLUDED_SPRINTS, JSON.stringify(obj))
+}
+
+function isSprintEnabled(projectId, sprintName) {
+  return !metricsExcludedSprints.get(projectId)?.has(sprintName)
+}
+
+function toggleSprint(projectId, sprintName) {
+  if (!metricsExcludedSprints.has(projectId)) metricsExcludedSprints.set(projectId, reactive(new Set()))
+  const set = metricsExcludedSprints.get(projectId)
+  if (set.has(sprintName)) set.delete(sprintName)
+  else set.add(sprintName)
+  if (set.size === 0) metricsExcludedSprints.delete(projectId)
+  saveExcludedSprints()
+}
+
+function toggleAllSprints(proj) {
+  if (allSprintsEnabled(proj)) {
+    metricsExcludedSprints.set(proj.project_id, reactive(new Set(proj.sprints.map(s => s.name))))
+  } else {
+    metricsExcludedSprints.delete(proj.project_id)
+  }
+  saveExcludedSprints()
+}
+
+function allSprintsEnabled(proj) {
+  const set = metricsExcludedSprints.get(proj.project_id)
+  if (!set || set.size === 0) return true
+  return proj.sprints.every(s => !set.has(s.name))
+}
+
+function sprintExcludedCount(proj) {
+  const set = metricsExcludedSprints.get(proj.project_id)
+  if (!set) return 0
+  return proj.sprints.filter(s => set.has(s.name)).length
+}
+
 const computedChartOptions = computed(() => {
   const d = isDark.value
   const textColor = d ? '#94a3b8' : '#475569'
@@ -1122,7 +1200,7 @@ const computedChartOptions = computed(() => {
         displayColors: true,
         usePointStyle: true,
         callbacks: {
-          label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} SP`,
+          label: (ctx) => ` ${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(1)} SP`,
         },
       },
     },
@@ -1168,7 +1246,9 @@ function buildChartData(proj) {
   const scopeFill = d ? 'rgba(99, 102, 241, 0.06)' : 'rgba(99, 102, 241, 0.1)'
   const burnedFill = d ? 'rgba(52, 211, 153, 0.08)' : 'rgba(16, 185, 129, 0.1)'
 
-  const labels = proj.sprints.map(s => {
+  const sprints = proj.sprints.filter(s => isSprintEnabled(proj.project_id, s.name))
+
+  const labels = sprints.map(s => {
     const raw = isDemoMode.value ? anonIterationPath(s.name) : s.name
     const short = sprintLabel(raw)
     if (s.timeframe === 'current') return `${short} ●`
@@ -1177,22 +1257,22 @@ function buildChartData(proj) {
   })
 
   // Compute average burned SP from past sprints (exclude current & future)
-  const pastSprints = proj.sprints.filter(s => s.timeframe === 'past')
+  const pastSprints = sprints.filter(s => s.timeframe === 'past')
   const avgBurned = pastSprints.length > 0
     ? pastSprints.reduce((sum, s) => sum + s.burned_points, 0) / pastSprints.length
     : 0
 
   // Build prognosis dataset: null for all past, then connect from last actual to future
-  const lastActualIdx = proj.sprints.findLastIndex(s => s.timeframe !== 'future')
-  const prognosisData = proj.sprints.map((s, i) => {
+  const lastActualIdx = sprints.findLastIndex(s => s.timeframe !== 'future')
+  const prognosisData = sprints.map((s, i) => {
     if (i === lastActualIdx) return s.burned_points // anchor to last real value
     if (s.timeframe === 'future') return Math.round(avgBurned)
     return null
   })
 
   // Actual lines: null out future sprints so lines stop at current
-  const scopeData = proj.sprints.map(s => s.timeframe === 'future' ? null : s.initial_scope)
-  const burnedData = proj.sprints.map(s => s.timeframe === 'future' ? null : s.burned_points)
+  const scopeData = sprints.map(s => s.timeframe === 'future' ? null : s.initial_scope)
+  const burnedData = sprints.map(s => s.timeframe === 'future' ? null : s.burned_points)
 
   return {
     labels,

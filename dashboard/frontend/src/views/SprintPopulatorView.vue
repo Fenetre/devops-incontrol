@@ -24,20 +24,14 @@
         <span class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold" :class="step >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'">1</span>
         Select Projects
       </h3>
-      <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Target project (where work items are created)</label>
-      <select v-model="selectedProjectId" @change="onProjectChange" :disabled="loading || applying"
-        class="w-full max-w-md px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-        <option value="">Choose a project…</option>
-        <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.project }} ({{ p.organization }})</option>
-      </select>
+      <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Template source project</label>
+      <SelectMenu autofocus v-model="selectedSourceProjectId" :options="projectOptions" @change="onSourceProjectChange"
+        :disabled="loading || applying" placeholder="Choose a project…" class="w-full max-w-md" />
 
       <div class="mt-4">
-        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Template source project (optional)</label>
-        <select v-model="selectedSourceProjectId" @change="onSourceProjectChange" :disabled="!selectedProjectId || loading || applying"
-          class="w-full max-w-md px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-          <option value="" disabled>Select source project…</option>
-          <option v-for="p in projects" :key="`source-${p.id}`" :value="p.id">{{ p.project }} ({{ p.organization }})</option>
-        </select>
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Target project (where work items are created)</label>
+        <SelectMenu v-model="selectedProjectId" :options="projectOptions" @change="onProjectChange"
+          :disabled="!selectedSourceProjectId || loading || applying" placeholder="Select target project…" class="w-full max-w-md" />
         <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
           Templates are read from the source project and cloned into the selected target sprint.
         </p>
@@ -50,15 +44,8 @@
         <span class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold" :class="step >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'">2</span>
         Select Team
       </h3>
-      <div v-if="loadingTeams" class="flex items-center gap-2 text-sm text-gray-500">
-        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        Loading teams…
-      </div>
-      <select v-else v-model="selectedTeam" @change="onTeamChange" :disabled="loading || applying"
-        class="w-full max-w-md px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-        <option value="">Choose a team…</option>
-        <option v-for="t in teams" :key="t.name" :value="t.name">{{ isDemoMode ? anonTeam(t.name) : t.name }}</option>
-      </select>
+      <SelectMenu v-model="selectedTeam" :options="teamOptions" @change="onTeamChange"
+        :loading="loadingTeams" :disabled="loading || applying || loadingTeams" class="w-full max-w-md" />
     </div>
 
     <!-- Step 3: Select sprint -->
@@ -67,15 +54,8 @@
         <span class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold" :class="step >= 3 ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'">3</span>
         Select Sprint
       </h3>
-      <div v-if="loadingIterations" class="flex items-center gap-2 text-sm text-gray-500">
-        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        Loading sprints…
-      </div>
-      <select v-else v-model="selectedIterationIdx" @change="onSprintChange" :disabled="loading || applying"
-        class="w-full max-w-md px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none">
-        <option :value="-1">Choose a sprint…</option>
-        <option v-for="(it, idx) in iterations" :key="idx" :value="idx">{{ isDemoMode ? anonIterationPath(it.name) : it.name }}</option>
-      </select>
+      <SelectMenu v-model="selectedIterationIdx" :options="iterationOptions" @change="onSprintChange"
+        :loading="loadingIterations" :disabled="loading || applying || loadingIterations" class="w-full max-w-md" />
     </div>
 
     <!-- Step 4: Preview -->
@@ -166,7 +146,7 @@
 
             <button v-if="applied" @click="resetAll"
               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              Start Over
+              Reset overview
             </button>
           </div>
         </div>
@@ -207,6 +187,7 @@ import { useMonitorStore } from '../stores/monitor.js'
 import { useApi } from '../composables/useApi.js'
 import { transformSprintProjects } from '../composables/demoTransform.js'
 import { useDemoMode, anonTeam, anonIterationPath, anonPrTitle } from '../composables/useDemoMode.js'
+import SelectMenu from '../components/SelectMenu.vue'
 
 const api = useApi()
 const store = useMonitorStore()
@@ -221,7 +202,7 @@ const applyResult = ref(null)
 
 const selectedProjectId = ref('')
 const selectedSourceProjectId = ref('')
-const previousTargetProjectId = ref('')
+const previousSourceProjectId = ref('')
 const selectedTeam = ref('')
 const selectedIterationIdx = ref(-1)
 const confirmed = ref(false)
@@ -234,8 +215,20 @@ const applying = ref(false)
 const applied = ref(false)
 const error = ref(null)
 
+const projectOptions = computed(() =>
+  projects.value.map(p => ({ value: p.id, label: `${p.project} (${p.organization})` }))
+)
+const teamOptions = computed(() => [
+  { value: '', label: 'Choose a team…' },
+  ...teams.value.map(t => ({ value: t.name, label: isDemoMode.value ? anonTeam(t.name) : t.name }))
+])
+const iterationOptions = computed(() => [
+  { value: -1, label: 'Choose a sprint…' },
+  ...iterations.value.map((it, idx) => ({ value: idx, label: isDemoMode.value ? anonIterationPath(it.name) : it.name }))
+])
+
 const step = computed(() => {
-  if (!selectedProjectId.value) return 1
+  if (!selectedSourceProjectId.value || !selectedProjectId.value) return 1
   if (!selectedTeam.value) return 2
   if (selectedIterationIdx.value < 0) return 3
   return 4
@@ -277,9 +270,9 @@ const totalTasks = computed(() => {
 
 // Auto-select when only one option is available
 watch(projects, (list) => {
-  if (list.length === 1 && !selectedProjectId.value) {
-    selectedProjectId.value = list[0].id
-    onProjectChange()
+  if (list.length === 1 && !selectedSourceProjectId.value) {
+    selectedSourceProjectId.value = list[0].id
+    onSourceProjectChange()
   }
 })
 
@@ -298,9 +291,6 @@ watch(iterations, (list) => {
 })
 
 async function onProjectChange() {
-  const previousTarget = previousTargetProjectId.value
-
-  // Reset downstream
   teams.value = []
   iterations.value = []
   preview.value = null
@@ -312,15 +302,9 @@ async function onProjectChange() {
   error.value = null
 
   if (!selectedProjectId.value) {
-    selectedSourceProjectId.value = ''
-    previousTargetProjectId.value = ''
-    return
+    selectedProjectId.value = selectedSourceProjectId.value
+    if (!selectedProjectId.value) return
   }
-
-  if (!selectedSourceProjectId.value || selectedSourceProjectId.value === previousTarget) {
-    selectedSourceProjectId.value = selectedProjectId.value
-  }
-  previousTargetProjectId.value = selectedProjectId.value
 
   loadingTeams.value = true
   try {
@@ -333,17 +317,37 @@ async function onProjectChange() {
 }
 
 async function onSourceProjectChange() {
+  const previousSource = previousSourceProjectId.value
+
+  teams.value = []
+  iterations.value = []
   preview.value = null
   applyResult.value = null
+  selectedTeam.value = ''
+  selectedIterationIdx.value = -1
   confirmed.value = false
   applied.value = false
   error.value = null
 
-  if (!selectedSourceProjectId.value)
-    selectedSourceProjectId.value = selectedProjectId.value
+  if (!selectedSourceProjectId.value) {
+    selectedProjectId.value = ''
+    previousSourceProjectId.value = ''
+    return
+  }
 
-  if (selectedIterationIdx.value >= 0)
-    await onSprintChange()
+  if (!selectedProjectId.value || selectedProjectId.value === previousSource) {
+    selectedProjectId.value = selectedSourceProjectId.value
+  }
+  previousSourceProjectId.value = selectedSourceProjectId.value
+
+  loadingTeams.value = true
+  try {
+    teams.value = await api.get(`/api/sprint-populator/${encodeURIComponent(selectedProjectId.value)}/teams`)
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loadingTeams.value = false
+  }
 }
 
 async function onTeamChange() {
@@ -422,7 +426,7 @@ async function applyClone() {
 function resetAll() {
   selectedProjectId.value = ''
   selectedSourceProjectId.value = ''
-  previousTargetProjectId.value = ''
+  previousSourceProjectId.value = ''
   selectedTeam.value = ''
   selectedIterationIdx.value = -1
   teams.value = []

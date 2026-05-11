@@ -38,4 +38,12 @@ dashboard/frontend/dist/
 Thumbs.db
 .DS_Store
 dashboard/data/config.json.bak
-rewrite-author.py
+
+# Local tooling
+.kaiandralph/
+_tmp_debug/
+.vs/VSWorkspaceState.json
+.vs/devops-incontrol/v17/.suo
+.vs/devops-incontrol/v17/.wsuo
+.vs/devops-incontrol/v17/DocumentLayout.backup.json
+.vs/devops-incontrol/v17/DocumentLayout.json

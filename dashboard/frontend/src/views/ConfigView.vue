@@ -32,6 +32,7 @@
               <div v-if="!store.patConfigured" class="text-xs text-amber-600 dark:text-amber-400 mb-1">Set a PAT in Settings first.</div>
               <div class="relative">
                 <input
+                  v-autofocus
                   v-model="form.organization"
                   :list="store.organizations.length > 1 ? 'known-orgs' : undefined"
                   type="text"
@@ -49,21 +50,15 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
               <div v-if="store.orgProjectsError" class="text-xs text-red-600 dark:text-red-400 mb-1">{{ store.orgProjectsError }}</div>
-              <div class="relative">
-                <select
-                  v-model="form.project"
-                  @change="onProjectChange"
-                  :disabled="!form.organization || store.loadingOrgProjects || store.orgProjects.length === 0"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400"
-                >
-                  <option value="">{{ store.loadingOrgProjects ? 'Loading projects…' : store.orgProjectsError ? 'Failed — check org name & PAT' : form.organization ? 'Select project…' : 'Enter organization first' }}</option>
-                  <option v-for="p in store.orgProjects" :key="p.id" :value="p.name">{{ p.name }}</option>
-                </select>
-                <svg v-if="store.loadingOrgProjects" class="absolute right-3 top-2.5 w-4 h-4 text-gray-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-              </div>
+              <SelectMenu
+                v-model="form.project"
+                :options="projectOptions"
+                :placeholder="projectPlaceholder"
+                :loading="store.loadingOrgProjects"
+                :disabled="!form.organization || store.loadingOrgProjects || store.orgProjects.length === 0"
+                @change="onProjectChange"
+                class="w-full"
+              />
             </div>
           </div>
 
@@ -71,20 +66,18 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area Path <span class="text-gray-500 font-normal">(optional)</span></label>
-              <div class="relative">
-                <select
-                  v-model="form.area_path"
-                  :disabled="!form.project || store.loadingAreaPaths"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400"
-                >
-                  <option value="">{{ store.loadingAreaPaths ? 'Loading areas…' : 'All areas (no filter)' }}</option>
-                  <option v-for="a in store.areaPaths" :key="a.path" :value="a.path">{{ a.path }}</option>
-                </select>
-                <svg v-if="store.loadingAreaPaths" class="absolute right-3 top-2.5 w-4 h-4 text-gray-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-              </div>
+              <SelectMenu
+                v-model="form.area_path"
+                :options="areaPathOptions"
+                :loading="store.loadingAreaPaths"
+                :disabled="!form.project || store.loadingAreaPaths"
+                placeholder="Select area path…"
+                class="w-full"
+              />
+              <label v-if="form.area_path" class="inline-flex items-center gap-2 mt-2 cursor-pointer">
+                <input type="checkbox" v-model="form.include_child_areas" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                <span class="text-sm text-gray-700 dark:text-gray-300">Include child areas</span>
+              </label>
             </div>
           </div>
 
@@ -125,21 +118,16 @@
                       <!-- Repository filter -->
                       <div v-if="['release_pr_check', 'pr_approval_check', 'stale_pr_check', 'unreviewed_pr_check'].includes(ct.type_key)">
                         <label class="text-xs text-gray-600 dark:text-gray-400">Repository name <span class="text-gray-500">(leave empty to check all repos)</span></label>
-                        <div class="relative">
-                          <select
-                            :value="checkRepositories[ct.type_key] || ''"
-                            @change="checkRepositories[ct.type_key] = $event.target.value"
-                            :disabled="!form.project || store.loadingRepos"
-                            class="w-full mt-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400"
-                          >
-                            <option value="">{{ store.loadingRepos ? 'Loading repos…' : 'All repositories' }}</option>
-                            <option v-for="r in store.repos" :key="r.id" :value="r.name">{{ r.name }}</option>
-                          </select>
-                          <svg v-if="store.loadingRepos" class="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                          </svg>
-                        </div>
+                        <SelectMenu
+                          :modelValue="checkRepositories[ct.type_key] || ''"
+                          @update:modelValue="checkRepositories[ct.type_key] = $event"
+                          :options="repoFilterOptions"
+                          :loading="store.loadingRepos"
+                          :disabled="!form.project || store.loadingRepos"
+                          placeholder="All repositories"
+                          size="sm"
+                          class="w-full mt-1"
+                        />
                       </div>
                       <!-- Stale days -->
                       <div v-if="ct.type_key === 'stale_pr_check'">
@@ -180,6 +168,59 @@
                             <input type="radio" :name="'estimate_mode_' + ct.type_key" value="remaining_work" :checked="(checkEstimateMode[ct.type_key] || 'both') === 'remaining_work'" @change="checkEstimateMode[ct.type_key] = 'remaining_work'" class="text-primary-600 focus:ring-primary-500" />
                             <span class="text-xs text-gray-700 dark:text-gray-300">Remaining Work only</span>
                           </label>
+                        </div>
+                      </div>
+                      <!-- Parent type mappings -->
+                      <div v-if="ct.type_key === 'orphan_check'">
+                        <div class="flex items-center gap-2">
+                          <label class="text-xs text-gray-600 dark:text-gray-400">Parent type mappings</label>
+                          <button
+                            v-if="editing && form.project && !loadingParentHierarchy"
+                            type="button"
+                            @click.stop="loadParentHierarchy"
+                            class="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          >Load from process</button>
+                          <svg v-if="loadingParentHierarchy" class="w-3 h-3 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                          </svg>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-0.5 mb-2">Maps child type → allowed parent types. Leave empty to use process defaults at runtime.</p>
+                        <div class="space-y-2">
+                          <div v-for="(parents, childType) in checkParentMappings" :key="childType" class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300 w-28 shrink-0">{{ childType }}</span>
+                            <input
+                              :value="parents.join(', ')"
+                              @change="updateParentMapping(childType, $event.target.value)"
+                              type="text"
+                              class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                              placeholder="e.g. Feature, Epic"
+                            />
+                            <button type="button" @click.stop="removeParentMapping(childType)" class="text-gray-400 hover:text-red-500 transition-colors">
+                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-2">
+                          <input
+                            v-model="newMappingChildType"
+                            type="text"
+                            class="w-28 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                            placeholder="Child type"
+                            @keydown.enter.prevent="addParentMapping"
+                          />
+                          <input
+                            v-model="newMappingParentTypes"
+                            type="text"
+                            class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                            placeholder="Parent types (comma-separated)"
+                            @keydown.enter.prevent="addParentMapping"
+                          />
+                          <button type="button" @click.stop="addParentMapping" :disabled="!newMappingChildType.trim()" class="px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 border border-primary-300 dark:border-primary-600 rounded hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors disabled:opacity-40">
+                            Add
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -310,14 +351,12 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Database Server</label>
-              <select
-                v-model.number="dbForm.db_server_index"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              >
-                <option v-for="i in 3" :key="i - 1" :value="i - 1">
-                  Server #{{ i }}{{ store.dbServers[i - 1]?.configured ? ` — ${store.dbServers[i - 1].server}` : ' (not configured)' }}
-                </option>
-              </select>
+              <SelectMenu
+                v-model="dbForm.db_server_index"
+                :options="dbServerOptions"
+                placeholder="Select server…"
+                class="w-full"
+              />
             </div>
           </div>
           <div class="mt-4">
@@ -391,9 +430,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import EmptyState from '../components/EmptyState.vue'
+import SelectMenu from '../components/SelectMenu.vue'
 
 const store = useMonitorStore()
 
@@ -411,6 +451,7 @@ const form = reactive({
   organization: '',
   project: '',
   area_path: '',
+  include_child_areas: true,
 })
 const selectedChecks = ref([])
 const checkApiVersions = reactive({})  // { check_type: "7.1" }
@@ -422,11 +463,74 @@ const expandedChecks = reactive({})  // { check_type: true/false }
 const ignoreTitles = ref('')
 const ignoreParentTitles = ref('')
 
+const projectOptions = computed(() =>
+  store.orgProjects.map(p => ({ value: p.name, label: p.name }))
+)
+const projectPlaceholder = computed(() =>
+  store.loadingOrgProjects ? 'Loading projects…'
+    : store.orgProjectsError ? 'Failed — check org name & PAT'
+    : form.organization ? 'Select project…'
+    : 'Enter organization first'
+)
+const areaPathOptions = computed(() => [
+  { value: '', label: 'All areas (no filter)' },
+  ...store.areaPaths.map(a => ({ value: a.path, label: a.path }))
+])
+const repoFilterOptions = computed(() => [
+  { value: '', label: 'All repositories' },
+  ...store.repos.map(r => ({ value: r.name, label: r.name }))
+])
+const dbServerOptions = computed(() =>
+  [0, 1, 2].map(i => ({
+    value: i,
+    label: `Server #${i + 1}${store.dbServers[i]?.configured ? ` — ${store.dbServers[i].server}` : ' (not configured)'}`
+  }))
+)
+
 const _CHECKS_WITH_OPTIONS = new Set([
-  'release_pr_check', 'pr_approval_check', 'stale_pr_check', 'unreviewed_pr_check', 'missing_estimate_check'
+  'release_pr_check', 'pr_approval_check', 'stale_pr_check', 'unreviewed_pr_check', 'missing_estimate_check', 'orphan_check'
 ])
 function hasCheckOptions(typeKey) {
   return _CHECKS_WITH_OPTIONS.has(typeKey)
+}
+
+const checkParentMappings = reactive({})
+const loadingParentHierarchy = ref(false)
+const newMappingChildType = ref('')
+const newMappingParentTypes = ref('')
+
+async function loadParentHierarchy() {
+  if (!editing.value) return
+  loadingParentHierarchy.value = true
+  try {
+    const res = await store.fetchParentTypeHierarchy(editing.value)
+    Object.keys(checkParentMappings).forEach(k => delete checkParentMappings[k])
+    if (res.hierarchy) {
+      for (const [child, parents] of Object.entries(res.hierarchy)) {
+        checkParentMappings[child] = [...parents]
+      }
+    }
+  } catch (e) {
+    store._toast('Failed to load hierarchy: ' + (e.message || 'Unknown error'), 'error')
+  } finally {
+    loadingParentHierarchy.value = false
+  }
+}
+
+function updateParentMapping(childType, value) {
+  checkParentMappings[childType] = value.split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function removeParentMapping(childType) {
+  delete checkParentMappings[childType]
+}
+
+function addParentMapping() {
+  const child = newMappingChildType.value.trim()
+  if (!child) return
+  checkParentMappings[child] = newMappingParentTypes.value.split(',').map(s => s.trim()).filter(Boolean)
+  newMappingChildType.value = ''
+  newMappingParentTypes.value = ''
 }
 function toggleCheckOptions(typeKey) {
   expandedChecks[typeKey] = !expandedChecks[typeKey]
@@ -471,6 +575,14 @@ watch(() => store.repos, (repos) => {
   }
 })
 
+// Auto-load parent type hierarchy when orphan_check is toggled on and no mappings exist
+watch(selectedChecks, (checks, oldChecks) => {
+  if (checks.includes('orphan_check') && !(oldChecks || []).includes('orphan_check') &&
+      Object.keys(checkParentMappings).length === 0 && editing.value) {
+    loadParentHierarchy()
+  }
+})
+
 onMounted(() => {
   store.fetchKnownOrganizations()
   store.fetchDbProjects()
@@ -511,12 +623,14 @@ function resetForm() {
   form.organization = ''
   form.project = ''
   form.area_path = ''
+  form.include_child_areas = true
   selectedChecks.value = []
   Object.keys(checkApiVersions).forEach(k => delete checkApiVersions[k])
   Object.keys(checkRepositories).forEach(k => delete checkRepositories[k])
   Object.keys(checkStaleDays).forEach(k => delete checkStaleDays[k])
   Object.keys(checkIgnoreReviewers).forEach(k => delete checkIgnoreReviewers[k])
   Object.keys(checkEstimateMode).forEach(k => delete checkEstimateMode[k])
+  Object.keys(checkParentMappings).forEach(k => delete checkParentMappings[k])
   ignoreTitles.value = ''
   ignoreParentTitles.value = ''
   editing.value = null
@@ -528,6 +642,7 @@ function editProject(p) {
   form.organization = p.organization
   form.project = p.project
   form.area_path = p.area_path
+  form.include_child_areas = p.include_child_areas ?? true
   selectedChecks.value = p.checks.filter(c => c.enabled).map(c => c.check_type)
   // Populate per-check api versions
   Object.keys(checkApiVersions).forEach(k => delete checkApiVersions[k])
@@ -535,6 +650,7 @@ function editProject(p) {
   Object.keys(checkStaleDays).forEach(k => delete checkStaleDays[k])
   Object.keys(checkIgnoreReviewers).forEach(k => delete checkIgnoreReviewers[k])
   Object.keys(checkEstimateMode).forEach(k => delete checkEstimateMode[k])
+  Object.keys(checkParentMappings).forEach(k => delete checkParentMappings[k])
   for (const c of p.checks) {
     if (c.enabled) {
       checkApiVersions[c.check_type] = c.api_version || '7.1'
@@ -542,11 +658,20 @@ function editProject(p) {
       if (c.stale_days) checkStaleDays[c.check_type] = c.stale_days
       if (c.ignore_reviewers && c.ignore_reviewers.length) checkIgnoreReviewers[c.check_type] = c.ignore_reviewers.join(', ')
       if (c.estimate_mode) checkEstimateMode[c.check_type] = c.estimate_mode
+      if (c.parent_type_mappings && Object.keys(c.parent_type_mappings).length > 0) {
+        for (const [child, parents] of Object.entries(c.parent_type_mappings)) {
+          checkParentMappings[child] = [...parents]
+        }
+      }
     }
   }
   ignoreTitles.value = (p.ignore_title_contains || []).join(', ')
   ignoreParentTitles.value = (p.ignore_parent_title_contains || []).join(', ')
   showForm.value = true
+  // Auto-load parent hierarchy if orphan_check is enabled but no mappings configured
+  if (selectedChecks.value.includes('orphan_check') && Object.keys(checkParentMappings).length === 0) {
+    loadParentHierarchy()
+  }
   // Load projects and areas for the existing org/project
   if (p.organization) {
     const savedProject = p.project
@@ -568,6 +693,7 @@ function buildPayload() {
     organization: form.organization,
     project: form.project,
     area_path: form.area_path,
+    include_child_areas: form.include_child_areas,
     ignore_title_contains: ignoreTitles.value ? ignoreTitles.value.split(',').map(s => s.trim()).filter(Boolean) : [],
     ignore_parent_title_contains: ignoreParentTitles.value ? ignoreParentTitles.value.split(',').map(s => s.trim()).filter(Boolean) : [],
     checks: selectedChecks.value.map(ct => ({
@@ -580,6 +706,7 @@ function buildPayload() {
       stale_days: checkStaleDays[ct] || 14,
       ignore_reviewers: checkIgnoreReviewers[ct] ? checkIgnoreReviewers[ct].split(',').map(s => s.trim()).filter(Boolean) : [],
       estimate_mode: checkEstimateMode[ct] || 'both',
+      parent_type_mappings: ct === 'orphan_check' && Object.keys(checkParentMappings).length > 0 ? { ...checkParentMappings } : {},
     })),
   }
 }

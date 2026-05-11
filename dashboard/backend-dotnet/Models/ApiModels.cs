@@ -463,6 +463,7 @@ public class TeamCapacityResponse
     [JsonPropertyName("members")] public List<CapacityMemberEntry> Members { get; set; } = [];
     [JsonPropertyName("total_development")] public double TotalDevelopment { get; set; }
     [JsonPropertyName("total_testing")] public double TotalTesting { get; set; }
+    [JsonPropertyName("total_unassigned")] public double TotalUnassigned { get; set; }
 }
 
 public class SetCapacityRequest
@@ -497,6 +498,7 @@ public class VelocitySprintInfo
     [JsonPropertyName("remaining_points")] public double RemainingPoints { get; set; }
     [JsonPropertyName("capacity_dev")] public double CapacityDev { get; set; }
     [JsonPropertyName("capacity_test")] public double CapacityTest { get; set; }
+    [JsonPropertyName("capacity_unassigned")] public double CapacityUnassigned { get; set; }
     [JsonPropertyName("capacity_total")] public double CapacityTotal { get; set; }
     [JsonPropertyName("timeframe")] public string Timeframe { get; set; } = "";
 }
@@ -597,6 +599,45 @@ public class RepoMissingGroupsInfo
 {
     [JsonPropertyName("repo_name")] public string RepoName { get; set; } = "";
     [JsonPropertyName("missing_groups")] public List<string> MissingGroups { get; set; } = [];
+}
+
+// --- Release Notes ---
+public record ReleaseNoteEntry(
+    [property: JsonPropertyName("version")] string Version,
+    [property: JsonPropertyName("content")] string Content);
+
+// --- Assign Parent ---
+public class ParentTypeHierarchyResponse
+{
+    [JsonPropertyName("hierarchy")] public Dictionary<string, List<string>> Hierarchy { get; set; } = new();
+}
+
+public class CandidateParentItem
+{
+    [JsonPropertyName("id")] public int Id { get; set; }
+    [JsonPropertyName("title")] public string Title { get; set; } = "";
+    [JsonPropertyName("work_item_type")] public string WorkItemType { get; set; } = "";
+    [JsonPropertyName("area_path")] public string AreaPath { get; set; } = "";
+    [JsonPropertyName("iteration_path")] public string IterationPath { get; set; } = "";
+    [JsonPropertyName("state")] public string State { get; set; } = "";
+    [JsonPropertyName("url")] public string Url { get; set; } = "";
+}
+
+public class CandidateParentResponse
+{
+    [JsonPropertyName("candidates")] public List<CandidateParentItem> Candidates { get; set; } = [];
+}
+
+public class AssignParentRequest
+{
+    [JsonPropertyName("work_item_id")] public int WorkItemId { get; set; }
+    [JsonPropertyName("parent_id")] public int ParentId { get; set; }
+}
+
+public class AssignParentResponse
+{
+    [JsonPropertyName("ok")] public bool Ok { get; set; }
+    [JsonPropertyName("message")] public string Message { get; set; } = "";
 }
 
 // --- Audit Denylist ---

@@ -34,7 +34,7 @@
         <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
         {{ store.loadingPipelineRuns ? 'Loading…' : 'Refresh' }}
       </button>
-      <input v-model="search" type="text" placeholder="Search…"
+      <input v-autofocus v-model="search" type="text" placeholder="Search…"
         class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-48" />
       <button v-if="filtered.length" @click="exportPipelines"
         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -84,7 +84,7 @@
 
     <!-- Table -->
     <div v-else-if="data && filtered.length" class="overflow-x-auto">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
         <thead>
           <tr class="bg-gray-100 dark:bg-gray-800/60">
             <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Pipeline</th>

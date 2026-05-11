@@ -402,6 +402,131 @@ public class AzureDevOpsClient
     }
 
     // ------------------------------------------------------------------
+    // Parent assignment
+    // ------------------------------------------------------------------
+
+    public async Task<Dictionary<string, List<string>>> GetProcessConfigurationAsync()
+    {
+        var url = $"{BaseUrl}/work/processconfiguration?api-version={_apiVersion}";
+        var resp = await _http.GetAsync(url);
+        ThrowIfPatScopeError(resp, url);
+        resp.EnsureSuccessStatusCode();
+        var doc = await ParseJsonAsync(resp);
+        var root = doc.RootElement;
+
+        var levels = new List<List<string>>();
+
+        if (root.TryGetProperty("taskBacklog", out var taskBacklog) &&
+            taskBacklog.TryGetProperty("workItemTypes", out var taskTypes))
+        {
+            var types = new List<string>();
+            foreach (var t in taskTypes.EnumerateArray())
+                if (t.TryGetProperty("name", out var n)) types.Add(n.GetString() ?? "");
+            levels.Add(types);
+        }
+
+        if (root.TryGetProperty("requirementBacklog", out var reqBacklog) &&
+            reqBacklog.TryGetProperty("workItemTypes", out var reqTypes))
+        {
+            var types = new List<string>();
+            foreach (var t in reqTypes.EnumerateArray())
+                if (t.TryGetProperty("name", out var n)) types.Add(n.GetString() ?? "");
+            levels.Add(types);
+        }
+
+        if (root.TryGetProperty("portfolioBacklogs", out var portfolios))
+        {
+            // The API returns portfolio backlogs top-down (Epics first,
+            // Features second). Reverse so the levels list goes from
+            // lowest to highest: Features (child) before Epics (parent).
+            var items = portfolios.EnumerateArray().ToList();
+            items.Reverse();
+
+            foreach (var portfolio in items)
+            {
+                if (portfolio.TryGetProperty("workItemTypes", out var pTypes))
+                {
+                    var types = new List<string>();
+                    foreach (var t in pTypes.EnumerateArray())
+                        if (t.TryGetProperty("name", out var n)) types.Add(n.GetString() ?? "");
+                    levels.Add(types);
+                }
+            }
+        }
+
+        var hierarchy = new Dictionary<string, List<string>>();
+        for (var i = 0; i < levels.Count - 1; i++)
+        {
+            var parentTypes = levels[i + 1];
+            foreach (var childType in levels[i])
+                hierarchy[childType] = new List<string>(parentTypes);
+        }
+
+        // Bug work items can live on the requirement OR iteration backlog,
+        // so their allowed parents span from the requirement level up to the
+        // top portfolio level (e.g. Bug → [Defect, User Story, Feature, Epic]).
+        if (root.TryGetProperty("bugWorkItems", out var bugSection) &&
+            bugSection.TryGetProperty("workItemTypes", out var bugTypes))
+        {
+            var allParentsAboveIteration = new List<string>();
+            for (var i = 1; i < levels.Count; i++) // skip iteration level (0)
+                allParentsAboveIteration.AddRange(levels[i]);
+
+            foreach (var t in bugTypes.EnumerateArray())
+            {
+                if (t.TryGetProperty("name", out var n))
+                {
+                    var name = n.GetString() ?? "";
+                    if (!string.IsNullOrEmpty(name) && !hierarchy.ContainsKey(name))
+                        hierarchy[name] = new List<string>(allParentsAboveIteration);
+                }
+            }
+        }
+
+        return hierarchy;
+    }
+
+    public async Task<JsonElement?> GetWorkItemWithRelationsAsync(int workItemId)
+    {
+        var url = $"{BaseUrl}/wit/workitems/{workItemId}?$expand=Relations&api-version={_apiVersion}";
+        var resp = await _http.GetAsync(url);
+        ThrowIfPatScopeError(resp, url);
+        if (!resp.IsSuccessStatusCode) return null;
+        return (await ParseJsonAsync(resp)).RootElement.Clone();
+    }
+
+    public async Task SetWorkItemParentAsync(int workItemId, int parentId, int? existingParentRelationIndex = null)
+    {
+        var url = $"{BaseUrl}/wit/workitems/{workItemId}?api-version={_apiVersion}";
+        var parentUrl = $"https://dev.azure.com/{_organization}/_apis/wit/workItems/{parentId}";
+
+        var ops = new List<object>();
+        if (existingParentRelationIndex.HasValue)
+        {
+            ops.Add(new { op = "remove", path = $"/relations/{existingParentRelationIndex.Value}" });
+        }
+        ops.Add(new
+        {
+            op = "add",
+            path = "/relations/-",
+            value = new
+            {
+                rel = "System.LinkTypes.Hierarchy-Reverse",
+                url = parentUrl,
+                attributes = new { comment = "" }
+            }
+        });
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(ops), Encoding.UTF8, "application/json-patch+json");
+        var resp = await _http.PatchAsync(url, content);
+        if ((int)resp.StatusCode == 401)
+            throw new UnauthorizedAccessException(
+                "PAT lacks write permissions. Update your PAT to include the 'Work Items (Read & Write)' scope.");
+        resp.EnsureSuccessStatusCode();
+    }
+
+    // ------------------------------------------------------------------
     // Iterations
     // ------------------------------------------------------------------
 
@@ -487,7 +612,7 @@ public class AzureDevOpsClient
         if (url.Contains("/_apis/git/pullrequests") || url.Contains("/_apis/git/repositories"))
             return "Code (Read) — scope 'vso.code'";
 
-        if (url.Contains("/_apis/work/teamsettings"))
+        if (url.Contains("/_apis/work/teamsettings") || url.Contains("/_apis/work/processconfiguration"))
             return "Work Items (Read) — scope 'vso.work'";
 
         if (url.Contains("/teams") && url.Contains("/members"))

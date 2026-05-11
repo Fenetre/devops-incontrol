@@ -7,6 +7,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
         <input
+          v-autofocus
           v-model="search"
           type="text"
           placeholder="Filter by ID, title, type, or assignee…"
@@ -17,10 +18,10 @@
 
     <!-- Table -->
     <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
         <thead>
           <tr class="text-left border-b border-gray-200 dark:border-gray-700">
-            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-24 cursor-pointer select-none" @click="toggleSort('id')">
+            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('id')">
               ID
               <span v-if="sortKey === 'id'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
@@ -28,28 +29,29 @@
               {{ isTagOverview ? 'Tag' : 'Title' }}
               <span v-if="sortKey === 'title'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-36 cursor-pointer select-none" @click="toggleSort('work_item_type')">
+            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('work_item_type')">
               {{ isTagOverview ? 'Count' : 'Type' }}
               <span v-if="sortKey === 'work_item_type'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasAssignedTo" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-44 cursor-pointer select-none" @click="toggleSort('assigned_to')">
+            <th v-if="hasAssignedTo" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('assigned_to')">
               Assigned To
               <span v-if="sortKey === 'assigned_to'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasState" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-36 cursor-pointer select-none" @click="toggleSort('state')">
+            <th v-if="hasState" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('state')">
               State
               <span v-if="sortKey === 'state'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasIterationPath" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-44 cursor-pointer select-none" @click="toggleSort('iteration_path')">
+            <th v-if="hasIterationPath" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('iteration_path')">
               Iteration
               <span v-if="sortKey === 'iteration_path'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasCreatedDate" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-32 cursor-pointer select-none" @click="toggleSort('created_date')">
+            <th v-if="hasCreatedDate" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('created_date')">
               Created
               <span v-if="sortKey === 'created_date'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="isTagOverview" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-56 text-right">Actions</th>
-            <th v-if="isTagDetail" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 w-48 text-right">Actions</th>
+            <th v-if="isOrphanCheck" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
+            <th v-if="isTagOverview" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
+            <th v-if="isTagDetail" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -69,7 +71,7 @@
                   #{{ item.id }}
                 </a>
               </td>
-              <td class="px-4 py-3 text-gray-800 dark:text-gray-200">
+              <td class="px-4 py-3 text-gray-800 dark:text-gray-200 !whitespace-normal">
                 <div class="flex items-center gap-1.5">
                   <router-link
                   v-if="isTagOverview && !isZeroCount(item)"
@@ -104,6 +106,18 @@
               </td>
               <td v-if="hasCreatedDate" class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
                 {{ formatDate(item.created_date) }}
+              </td>
+              <td v-if="isOrphanCheck" class="px-4 py-3 text-right">
+                <button
+                  @click="emit('assign-parent', item)"
+                  class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                  :title="isParentDone(item) ? 'Change the parent work item' : 'Assign a parent work item'"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  {{ isParentDone(item) ? 'Change Parent' : 'Assign Parent' }}
+                </button>
               </td>
               <td v-if="isTagOverview" class="px-4 py-3 text-right">
                 <div class="inline-flex items-center gap-1.5">
@@ -396,10 +410,15 @@ const props = defineProps({
   busyItemId: { type: Number, default: null },
 })
 
-const emit = defineEmits(['delete-tag', 'remove-item-tag', 'rename-item-tag', 'remove-tag', 'rename-tag'])
+const emit = defineEmits(['delete-tag', 'remove-item-tag', 'rename-item-tag', 'remove-tag', 'rename-tag', 'assign-parent'])
 
+const isOrphanCheck = computed(() => props.checkType === 'orphan_check')
 const isTagOverview = computed(() => props.checkType === 'tag_overview_check')
 const isTagDetail = computed(() => props.checkType === 'tag_detail')
+
+function isParentDone(item) {
+  return (item.work_item_type || '').toLowerCase().includes('[parent done]')
+}
 
 function isZeroCount(item) {
   return (item.work_item_type || '').startsWith('0 ')

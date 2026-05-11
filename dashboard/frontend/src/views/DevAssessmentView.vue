@@ -48,33 +48,15 @@
     <!-- Filter row -->
     <div class="flex items-center gap-3 mb-6 flex-wrap justify-end">
       <!-- Months selector -->
-      <select v-if="timeMode === 'months'" v-model.number="months"
-        class="text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-2 focus:ring-2 focus:ring-primary-500 outline-none">
-        <option :value="1">Last 1 month</option>
-        <option :value="3">Last 3 months</option>
-        <option :value="6">Last 6 months</option>
-        <option :value="12">Last 12 months</option>
-      </select>
+      <SelectMenu v-if="timeMode === 'months'" v-model="months" :options="monthOptions" size="sm" class="w-40" />
 
       <!-- Project selector (always visible) -->
-      <select v-model="sprintProjectId" @change="onSprintProjectChange"
-        class="text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-2 focus:ring-2 focus:ring-primary-500 outline-none">
-        <option value="">All projects</option>
-        <option v-for="p in availableProjects" :key="p.id" :value="p.id">{{ dProject(p.project) }}</option>
-      </select>
+      <SelectMenu autofocus v-model="sprintProjectId" :options="projectSelectOptions" @change="onSprintProjectChange" size="sm" class="w-44" />
 
       <!-- Team & Sprint selectors (sprint mode only) -->
       <template v-if="timeMode === 'sprint'">
-        <select v-if="sprintTeams.length" v-model="sprintTeam" @change="onSprintTeamChange"
-          class="text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-2 focus:ring-2 focus:ring-primary-500 outline-none">
-          <option value="">Team…</option>
-          <option v-for="t in sprintTeams" :key="t.id" :value="t.name">{{ dTeam(t.name) }}</option>
-        </select>
-        <select v-if="sprintIterations.length" v-model="sprintIterationId" @change="onSprintIterationChange"
-          class="text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-2 focus:ring-2 focus:ring-primary-500 outline-none max-w-[220px]">
-          <option value="">Sprint…</option>
-          <option v-for="it in sprintIterations" :key="it.id" :value="it.id">{{ dSprint(it.name) }}</option>
-        </select>
+        <SelectMenu v-if="sprintTeams.length" v-model="sprintTeam" :options="teamSelectOptions" @change="onSprintTeamChange" size="sm" class="w-44" />
+        <SelectMenu v-if="sprintIterations.length" v-model="sprintIterationId" :options="sprintSelectOptions" @change="onSprintIterationChange" size="sm" class="w-52" />
         <span v-if="sprintDateLabel" class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ sprintDateLabel }}</span>
       </template>
     </div>
@@ -336,7 +318,7 @@
               <h3 class="text-sm font-semibold text-primary-500 dark:text-gray-300 uppercase tracking-wider">Team Overview — {{ selectedProject }}</h3>
             </div>
             <div class="overflow-x-auto">
-              <table class="w-full text-sm">
+              <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
                   <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2.5">Developer</th>
@@ -407,7 +389,7 @@
               <h3 class="text-sm font-semibold text-primary-500 dark:text-gray-300 uppercase tracking-wider">Pull Requests ({{ activeDev.prs.length }})</h3>
             </div>
             <div class="overflow-x-auto">
-              <table class="w-full text-sm">
+              <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
                   <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('prs', 'pr_id')">PR{{ sortIcon('prs', 'pr_id') }}</th>
@@ -442,7 +424,7 @@
               <h3 class="text-sm font-semibold text-primary-500 dark:text-gray-300 uppercase tracking-wider">Estimated vs Completed ({{ activeDev.estItems.length }})</h3>
             </div>
             <div v-if="activeDev.estItems.length" class="overflow-x-auto">
-              <table class="w-full text-sm">
+              <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
                   <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('est', 'id')">ID{{ sortIcon('est', 'id') }}</th>
@@ -474,7 +456,7 @@
               <h3 class="text-sm font-semibold text-primary-500 dark:text-gray-300 uppercase tracking-wider">WIP Items ({{ activeDev.wipItems.length }})</h3>
             </div>
             <div v-if="activeDev.wipItems.length" class="overflow-x-auto">
-              <table class="w-full text-sm">
+              <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
                   <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wip', 'id')">ID{{ sortIcon('wip', 'id') }}</th>
@@ -513,7 +495,7 @@
               <h3 class="text-sm font-semibold text-primary-500 dark:text-gray-300 uppercase tracking-wider">Work Items ({{ activeDev.workItems.length }})</h3>
             </div>
             <div v-if="activeDev.workItems.length" class="overflow-x-auto">
-              <table class="w-full text-sm">
+              <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
                   <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wi', 'id')">ID{{ sortIcon('wi', 'id') }}</th>
@@ -568,6 +550,7 @@ import { transformDevAssessment } from '../composables/demoTransform.js'
 import { useCsvExport } from '../composables/useCsvExport.js'
 import { useDemoMode, anonName, anonProject, anonPrTitle, anonRepo, anonOrg, anonTeam, anonSprint } from '../composables/useDemoMode.js'
 import DataFreshness from '../components/DataFreshness.vue'
+import SelectMenu from '../components/SelectMenu.vue'
 
 const { isDemoMode } = useDemoMode()
 function dName(v) { return isDemoMode.value ? anonName(v) : v }
@@ -593,6 +576,25 @@ async function loadProjects() {
     availableProjects.value = await api.get('/api/projects')
   } catch { /* ignore */ }
 }
+
+const monthOptions = [
+  { value: 1, label: 'Last 1 month' },
+  { value: 3, label: 'Last 3 months' },
+  { value: 6, label: 'Last 6 months' },
+  { value: 12, label: 'Last 12 months' },
+]
+const projectSelectOptions = computed(() => [
+  { value: '', label: 'All projects' },
+  ...availableProjects.value.map(p => ({ value: p.id, label: dProject(p.project) }))
+])
+const teamSelectOptions = computed(() => [
+  { value: '', label: 'Team…' },
+  ...sprintTeams.value.map(t => ({ value: t.name, label: dTeam(t.name) }))
+])
+const sprintSelectOptions = computed(() => [
+  { value: '', label: 'Sprint…' },
+  ...sprintIterations.value.map(it => ({ value: it.id, label: dSprint(it.name) }))
+])
 
 // --- Member selection (persistent) ---
 const excludedDevs = reactive({}) // { projectName: Set<devName> }

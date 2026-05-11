@@ -2,7 +2,7 @@
   <!-- Setup wizard (no auth gate, no sidebar) -->
   <router-view v-if="isSetupRoute" />
 
-  <!-- API Key login gate -->
+  <!-- Password login gate -->
   <div v-else-if="!store.authenticated" class="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-sm mx-4">
       <div class="flex items-center gap-2 mb-6">
@@ -10,11 +10,11 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
         </svg>
         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {{ store.apiKeyConfigured ? 'Enter API Key' : 'Create API Key' }}
+          {{ store.apiKeyConfigured ? 'Enter Password' : 'Create Password' }}
         </h2>
       </div>
       <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">
-        {{ store.apiKeyConfigured ? 'Authentication is required to unlock the dashboard.' : 'No API key is configured yet. Enter one to secure and unlock this dashboard.' }}
+        {{ store.apiKeyConfigured ? 'Authentication is required to unlock the dashboard.' : 'No password is configured yet. Enter one to secure and unlock this dashboard.' }}
       </p>
       <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
         Once verified, this browser is remembered with a secure HttpOnly session cookie.
@@ -23,12 +23,12 @@
         <input
           v-model="loginKey"
           type="password"
-          placeholder="API Key…"
+          placeholder="Password…"
           autofocus
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
         />
         <p v-if="loginError" class="mt-2 text-sm text-red-600 dark:text-red-400">
-          {{ store.apiKeyConfigured ? 'Invalid API key' : 'API key is required' }}
+          {{ store.apiKeyConfigured ? 'Invalid password' : 'Password is required' }}
         </p>
         <button
           type="submit"
@@ -43,7 +43,7 @@
 
   <div v-else class="flex h-screen bg-gray-100 dark:bg-gray-900">
     <!-- Sidebar -->
-    <SidebarMenu />
+    <SidebarMenu @show-release-notes="showReleaseNotes = true" />
 
     <!-- Main content -->
     <div class="flex-1 flex flex-col overflow-hidden">
@@ -117,7 +117,7 @@
 
       <!-- Page content -->
       <main class="flex-1 overflow-y-auto p-6">
-        <router-view />
+        <router-view :key="$route.fullPath" />
       </main>
     </div>
 
@@ -126,6 +126,9 @@
 
     <!-- Keyboard shortcuts help -->
     <KeyboardShortcutsHelp v-if="showShortcutsHelp" @close="showShortcutsHelp = false" />
+
+    <!-- Release notes modal -->
+    <ReleaseNotesModal v-if="showReleaseNotes" @close="showReleaseNotes = false" />
 
     <!-- Toast notifications -->
     <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
@@ -162,6 +165,8 @@ import { useRouter, useRoute } from 'vue-router'
 import SidebarMenu from './components/SidebarMenu.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp.vue'
+import ReleaseNotesModal from './components/ReleaseNotesModal.vue'
+import appPackage from '../package.json'
 import { getHelpUrl } from './config/helpUrls.js'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts.js'
 
@@ -172,6 +177,7 @@ const router = useRouter()
 const route = useRoute()
 const showSettings = ref(false)
 const showShortcutsHelp = ref(false)
+const showReleaseNotes = ref(false)
 const loginKey = ref('')
 
 useKeyboardShortcuts({ showSettings, showShortcutsHelp })
@@ -237,7 +243,14 @@ async function loadData() {
 
 // Load data once authenticated
 watch(() => store.authenticated, (authed) => {
-  if (authed) loadData()
+  if (authed) {
+    loadData()
+    const lastSeen = localStorage.getItem('devops-incontrol-last-seen-version')
+    if (lastSeen !== appPackage.version) {
+      showReleaseNotes.value = true
+      localStorage.setItem('devops-incontrol-last-seen-version', appPackage.version)
+    }
+  }
 })
 
 onMounted(async () => {
@@ -252,7 +265,14 @@ onMounted(async () => {
     }
   }
 
-  if (store.authenticated) loadData()
+  if (store.authenticated) {
+    loadData()
+    const lastSeen = localStorage.getItem('devops-incontrol-last-seen-version')
+    if (lastSeen !== appPackage.version) {
+      showReleaseNotes.value = true
+      localStorage.setItem('devops-incontrol-last-seen-version', appPackage.version)
+    }
+  }
 })
 </script>
 

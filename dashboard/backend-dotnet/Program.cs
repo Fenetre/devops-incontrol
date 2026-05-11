@@ -3,12 +3,14 @@ using DashboardApi.Services;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.FileProviders;
 using System.IO.Compression;
+using System.Net.Sockets;
 
 // Trigger dotnet watch restart
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Services ---
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -33,6 +35,8 @@ var corsOrigins = Environment.GetEnvironmentVariable("CORS_ORIGINS")
 var allowedOrigins = corsOrigins
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
     .Select(o => o.TrimEnd('/'))
+    .Where(o => Uri.TryCreate(o, UriKind.Absolute, out var uri) &&
+                (uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host == "::1"))
     .Distinct(StringComparer.OrdinalIgnoreCase)
     .ToArray();
 var allowedOriginsSet = new HashSet<string>(allowedOrigins, StringComparer.OrdinalIgnoreCase);
@@ -109,4 +113,18 @@ if (Directory.Exists(distPath))
     });
 }
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (IOException ex) when (ex.InnerException is SocketException { SocketErrorCode: SocketError.AddressAlreadyInUse })
+{
+    Console.Error.WriteLine($"Failed to start: {ex.Message}");
+    Console.Error.WriteLine("Another application is already using this port. Close the other application or use a different port (e.g. -BackendPort in start.ps1).");
+    Environment.Exit(1);
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"Failed to start: {ex.Message}");
+    Environment.Exit(1);
+}

@@ -3,7 +3,7 @@ const SWR_TTL = 30_000 // 30 seconds stale-while-revalidate window
 const swrCache = new Map() // key → { data, timestamp }
 let apiKeyMemory = ''
 
-// Keep API key in memory only; do not persist to browser storage.
+// Keep password in memory only; do not persist to browser storage.
 function getApiKey() {
   return apiKeyMemory
 }

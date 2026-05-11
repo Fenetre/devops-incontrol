@@ -22,8 +22,7 @@ public class ReleasePrCheck : ICheckCase
         var sprintPath = currentSprint["path"]?.ToString() ?? "";
         var sprintRelease = Helpers.ExtractRelease(sprintPath);
 
-        var areaFilter = !string.IsNullOrEmpty(projectCfg.AreaPath)
-            ? $"AND [System.AreaPath] UNDER '{Helpers.EscapeWiql(projectCfg.AreaPath)}' " : "";
+        var areaFilter = Helpers.BuildAreaFilter(projectCfg.AreaPath, projectCfg.IncludeChildAreas);
 
         var wiql =
             "SELECT [System.Id] FROM WorkItems " +

@@ -34,7 +34,7 @@
         <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
         {{ store.loadingReleaseRuns ? 'Loading…' : 'Refresh' }}
       </button>
-      <input v-model="search" type="text" placeholder="Search…"
+      <input v-autofocus v-model="search" type="text" placeholder="Search…"
         class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-48" />
       <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
         <span>From:</span>
@@ -77,7 +77,7 @@
 
     <!-- Table -->
     <div v-else-if="data && filtered.length" class="overflow-x-auto">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
         <thead>
           <tr class="bg-gray-100 dark:bg-gray-800/60">
             <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Release</th>
@@ -98,7 +98,7 @@
               </span>
             </td>
             <td class="px-3 py-2">
-              <div class="flex flex-wrap gap-1">
+              <div class="flex gap-1">
                 <span v-for="env in run.environments" :key="env.name"
                   class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium" :class="resultClass(env.status)">
                   {{ env.name }}: {{ env.status }}

@@ -35,6 +35,9 @@ public partial class ProjectCheckConfig
     [JsonPropertyName("estimate_mode")]
     public string EstimateMode { get; set; } = "both";
 
+    [JsonPropertyName("parent_type_mappings")]
+    public Dictionary<string, List<string>> ParentTypeMappings { get; set; } = new();
+
     [GeneratedRegex(@"\b(DROP|ALTER|DELETE|INSERT|UPDATE|EXEC|EXECUTE|TRUNCATE|CREATE|GRANT|REVOKE)\b", RegexOptions.IgnoreCase)]
     private static partial Regex WiqlDenyPattern();
 
@@ -67,6 +70,9 @@ public class ProjectConfig
 
     [JsonPropertyName("area_path")]
     public string AreaPath { get; set; } = "";
+
+    [JsonPropertyName("include_child_areas")]
+    public bool IncludeChildAreas { get; set; } = true;
 
     [JsonPropertyName("ignore_title_contains")]
     public List<string> IgnoreTitleContains { get; set; } = [];

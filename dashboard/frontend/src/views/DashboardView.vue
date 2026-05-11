@@ -39,16 +39,13 @@
           <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
           </svg>
-          <select
+          <SelectMenu
             v-model="refreshInterval"
-            class="text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none"
-          >
-            <option :value="0">Auto-refresh: Off</option>
-            <option :value="60">Every 1 min</option>
-            <option :value="300">Every 5 min</option>
-            <option :value="600">Every 10 min</option>
-            <option :value="1800">Every 30 min</option>
-          </select>
+            :options="refreshIntervalOptions"
+            placeholder="Auto-refresh: Off"
+            size="sm"
+            class="w-44"
+          />
         </div>
 
         <button
@@ -237,10 +234,18 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import ProjectCard from '../components/ProjectCard.vue'
+import SelectMenu from '../components/SelectMenu.vue'
 
 const store = useMonitorStore()
 const refreshInterval = ref(0)
 const hideAllClear = ref(false)
+const refreshIntervalOptions = [
+  { value: 0, label: 'Auto-refresh: Off' },
+  { value: 60, label: 'Every 1 min' },
+  { value: 300, label: 'Every 5 min' },
+  { value: 600, label: 'Every 10 min' },
+  { value: 1800, label: 'Every 30 min' },
+]
 let timerId = null
 
 watch(refreshInterval, (seconds) => {

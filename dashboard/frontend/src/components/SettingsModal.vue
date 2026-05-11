@@ -53,16 +53,16 @@
 
         <hr class="border-gray-200 dark:border-gray-700" />
 
-        <!-- API Key section -->
+        <!-- Password section -->
         <div>
           <h3 class="text-sm font-semibold text-primary-500 dark:text-gray-200 mb-3">Security</h3>
           <div>
-            <label for="apiKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+            <label for="apiKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
             <input
               id="apiKey"
               v-model="apiKey"
               type="password"
-              placeholder="Enter API key…"
+              placeholder="Enter password…"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
             />
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Protects all API endpoints. Encrypted at rest using Windows DPAPI with application-specific salt.</p>
@@ -70,7 +70,7 @@
           <div class="flex items-center gap-2 mt-2">
             <span class="w-2.5 h-2.5 rounded-full" :class="store.apiKeyConfigured ? 'bg-green-500' : (store.allowUnprotectedApi ? 'bg-amber-400' : 'bg-red-400')"></span>
             <span class="text-sm" :class="store.apiKeyConfigured ? 'text-green-700 dark:text-green-400' : (store.allowUnprotectedApi ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')">
-              {{ store.apiKeyConfigured ? 'API key is set' : (store.allowUnprotectedApi ? 'No API key — unprotected mode is enabled' : 'No API key configured') }}
+              {{ store.apiKeyConfigured ? 'Password is set' : (store.allowUnprotectedApi ? 'No password — unprotected mode is enabled' : 'No password configured') }}
             </span>
           </div>
         </div>
@@ -120,13 +120,11 @@
               </div>
               <div class="space-y-2">
                 <div>
-                  <select
+                  <SelectMenu
                     v-model="dbForms[i - 1].driver"
-                    class="w-full px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
-                  >
-                    <option value="sqlserver">SQL Server</option>
-                    <option value="postgres">PostgreSQL</option>
-                  </select>
+                    :options="dbDriverOptions"
+                    size="sm"
+                  />
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                   <div class="col-span-2">
@@ -229,9 +227,14 @@
 import { ref, reactive } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useDemoMode } from '../composables/useDemoMode.js'
+import SelectMenu from './SelectMenu.vue'
 
 const emit = defineEmits(['close'])
 const store = useMonitorStore()
+const dbDriverOptions = [
+  { value: 'sqlserver', label: 'SQL Server' },
+  { value: 'postgres', label: 'PostgreSQL' },
+]
 const demoMode = useDemoMode()
 const activeTab = ref('general')
 const settingsTabs = [
