@@ -29,7 +29,7 @@ A control and management application for Microsoft Azure DevOps made by scrummas
 -  Database Governance – Automatically verify that your SQL/Postgres databases correspond to active DevOps tickets and flag "orphaned" databases.
 -  Permission Audit – Matrix views to quickly audit user access across repos, pipelines, releases, and wikis.
 -  Local & Secure – Runs entirely on your Windows PC with DPAPI encryption; your Azure DevOps PAT never leaves your machine.
--  Tag Overview & Health – Scan your entire project to see which tags are actually in use and which have become redundant.
+-  Tag Overview & Health – Scan your entire project to see which tags are actually in use and which have become redundant to delete or change.
 -  One-Click Cleanup – Delete "ghost tags" (tags with zero associated items) directly from the dashboard to keep your taxonomy clean.
 -  Smart Version Filtering – Logic that automatically hides noise like version numbers (v1.2.0) so you can focus on functional tags.
 
