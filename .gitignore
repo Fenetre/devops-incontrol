@@ -43,7 +43,8 @@ dashboard/data/config.json.bak
 .kaiandralph/
 _tmp_debug/
 .vs/VSWorkspaceState.json
-.vs/devops-incontrol/v17/.suo
-.vs/devops-incontrol/v17/.wsuo
+*.suo
+*.wsuo
 .vs/devops-incontrol/v17/DocumentLayout.backup.json
 .vs/devops-incontrol/v17/DocumentLayout.json
+*.lscache
