@@ -648,10 +648,10 @@ public class CheckPermissionsController(ConfigStore configStore) : ControllerBas
             http, orgUrl, projectName, groupNameMap, areaGroups);
 
         await Task.WhenAll(wikiTask, areaTask);
-        var (wikiMissing, wikiUnwanted) = wikiTask.Result;
+        var (wikiMissing, wikiUnwanted) = await wikiTask;
         checks.WikiMissingGroups = wikiMissing;
         checks.WikiUnwantedGroups = wikiUnwanted;
-        checks.AreasMissingGroups = areaTask.Result;
+        checks.AreasMissingGroups = await areaTask;
 
         return new ProjectAuditResult
         {

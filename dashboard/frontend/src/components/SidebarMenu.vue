@@ -8,40 +8,30 @@
       <router-link v-if="!collapsed" to="/" class="flex items-center transition-opacity hover:opacity-90">
         <img src="/fenetre-logo.svg" alt="Fenetre logo" class="w-36 h-auto rounded-sm" />
       </router-link>
-      <button
+      <UButton
         @click="collapsed = !collapsed"
-        class="p-1 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        variant="ghost" color="neutral" size="xs"
+        icon="i-heroicons-chevron-left"
+        :ui="{ base: 'text-white/60 hover:text-white hover:bg-white/10' }"
+        :class="{ '[&_svg]:rotate-180': collapsed }"
         :title="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-      >
-        <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': collapsed }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-      </button>
+      />
     </div>
 
     <!-- Search bar -->
     <div v-if="!collapsed" class="px-3 pt-3 pb-1">
-      <div class="relative">
-        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-        <input
-          v-model="menuSearch"
-          type="text"
-          placeholder="Search menu…"
-          data-sidebar-search
-          class="w-full pl-8 pr-7 py-1.5 text-xs rounded-md bg-white/15 border border-white/20 text-white placeholder-white/50 focus:ring-1 focus:ring-white/40 focus:border-white/40 outline-none transition-shadow"
-        />
-        <button
-          v-if="menuSearch"
-          @click="menuSearch = ''"
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+      <UInput
+        name="menu-search" v-model="menuSearch"
+        placeholder="Search menu…"
+        data-sidebar-search
+        size="sm"
+        icon="i-heroicons-magnifying-glass"
+        class="w-full sidebar-search"
+      >
+        <template v-if="menuSearch" #trailing>
+          <UButton @click="menuSearch = ''" variant="link" color="neutral" size="xs" icon="i-heroicons-x-mark" :padded="false" class="text-white/70 hover:text-white" />
+        </template>
+      </UInput>
     </div>
 
     <nav class="flex-1 py-2 overflow-y-auto min-h-0">
@@ -54,14 +44,10 @@
         :title="collapsed ? 'DevOps Monitor' : ''"
       >
         <span class="flex items-center gap-2">
-          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" />
-          </svg>
+          <UIcon name="i-heroicons-computer-desktop" class="w-4 h-4 shrink-0" />
           <span v-if="!collapsed">DevOps Monitor</span>
         </span>
-        <svg v-if="!collapsed" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': devopsOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
+        <UIcon v-if="!collapsed" name="i-heroicons-chevron-right" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': devopsOpen }" />
       </button>
 
       <div v-show="(devopsOpen || isSearching) && !collapsed" class="ml-2 border-l border-white/15">
@@ -87,9 +73,7 @@
             <span class="text-sm font-bold text-white truncate">{{ item.projectName }}</span>
             <div class="flex items-center gap-1.5">
               <span v-if="item.hasErrors" class="text-xs text-amber-400" title="Some checks failed">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
+                <UIcon name="i-heroicons-exclamation-triangle" class="w-3.5 h-3.5" />
               </span>
               <span v-if="item.totalIssues > 0" class="text-xs bg-white/90 text-red-600 dark:bg-red-500/20 dark:text-red-400 rounded-full px-2 py-0.5 font-bold">
                 {{ item.totalIssues }}
@@ -117,105 +101,46 @@
       </div>
       </div>
 
-      <!-- PR Monitor section -->
-      <div v-show="!isSearching || hasPrMatches">
-      <button
-        @click="collapsed ? (collapsed = false, prOpen = true) : (prOpen = !prOpen)"
-        class="w-full flex items-center px-4 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
-        :class="collapsed ? 'justify-center' : 'justify-between'"
-        :title="collapsed ? 'PR Monitor' : ''"
-      >
-        <span class="flex items-center gap-2">
-          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-          </svg>
-          <span v-if="!collapsed">PR Monitor</span>
-        </span>
-        <svg v-if="!collapsed" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': prOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
-
-      <div v-show="(prOpen || isSearching) && !collapsed" class="ml-2 border-l border-white/15">
+      <!-- PR Monitor link -->
+      <div v-show="!isSearching || matchesSearch('PR Monitor')">
         <router-link
-          v-if="matchesSearch('All Projects')"
-          to="/pr-monitor"
-          class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-white/10 hover:text-white transition-colors"
-          :class="route.name === 'pr-monitor' ? 'text-white bg-white/15' : 'text-white/60'"
+          :to="prProjects.length ? { name: 'pr-project', params: { projectId: prProjects[0].id } } : '/pr-monitor'"
+          @click="collapsed && (collapsed = false)"
+          class="w-full flex items-center px-4 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors"
+          :class="[
+            collapsed ? 'justify-center' : 'justify-between',
+            route.name === 'pr-project' || route.name === 'pr-monitor' ? 'text-white bg-white/15' : 'text-white/90'
+          ]"
+          :title="collapsed ? 'PR Monitor' : ''"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-          </svg>
-          All Projects
-        </router-link>
-
-        <router-link
-          v-for="proj in filteredPrProjects"
-          :key="proj.id"
-          :to="{ name: 'pr-project', params: { projectId: proj.id } }"
-          class="flex items-center justify-between pl-8 pr-4 py-2 text-sm hover:bg-white/10 hover:text-white transition-colors"
-          :class="route.name === 'pr-project' && route.params.projectId === proj.id ? 'text-white bg-white/15' : 'text-white/60'"
-        >
-          <span class="flex items-center gap-2 truncate">
-            <span class="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0"></span>
-            {{ proj.project }}
+          <span class="flex items-center gap-2">
+            <UIcon name="i-heroicons-arrows-right-left" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">PR Monitor</span>
           </span>
         </router-link>
       </div>
-      </div>
 
-      <!-- DB Monitor section -->
-      <div v-show="!isSearching || hasDbMatches">
-      <button
-        @click="collapsed ? (collapsed = false, dbOpen = true) : (dbOpen = !dbOpen)"
-        class="w-full flex items-center px-4 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
-        :class="collapsed ? 'justify-center' : 'justify-between'"
-        :title="collapsed ? 'DB Monitor' : ''"
-      >
-        <span class="flex items-center gap-2">
-          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
-          </svg>
-          <span v-if="!collapsed">DB Monitor</span>
-        </span>
-        <svg v-if="!collapsed" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': dbOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
-
-      <div v-show="(dbOpen || isSearching) && !collapsed" class="ml-2 border-l border-white/15">
+      <!-- DB Monitor link -->
+      <div v-show="!isSearching || matchesSearch('DB Monitor')">
         <router-link
-          v-if="matchesSearch('All Databases')"
-          to="/db-monitor"
-          class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-white/10 hover:text-white transition-colors"
-          :class="route.name === 'db-monitor' ? 'text-white bg-white/15' : 'text-white/60'"
+          :to="store.displayDbProjects.length ? { name: 'db-project', params: { projectId: store.displayDbProjects[0].id } } : '/db-monitor'"
+          @click="collapsed && (collapsed = false)"
+          class="w-full flex items-center px-4 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors"
+          :class="[
+            collapsed ? 'justify-center' : 'justify-between',
+            route.name === 'db-project' || route.name === 'db-monitor' ? 'text-white bg-white/15' : 'text-white/90'
+          ]"
+          :title="collapsed ? 'DB Monitor' : ''"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-          </svg>
-          All Databases
-          <span v-if="store.allDatabases.length" class="ml-auto text-xs bg-white/90 text-primary-700 dark:bg-white/20 dark:text-white/80 rounded-full px-2 py-0.5 font-bold">{{ store.allDatabases.length }}</span>
-        </router-link>
-
-        <!-- Per-project sub-items -->
-        <router-link
-          v-for="dbProj in filteredDbProjects"
-          :key="dbProj.id"
-          :to="{ name: 'db-project', params: { projectId: dbProj.id } }"
-          class="flex items-center justify-between pl-8 pr-4 py-2 text-sm hover:bg-white/10 hover:text-white transition-colors"
-          :class="route.name === 'db-project' && route.params.projectId === dbProj.id ? 'text-white bg-white/15' : 'text-white/60'"
-        >
-          <span class="flex items-center gap-2 truncate">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></span>
-            {{ dbProj.name }}
+          <span class="flex items-center gap-2">
+            <UIcon name="i-heroicons-circle-stack" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">DB Monitor</span>
           </span>
-          <span v-if="store.dbProjectDatabases[dbProj.id]?.databases" class="text-xs opacity-75">{{ store.dbProjectDatabases[dbProj.id].databases.length }}</span>
         </router-link>
       </div>
-      </div>
 
-      <!-- Sprint Populator link -->
-      <div v-show="!isSearching || matchesSearch('Sprint Populator')">
+      <!-- Sprint Manager link -->
+      <div v-show="!isSearching || matchesSearch('Sprint Manager')">
         <router-link
           to="/sprint-populator"
           @click="collapsed && (collapsed = false)"
@@ -224,19 +149,36 @@
             collapsed ? 'justify-center' : 'justify-between',
             route.name === 'sprint-populator' ? 'text-white bg-white/15' : 'text-white/90'
           ]"
-          :title="collapsed ? 'Sprint Populator' : ''"
+          :title="collapsed ? 'Sprint Manager' : ''"
         >
           <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-            </svg>
-            <span v-if="!collapsed">Sprint Populator</span>
+            <UIcon name="i-heroicons-rocket-launch" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">Sprint Manager</span>
           </span>
         </router-link>
       </div>
 
-      <!-- Velocity link -->
-      <div v-show="!isSearching || matchesSearch('Velocity')">
+      <!-- Template Manager link -->
+      <div v-show="!isSearching || matchesSearch('Template Manager')">
+        <router-link
+          to="/template-manager"
+          @click="collapsed && (collapsed = false)"
+          class="w-full flex items-center px-4 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors"
+          :class="[
+            collapsed ? 'justify-center' : 'justify-between',
+            route.name === 'template-manager' ? 'text-white bg-white/15' : 'text-white/90'
+          ]"
+          :title="collapsed ? 'Template Manager' : ''"
+        >
+          <span class="flex items-center gap-2">
+            <UIcon name="i-heroicons-document-duplicate" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">Template Manager</span>
+          </span>
+        </router-link>
+      </div>
+
+      <!-- Capacity & Velocity link -->
+      <div v-show="!isSearching || matchesSearch('Capacity & Velocity')">
         <router-link
           to="/velocity"
           @click="collapsed && (collapsed = false)"
@@ -245,148 +187,71 @@
             collapsed ? 'justify-center' : 'justify-between',
             route.name === 'velocity' ? 'text-white bg-white/15' : 'text-white/90'
           ]"
-          :title="collapsed ? 'Velocity' : ''"
+          :title="collapsed ? 'Capacity & Velocity' : ''"
         >
           <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-1.5L12 12m0 0l3-1.5M12 12V9" />
-            </svg>
-            <span v-if="!collapsed">Velocity</span>
+            <UIcon name="i-heroicons-presentation-chart-line" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">Capacity & Velocity</span>
           </span>
         </router-link>
       </div>
 
-      <!-- Permission Overview section -->
-      <div v-show="!isSearching || hasPermCheckMatches">
-      <button
-        @click="collapsed ? (collapsed = false, permCheckOpen = true) : (permCheckOpen = !permCheckOpen)"
-        class="w-full flex items-center px-4 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
-        :class="collapsed ? 'justify-center' : 'justify-between'"
-        :title="collapsed ? 'Permission Overview' : ''"
-      >
-        <span class="flex items-center gap-2">
-          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-          </svg>
-          <span v-if="!collapsed">Permission Overview</span>
-        </span>
-        <svg v-if="!collapsed" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': permCheckOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
-
-      <div v-show="(permCheckOpen || isSearching) && !collapsed" class="ml-2 border-l border-white/15">
+      <!-- Roadmap link -->
+      <div v-show="!isSearching || matchesSearch('Roadmap')">
         <router-link
-          v-for="proj in filteredPermCheckProjects"
-          :key="'perm-' + proj.id"
-          :to="{ name: 'permission-check', params: { projectId: proj.id } }"
-          class="flex items-center justify-between pl-8 pr-4 py-2 text-sm hover:bg-white/10 hover:text-white transition-colors"
-          :class="route.name === 'permission-check' && route.params.projectId === proj.id ? 'text-white bg-white/15' : 'text-white/60'"
-        >
-          <span class="flex items-center gap-2 truncate">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-            {{ proj.project }}
-          </span>
-        </router-link>
-        <div v-if="filteredPermCheckProjects.length === 0 && isSearching" class="px-4 py-3 text-xs text-white/50 text-center italic">No matches</div>
-        <div v-else-if="filteredPermCheckProjects.length === 0" class="px-4 py-3 text-xs text-white/50 text-center italic">No projects configured</div>
-      </div>
-      </div>
-
-      <!-- Check Permissions link -->
-      <div v-show="!isSearching || matchesSearch('Check Permissions')">
-        <router-link
-          to="/check-permissions"
+          to="/roadmap"
           @click="collapsed && (collapsed = false)"
           class="w-full flex items-center px-4 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors"
           :class="[
             collapsed ? 'justify-center' : 'justify-between',
-            route.name === 'check-permissions' ? 'text-white bg-white/15' : 'text-white/90'
+            route.name === 'roadmap' ? 'text-white bg-white/15' : 'text-white/90'
           ]"
-          :title="collapsed ? 'Check Permissions' : ''"
+          :title="collapsed ? 'Roadmap' : ''"
         >
           <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-            </svg>
-            <span v-if="!collapsed">Check Permissions</span>
+            <UIcon name="i-heroicons-map" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">Roadmap</span>
           </span>
+          <span v-if="!collapsed && roadmapStore.hasDirty" class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-400 animate-pulse">unsaved</span>
         </router-link>
       </div>
 
-      <!-- Pipelines section -->
-      <div v-show="!isSearching || hasPipelinesMatches">
-      <button
-        @click="collapsed ? (collapsed = false, pipelinesOpen = true) : (pipelinesOpen = !pipelinesOpen)"
-        class="w-full flex items-center px-4 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
-        :class="collapsed ? 'justify-center' : 'justify-between'"
-        :title="collapsed ? 'Pipelines' : ''"
-      >
-        <span class="flex items-center gap-2">
-          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-          </svg>
-          <span v-if="!collapsed">Pipelines</span>
-        </span>
-        <svg v-if="!collapsed" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': pipelinesOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
-
-      <div v-show="(pipelinesOpen || isSearching) && !collapsed" class="ml-2 border-l border-white/15">
+      <!-- Permissions link -->
+      <div v-show="!isSearching || matchesSearch('Permissions')">
         <router-link
-          v-for="proj in filteredPipelinesProjects"
-          :key="'pipe-' + proj.id"
-          :to="{ name: 'pipelines', params: { projectId: proj.id } }"
-          class="flex items-center justify-between pl-8 pr-4 py-2 text-sm hover:bg-white/10 hover:text-white transition-colors"
-          :class="route.name === 'pipelines' && route.params.projectId === proj.id ? 'text-white bg-white/15' : 'text-white/60'"
+          :to="permCheckProjects.length ? { name: 'permissions', params: { projectId: permCheckProjects[0].id } } : '/'"
+          @click="collapsed && (collapsed = false)"
+          class="w-full flex items-center px-4 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors"
+          :class="[
+            collapsed ? 'justify-center' : 'justify-between',
+            route.name === 'permissions' ? 'text-white bg-white/15' : 'text-white/90'
+          ]"
+          :title="collapsed ? 'Permissions' : ''"
         >
-          <span class="flex items-center gap-2 truncate">
-            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0"></span>
-            {{ proj.project }}
+          <span class="flex items-center gap-2">
+            <UIcon name="i-heroicons-shield-check" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">Permissions</span>
           </span>
         </router-link>
-        <div v-if="filteredPipelinesProjects.length === 0 && isSearching" class="px-4 py-3 text-xs text-white/50 text-center italic">No matches</div>
-        <div v-else-if="filteredPipelinesProjects.length === 0" class="px-4 py-3 text-xs text-white/50 text-center italic">No projects configured</div>
-      </div>
       </div>
 
-      <!-- Releases section -->
-      <div v-show="!isSearching || hasReleasesMatches">
-      <button
-        @click="collapsed ? (collapsed = false, releasesOpen = true) : (releasesOpen = !releasesOpen)"
-        class="w-full flex items-center px-4 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
-        :class="collapsed ? 'justify-center' : 'justify-between'"
-        :title="collapsed ? 'Releases' : ''"
-      >
-        <span class="flex items-center gap-2">
-          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
-          </svg>
-          <span v-if="!collapsed">Releases</span>
-        </span>
-        <svg v-if="!collapsed" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': releasesOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
-
-      <div v-show="(releasesOpen || isSearching) && !collapsed" class="ml-2 border-l border-white/15">
+      <!-- Pipelines & Releases link -->
+      <div v-show="!isSearching || matchesSearch('Pipelines') || matchesSearch('Releases')">
         <router-link
-          v-for="proj in filteredReleasesProjects"
-          :key="'rel-' + proj.id"
-          :to="{ name: 'releases', params: { projectId: proj.id } }"
-          class="flex items-center justify-between pl-8 pr-4 py-2 text-sm hover:bg-white/10 hover:text-white transition-colors"
-          :class="route.name === 'releases' && route.params.projectId === proj.id ? 'text-white bg-white/15' : 'text-white/60'"
+          :to="pipelinesProjects.length ? { name: 'pipelines', params: { projectId: pipelinesProjects[0].id } } : '/'"
+          @click="collapsed && (collapsed = false)"
+          class="w-full flex items-center px-4 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors"
+          :class="[
+            collapsed ? 'justify-center' : 'justify-between',
+            route.name === 'pipelines' ? 'text-white bg-white/15' : 'text-white/90'
+          ]"
+          :title="collapsed ? 'Pipelines & Releases' : ''"
         >
-          <span class="flex items-center gap-2 truncate">
-            <span class="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0"></span>
-            {{ proj.project }}
+          <span class="flex items-center gap-2">
+            <UIcon name="i-heroicons-play" class="w-4 h-4 shrink-0" />
+            <span v-if="!collapsed">Pipelines & Releases</span>
           </span>
         </router-link>
-        <div v-if="filteredReleasesProjects.length === 0 && isSearching" class="px-4 py-3 text-xs text-white/50 text-center italic">No matches</div>
-        <div v-else-if="filteredReleasesProjects.length === 0" class="px-4 py-3 text-xs text-white/50 text-center italic">No projects configured</div>
-      </div>
       </div>
 
       <!-- DEV Assessment link -->
@@ -402,9 +267,7 @@
           :title="collapsed ? 'DEV Assessment' : ''"
         >
           <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-            </svg>
+            <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 shrink-0" />
             <span v-if="!collapsed">DEV Assessment</span>
           </span>
         </router-link>
@@ -419,21 +282,20 @@
         :class="collapsed ? 'justify-center' : ''"
         :title="collapsed ? 'Manage Projects' : ''"
       >
-        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+        <UIcon name="i-heroicons-cog-6-tooth" class="w-4 h-4 shrink-0" />
         <span v-if="!collapsed">Manage Projects</span>
       </router-link>
 
-      <button
-        class="mt-3 flex w-full items-center rounded-md border border-white/15 bg-white/5 px-2 py-2 text-white/75 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+      <UButton
+        variant="outline" color="neutral" size="xs"
+        class="mt-3 w-full"
         :class="collapsed ? 'justify-center' : ''"
+        :ui="{ base: 'border-white/15 bg-white/5 text-white/75 hover:bg-white/10 hover:text-white' }"
         title="View release notes"
         @click="$emit('show-release-notes')"
       >
         <span class="text-xs font-semibold tracking-wide">Version ID: {{ appVersion }}</span>
-      </button>
+      </UButton>
     </div>
   </aside>
 </template>
@@ -442,19 +304,16 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMonitorStore } from '../stores/monitor.js'
+import { useRoadmapStore } from '../stores/roadmap.js'
 import appPackage from '../../package.json'
 
 defineEmits(['show-release-notes'])
 
 const store = useMonitorStore()
+const roadmapStore = useRoadmapStore()
 const route = useRoute()
 const collapsed = ref(false)
 const devopsOpen = ref(true)
-const dbOpen = ref(false)
-const prOpen = ref(false)
-const permCheckOpen = ref(false)
-const pipelinesOpen = ref(false)
-const releasesOpen = ref(false)
 const menuSearch = ref('')
 const appVersion = appPackage.version
 
@@ -467,11 +326,7 @@ function matchesSearch(text) {
 
 const prCheckTypes = ['pr_approval_check', 'stale_pr_check', 'unreviewed_pr_check']
 
-const prProjects = computed(() => {
-  return store.displayProjects.filter(p =>
-    p.checks.some(c => c.enabled && ['pr_approval_check', 'stale_pr_check', 'unreviewed_pr_check'].includes(c.check_type))
-  )
-})
+const prProjects = computed(() => store.displayProjects)
 
 // --- Filtered items for search ---
 const filteredSidebarItems = computed(() => {
@@ -493,71 +348,14 @@ function filteredChecks(item) {
   return nonPr.filter(c => c.label.toLowerCase().includes(q))
 }
 
-const filteredPrProjects = computed(() => {
-  if (!isSearching.value) return prProjects.value
-  const q = menuSearch.value.trim().toLowerCase()
-  return prProjects.value.filter(p => p.project.toLowerCase().includes(q))
-})
-
 const permCheckProjects = computed(() => store.displayProjects)
 
-const filteredPermCheckProjects = computed(() => {
-  if (!isSearching.value) return permCheckProjects.value
-  const q = menuSearch.value.trim().toLowerCase()
-  return permCheckProjects.value.filter(p => p.project.toLowerCase().includes(q))
-})
-
-const hasPermCheckMatches = computed(() => {
-  if (matchesSearch('Permission Overview')) return true
-  return filteredPermCheckProjects.value.length > 0
-})
-
 const pipelinesProjects = computed(() => store.displayProjects)
-
-const filteredPipelinesProjects = computed(() => {
-  if (!isSearching.value) return pipelinesProjects.value
-  const q = menuSearch.value.trim().toLowerCase()
-  return pipelinesProjects.value.filter(p => p.project.toLowerCase().includes(q))
-})
-
-const hasPipelinesMatches = computed(() => {
-  if (matchesSearch('Pipelines')) return true
-  return filteredPipelinesProjects.value.length > 0
-})
-
-const releasesProjects = computed(() => store.displayProjects)
-
-const filteredReleasesProjects = computed(() => {
-  if (!isSearching.value) return releasesProjects.value
-  const q = menuSearch.value.trim().toLowerCase()
-  return releasesProjects.value.filter(p => p.project.toLowerCase().includes(q))
-})
-
-const hasReleasesMatches = computed(() => {
-  if (matchesSearch('Releases')) return true
-  return filteredReleasesProjects.value.length > 0
-})
-
-const filteredDbProjects = computed(() => {
-  if (!isSearching.value) return store.displayDbProjects
-  const q = menuSearch.value.trim().toLowerCase()
-  return store.displayDbProjects.filter(p => p.name.toLowerCase().includes(q))
-})
 
 // Section visibility when searching
 const hasDevopsMatches = computed(() => {
   if (!isSearching.value) return true
   return filteredSidebarItems.value.length > 0 || matchesSearch('DevOps Monitor')
-})
-
-const hasPrMatches = computed(() => {
-  if (!isSearching.value) return true
-  return matchesSearch('All Projects') || matchesSearch('PR Monitor') || filteredPrProjects.value.length > 0
-})
-
-const hasDbMatches = computed(() => {
-  if (!isSearching.value) return true
-  return matchesSearch('All Databases') || matchesSearch('DB Monitor') || filteredDbProjects.value.length > 0
 })
 
 onMounted(async () => {
@@ -567,6 +365,9 @@ onMounted(async () => {
   if (store.dbCredentialsConfigured) {
     store.refreshDbSidebar()
   }
+  // Prefetch roadmap config & chunk so navigation feels instant
+  roadmapStore.loadConfig()
+  import('../views/RoadmapView.vue')
 })
 
 watch(() => store.dbCredentialsConfigured, (configured) => {
@@ -594,3 +395,21 @@ function checkColor(checkType) {
   return colors[checkType] || 'bg-gray-300'
 }
 </script>
+
+<style scoped>
+.sidebar-search :deep(input) {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.sidebar-search :deep(input::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
+}
+.sidebar-search :deep(input:focus) {
+  ring-color: rgba(255, 255, 255, 0.4);
+}
+.sidebar-search :deep(.iconify),
+.sidebar-search :deep(svg) {
+  color: rgba(255, 255, 255, 0.6);
+}
+</style>

@@ -24,16 +24,18 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html">Managing Projects</a>
 </nav>
@@ -71,6 +73,18 @@
     <li><span class="ui">Refresh</span> — Click to reload the pull request list from Azure DevOps.</li>
     <li><span class="ui">Pagination</span> — Use the page controls at the bottom if there are many PRs.</li>
   </ul>
+
+  <h2>Reviewers Tab</h2>
+  <p>Switch to the <span class="ui">Reviewers</span> tab to see a bottleneck analysis of who has the most pending reviews. This helps identify team members who may be blocking PR throughput.</p>
+  <ul>
+    <li>Each reviewer is listed with their total pending review count.</li>
+    <li>Reviewers with the most pending PRs appear at the top — these are potential bottlenecks.</li>
+    <li>Use this view to redistribute review load or follow up with overloaded reviewers.</li>
+  </ul>
+
+  <!-- TODO: SCREENSHOT NEEDED — pr-reviewers.png — Reviewers tab showing reviewer bottleneck list -->
+  <img src="screenshots/pr-reviewers.png" alt="Screenshot of the Reviewers tab showing reviewer bottleneck list grouped by reviewer" class="screenshot">
+  <p class="screenshot-caption">The Reviewers tab showing pending review counts per person.</p>
 
   <div class="callout tip">
     <strong>Tip</strong>

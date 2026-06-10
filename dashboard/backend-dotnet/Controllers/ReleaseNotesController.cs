@@ -11,10 +11,22 @@ public partial class ReleaseNotesController : ControllerBase
     [GeneratedRegex(@"^\d+(\.\d+)*$")]
     private static partial Regex VersionPattern();
 
+    private static List<ReleaseNoteEntry>? _cachedNotes;
+    private static DateTime _cacheExpiry = DateTime.MinValue;
+    private static readonly object _cacheLock = new();
+
     [HttpGet]
     public async Task<IActionResult> GetReleaseNotes(CancellationToken ct)
     {
+        lock (_cacheLock)
+        {
+            if (_cachedNotes is not null && DateTime.UtcNow < _cacheExpiry)
+                return Ok(_cachedNotes);
+        }
+
         var basePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "dashboard", "release-notes"));
+        if (!Directory.Exists(basePath))
+            basePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "release-notes"));
         if (!Directory.Exists(basePath))
             basePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "release-notes"));
         if (!Directory.Exists(basePath))
@@ -29,7 +41,10 @@ public partial class ReleaseNotesController : ControllerBase
             if (!regex.IsMatch(version))
                 continue;
 
-            var notesPath = Path.Combine(dir, "notes.md");
+            var notesPath = Path.GetFullPath(Path.Combine(dir, "notes.md"));
+            if (!notesPath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
+                continue;
+
             if (!System.IO.File.Exists(notesPath))
                 continue;
 
@@ -38,6 +53,13 @@ public partial class ReleaseNotesController : ControllerBase
         }
 
         entries.Sort((a, b) => CompareVersionsDescending(a.Version, b.Version));
+
+        lock (_cacheLock)
+        {
+            _cachedNotes = entries;
+            _cacheExpiry = DateTime.UtcNow.AddHours(1);
+        }
+
         return Ok(entries);
     }
 

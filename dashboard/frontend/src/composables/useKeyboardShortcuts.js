@@ -70,6 +70,7 @@ export function useKeyboardShortcuts({ showSettings, showShortcutsHelp }) {
         v: '/velocity',
         c: '/config',
         s: '/sprint-populator',
+        t: '/template-manager',
         a: '/dev-assessment',
       }
       const target = routes[e.key]

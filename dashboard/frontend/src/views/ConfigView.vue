@@ -3,19 +3,13 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Manage Projects</h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Configure which Azure DevOps projects and checks to monitor.</p>
+        <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">Manage Projects</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure which Azure DevOps projects and checks to monitor.</p>
       </div>
 
-      <button
-        @click="showForm = !showForm"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm"
-      >
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
+      <UButton icon="i-heroicons-plus" @click="showForm = !showForm">
         {{ showForm ? 'Cancel' : 'Add Project' }}
-      </button>
+      </UButton>
     </div>
 
     <!-- Add/Edit form -->
@@ -31,16 +25,15 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Organization</label>
               <div v-if="!store.patConfigured" class="text-xs text-amber-600 dark:text-amber-400 mb-1">Set a PAT in Settings first.</div>
               <div class="relative">
-                <input
+                <UInput
                   v-autofocus
-                  v-model="form.organization"
+                  name="organization" v-model="form.organization"
                   :list="store.organizations.length > 1 ? 'known-orgs' : undefined"
-                  type="text"
                   placeholder="e.g. MyOrganization"
                   :disabled="!store.patConfigured || store.organizations.length === 1"
                   @change="onOrgChange"
                   @blur="onOrgChange"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400"
+                  class="w-full"
                 />
                 <datalist v-if="store.organizations.length > 1" id="known-orgs">
                   <option v-for="o in store.organizations" :key="o.name" :value="o.name" />
@@ -50,13 +43,13 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
               <div v-if="store.orgProjectsError" class="text-xs text-red-600 dark:text-red-400 mb-1">{{ store.orgProjectsError }}</div>
-              <SelectMenu
+              <USelectMenu
                 v-model="form.project"
-                :options="projectOptions"
+                :items="projectOptions"
+                value-key="value"
                 :placeholder="projectPlaceholder"
                 :loading="store.loadingOrgProjects"
                 :disabled="!form.organization || store.loadingOrgProjects || store.orgProjects.length === 0"
-                @change="onProjectChange"
                 class="w-full"
               />
             </div>
@@ -66,18 +59,16 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area Path <span class="text-gray-500 font-normal">(optional)</span></label>
-              <SelectMenu
+              <USelectMenu
                 v-model="form.area_path"
-                :options="areaPathOptions"
+                :items="areaPathOptions"
+                value-key="value"
                 :loading="store.loadingAreaPaths"
                 :disabled="!form.project || store.loadingAreaPaths"
-                placeholder="Select area path…"
+                placeholder="All areas (no filter)"
                 class="w-full"
               />
-              <label v-if="form.area_path" class="inline-flex items-center gap-2 mt-2 cursor-pointer">
-                <input type="checkbox" v-model="form.include_child_areas" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-                <span class="text-sm text-gray-700 dark:text-gray-300">Include child areas</span>
-              </label>
+              <UCheckbox v-if="form.area_path" v-model="form.include_child_areas" label="Include child areas" class="mt-2" />
             </div>
           </div>
 
@@ -91,26 +82,22 @@
                 class="border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
                 <label class="flex items-start gap-3 p-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    :value="ct.type_key"
-                    v-model="selectedChecks"
-                    class="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  <UCheckbox
+                    :model-value="selectedChecks.includes(ct.type_key)"
+                    @update:model-value="v => toggleCheck(ct.type_key, v)"
+                    class="mt-0.5"
                   />
                   <div class="flex-1">
                     <div class="flex items-center justify-between">
                       <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ ct.label }}</span>
-                      <button
+                      <UButton
                         v-if="selectedChecks.includes(ct.type_key) && hasCheckOptions(ct.type_key)"
-                        type="button"
                         @click.prevent.stop="toggleCheckOptions(ct.type_key)"
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                        variant="ghost" color="neutral" size="xs"
                       >
-                        <svg class="w-3.5 h-3.5 transition-transform" :class="expandedChecks[ct.type_key] ? 'rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
+                        <UIcon name="i-heroicons-chevron-right" class="w-3.5 h-3.5 transition-transform" :class="expandedChecks[ct.type_key] ? 'rotate-90' : ''" />
                         Options
-                      </button>
+                      </UButton>
                     </div>
                     <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{{ ct.description }}</p>
                     <!-- Collapsible per-check options -->
@@ -118,10 +105,11 @@
                       <!-- Repository filter -->
                       <div v-if="['release_pr_check', 'pr_approval_check', 'stale_pr_check', 'unreviewed_pr_check'].includes(ct.type_key)">
                         <label class="text-xs text-gray-600 dark:text-gray-400">Repository name <span class="text-gray-500">(leave empty to check all repos)</span></label>
-                        <SelectMenu
+                        <USelectMenu
                           :modelValue="checkRepositories[ct.type_key] || ''"
                           @update:modelValue="checkRepositories[ct.type_key] = $event"
-                          :options="repoFilterOptions"
+                          :items="repoFilterOptions"
+                          value-key="value"
                           :loading="store.loadingRepos"
                           :disabled="!form.project || store.loadingRepos"
                           placeholder="All repositories"
@@ -132,95 +120,83 @@
                       <!-- Stale days -->
                       <div v-if="ct.type_key === 'stale_pr_check'">
                         <label class="text-xs text-gray-600 dark:text-gray-400">Inactive days threshold</label>
-                        <input
-                          :value="checkStaleDays[ct.type_key] || 14"
-                          @input="checkStaleDays[ct.type_key] = parseInt($event.target.value) || 14"
+                        <UInput
+                          name="stale-days"
+                          :model-value="checkStaleDays[ct.type_key] || 14"
+                          @update:model-value="checkStaleDays[ct.type_key] = parseInt($event) || 14"
                           type="number"
-                          min="1"
-                          class="w-20 mt-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                          size="xs"
                           placeholder="14"
+                          class="w-20 mt-1"
                         />
                       </div>
                       <!-- Ignore reviewers -->
                       <div v-if="ct.type_key === 'unreviewed_pr_check'">
                         <label class="text-xs text-gray-600 dark:text-gray-400">Ignore reviewers <span class="text-gray-500">(comma-separated, substring match)</span></label>
-                        <input
-                          :value="checkIgnoreReviewers[ct.type_key] || ''"
-                          @input="checkIgnoreReviewers[ct.type_key] = $event.target.value"
-                          type="text"
-                          class="w-full mt-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                        <UInput
+                          name="field-input"
+                          :model-value="checkIgnoreReviewers[ct.type_key] || ''"
+                          @update:model-value="checkIgnoreReviewers[ct.type_key] = $event"
+                          size="xs"
                           placeholder="e.g. Build Service, Project Collection"
+                          class="w-full mt-1"
                         />
                       </div>
                       <!-- Estimate mode -->
                       <div v-if="ct.type_key === 'missing_estimate_check'">
                         <label class="text-xs text-gray-600 dark:text-gray-400">Check for missing</label>
-                        <div class="flex flex-col gap-1.5 mt-1.5">
-                          <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                            <input type="radio" :name="'estimate_mode_' + ct.type_key" value="both" :checked="(checkEstimateMode[ct.type_key] || 'both') === 'both'" @change="checkEstimateMode[ct.type_key] = 'both'" class="text-primary-600 focus:ring-primary-500" />
-                            <span class="text-xs text-gray-700 dark:text-gray-300">Both Original Estimate &amp; Remaining Work</span>
-                          </label>
-                          <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                            <input type="radio" :name="'estimate_mode_' + ct.type_key" value="original_estimate" :checked="(checkEstimateMode[ct.type_key] || 'both') === 'original_estimate'" @change="checkEstimateMode[ct.type_key] = 'original_estimate'" class="text-primary-600 focus:ring-primary-500" />
-                            <span class="text-xs text-gray-700 dark:text-gray-300">Original Estimate only</span>
-                          </label>
-                          <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                            <input type="radio" :name="'estimate_mode_' + ct.type_key" value="remaining_work" :checked="(checkEstimateMode[ct.type_key] || 'both') === 'remaining_work'" @change="checkEstimateMode[ct.type_key] = 'remaining_work'" class="text-primary-600 focus:ring-primary-500" />
-                            <span class="text-xs text-gray-700 dark:text-gray-300">Remaining Work only</span>
-                          </label>
-                        </div>
+                        <URadioGroup
+                          :model-value="checkEstimateMode[ct.type_key] || 'both'"
+                          @update:model-value="checkEstimateMode[ct.type_key] = $event"
+                          :items="estimateModeOptions"
+                          size="sm"
+                          class="mt-1.5"
+                        />
                       </div>
                       <!-- Parent type mappings -->
                       <div v-if="ct.type_key === 'orphan_check'">
                         <div class="flex items-center gap-2">
                           <label class="text-xs text-gray-600 dark:text-gray-400">Parent type mappings</label>
-                          <button
+                          <UButton
                             v-if="editing && form.project && !loadingParentHierarchy"
-                            type="button"
                             @click.stop="loadParentHierarchy"
-                            class="text-xs text-primary-600 dark:text-primary-400 hover:underline"
-                          >Load from process</button>
-                          <svg v-if="loadingParentHierarchy" class="w-3 h-3 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                          </svg>
+                            variant="link" size="xs"
+                          >Load from process</UButton>
+                          <UIcon v-if="loadingParentHierarchy" name="i-heroicons-arrow-path" class="w-3 h-3 animate-spin text-gray-400 dark:text-gray-300" />
                         </div>
-                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-0.5 mb-2">Maps child type → allowed parent types. Leave empty to use process defaults at runtime.</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-2">Maps child type → allowed parent types. Leave empty to use process defaults at runtime.</p>
                         <div class="space-y-2">
                           <div v-for="(parents, childType) in checkParentMappings" :key="childType" class="flex items-center gap-2">
                             <span class="text-xs font-medium text-gray-700 dark:text-gray-300 w-28 shrink-0">{{ childType }}</span>
-                            <input
-                              :value="parents.join(', ')"
-                              @change="updateParentMapping(childType, $event.target.value)"
-                              type="text"
-                              class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                            <UInput
+                              name="parents"
+                              :model-value="parents.join(', ')"
+                              @change="updateParentMapping(childType, $event)"
+                              size="xs"
                               placeholder="e.g. Feature, Epic"
+                              class="flex-1"
                             />
-                            <button type="button" @click.stop="removeParentMapping(childType)" class="text-gray-400 hover:text-red-500 transition-colors">
-                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
+                            <UButton type="button" icon="i-heroicons-x-mark" size="xs" variant="ghost" color="neutral" @click.stop="removeParentMapping(childType)" class="text-gray-400 dark:text-gray-300 hover:text-red-500" />
                           </div>
                         </div>
                         <div class="flex items-center gap-2 mt-2">
-                          <input
-                            v-model="newMappingChildType"
-                            type="text"
-                            class="w-28 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                          <UInput
+                            name="new-mapping-child-type" v-model="newMappingChildType"
+                            size="xs"
                             placeholder="Child type"
+                            class="w-28"
                             @keydown.enter.prevent="addParentMapping"
                           />
-                          <input
-                            v-model="newMappingParentTypes"
-                            type="text"
-                            class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                          <UInput
+                            name="new-mapping-parent-types" v-model="newMappingParentTypes"
+                            size="xs"
                             placeholder="Parent types (comma-separated)"
+                            class="flex-1"
                             @keydown.enter.prevent="addParentMapping"
                           />
-                          <button type="button" @click.stop="addParentMapping" :disabled="!newMappingChildType.trim()" class="px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 border border-primary-300 dark:border-primary-600 rounded hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors disabled:opacity-40">
+                          <UButton type="button" size="xs" variant="outline" @click.stop="addParentMapping" :disabled="!newMappingChildType.trim()">
                             Add
-                          </button>
+                          </UButton>
                         </div>
                       </div>
                     </div>
@@ -234,25 +210,23 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ignore Title Contains <span class="text-gray-500 font-normal">(comma-separated)</span></label>
-              <input v-model="ignoreTitles" type="text" placeholder="In doc verwerken, FO change"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" />
+              <UInput name="ignore-titles" v-model="ignoreTitles" placeholder="In doc verwerken, FO change" class="w-full" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ignore Parent Title Contains <span class="text-gray-500 font-normal">(comma-separated)</span></label>
-              <input v-model="ignoreParentTitles" type="text" placeholder="Bugs to be discussed"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" />
+              <UInput name="ignore-parent-titles" v-model="ignoreParentTitles" placeholder="Bugs to be discussed" class="w-full" />
             </div>
           </div>
         </div>
 
         <!-- Form footer -->
         <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-          <button @click="resetForm" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+          <UButton variant="outline" color="neutral" @click="resetForm">
             Cancel
-          </button>
-          <button @click="saveProject" :disabled="!form.organization || !form.project" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">
+          </UButton>
+          <UButton icon="i-heroicons-document-arrow-down" @click="saveProject" :disabled="!form.organization || !form.project">
             {{ editing ? 'Update' : 'Add Project' }}
-          </button>
+          </UButton>
         </div>
       </div>
 
@@ -268,38 +242,31 @@
         <div>
           <div class="flex items-center gap-2">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ p.project }}</h3>
-            <span class="text-xs text-gray-600">{{ p.organization }}</span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">{{ p.organization }}</span>
           </div>
           <div class="flex flex-wrap gap-1.5 mt-2">
-            <span
+            <UBadge
               v-for="c in p.checks.filter(ch => ch.enabled)"
               :key="c.check_type"
-              class="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
+              variant="subtle"
+              size="sm"
             >
               {{ checkLabel(c.check_type) }}
-            </span>
-            <span v-if="p.area_path" class="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+            </UBadge>
+            <span v-if="p.area_path" class="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
               {{ p.area_path }}
             </span>
           </div>
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
-          <button @click="editProject(p)" class="p-2 text-gray-500 hover:text-primary-700 hover:bg-gray-100 rounded-lg transition-colors" title="Edit">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-            </svg>
-          </button>
+          <UButton icon="i-heroicons-pencil-square" size="sm" variant="ghost" color="neutral" title="Edit" @click="editProject(p)" />
           <template v-if="confirmingDeleteId === p.id">
             <span class="text-xs text-red-600 dark:text-red-400">Remove?</span>
-            <button @click="removeProject(p.id)" class="px-2 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">Yes</button>
-            <button @click="confirmingDeleteId = null" class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors">Cancel</button>
+            <UButton size="xs" color="error" @click="removeProject(p.id)">Yes</UButton>
+            <UButton size="xs" variant="outline" color="neutral" @click="confirmingDeleteId = null">Cancel</UButton>
           </template>
-          <button v-else @click="removeProject(p.id)" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-            </svg>
-          </button>
+          <UButton v-else icon="i-heroicons-trash" size="sm" variant="ghost" color="neutral" title="Delete" @click="removeProject(p.id)" class="hover:text-red-600" />
         </div>
       </div>
     </div>
@@ -308,19 +275,13 @@
     <div class="mt-10">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Database Projects</h2>
+          <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">Database Projects</h2>
           <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Track database project names for monitoring.</p>
         </div>
 
-        <button
-          @click="showDbForm = !showDbForm"
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
+        <UButton icon="i-heroicons-plus" color="info" @click="showDbForm = !showDbForm">
           {{ showDbForm ? 'Cancel' : 'Add DB Project' }}
-        </button>
+        </UButton>
       </div>
 
       <!-- Add/Edit DB project form -->
@@ -332,28 +293,19 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name</label>
-              <input
-                v-model="dbForm.name"
-                type="text"
-                placeholder="e.g. Customer Portal"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              />
+              <UInput name="name" v-model="dbForm.name" placeholder="e.g. Customer Portal" class="w-full" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Database Name Filter</label>
-              <input
-                v-model="dbForm.name_filter"
-                type="text"
-                placeholder="e.g. CustomerPortal"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              />
+              <UInput name="namefilter" v-model="dbForm.name_filter" placeholder="e.g. CustomerPortal" class="w-full" />
               <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">Filters databases whose name contains this text (case-insensitive). Leave empty to show all.</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Database Server</label>
-              <SelectMenu
+              <USelectMenu
                 v-model="dbForm.db_server_index"
-                :options="dbServerOptions"
+                :items="dbServerOptions"
+                value-key="value"
                 placeholder="Select server…"
                 class="w-full"
               />
@@ -361,22 +313,22 @@
           </div>
           <div class="mt-4">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Allowlist <span class="text-gray-500 font-normal">(always green)</span></label>
-            <textarea
+            <UTextarea
               v-model="dbForm.db_allowlist"
-              rows="2"
+              :rows="2"
               placeholder="One database name per line"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono"
+              class="w-full font-mono"
             />
             <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">Databases listed here will always be marked as OK, regardless of ticket status.</p>
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-          <button @click="resetDbForm" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+          <UButton variant="outline" color="neutral" @click="resetDbForm">
             Cancel
-          </button>
-          <button @click="saveDbProject" :disabled="!dbForm.name.trim()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+          </UButton>
+          <UButton color="info" icon="i-heroicons-document-arrow-down" @click="saveDbProject" :disabled="!dbForm.name.trim()">
             {{ editingDb ? 'Update' : 'Add' }}
-          </button>
+          </UButton>
         </div>
       </div>
 
@@ -391,9 +343,7 @@
         >
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375" />
-              </svg>
+              <UIcon name="i-heroicons-circle-stack" class="w-4 h-4 text-indigo-500" />
             </div>
             <div>
               <span class="font-semibold text-gray-800 dark:text-gray-100">{{ db.name }}</span>
@@ -407,21 +357,13 @@
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <button @click="editDbProject(db)" class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors" title="Edit">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-              </svg>
-            </button>
+            <UButton icon="i-heroicons-pencil-square" size="sm" variant="ghost" color="neutral" title="Edit" @click="editDbProject(db)" />
             <template v-if="confirmingDbDeleteId === db.id">
               <span class="text-xs text-red-600 dark:text-red-400">Remove?</span>
-              <button @click="removeDbProject(db.id)" class="px-2 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">Yes</button>
-              <button @click="confirmingDbDeleteId = null" class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors">Cancel</button>
+              <UButton size="xs" color="error" @click="removeDbProject(db.id)">Yes</UButton>
+              <UButton size="xs" variant="outline" color="neutral" @click="confirmingDbDeleteId = null">Cancel</UButton>
             </template>
-            <button v-else @click="removeDbProject(db.id)" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-              </svg>
-            </button>
+            <UButton v-else icon="i-heroicons-trash" size="sm" variant="ghost" color="neutral" title="Delete" @click="removeDbProject(db.id)" class="hover:text-red-600" />
           </div>
         </div>
       </div>
@@ -433,7 +375,6 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import EmptyState from '../components/EmptyState.vue'
-import SelectMenu from '../components/SelectMenu.vue'
 
 const store = useMonitorStore()
 
@@ -454,11 +395,21 @@ const form = reactive({
   include_child_areas: true,
 })
 const selectedChecks = ref([])
+function toggleCheck(key, checked) {
+  const idx = selectedChecks.value.indexOf(key)
+  if (checked && idx === -1) selectedChecks.value.push(key)
+  else if (!checked && idx !== -1) selectedChecks.value.splice(idx, 1)
+}
 const checkApiVersions = reactive({})  // { check_type: "7.1" }
 const checkRepositories = reactive({})  // { check_type: "repo-name" }
 const checkStaleDays = reactive({})  // { check_type: 14 }
 const checkIgnoreReviewers = reactive({})  // { check_type: "name1, name2" }
 const checkEstimateMode = reactive({})  // { check_type: "both" | "original_estimate" | "remaining_work" }
+const estimateModeOptions = [
+  { label: 'Both Original Estimate & Remaining Work', value: 'both' },
+  { label: 'Original Estimate only', value: 'original_estimate' },
+  { label: 'Remaining Work only', value: 'remaining_work' },
+]
 const expandedChecks = reactive({})  // { check_type: true/false }
 const ignoreTitles = ref('')
 const ignoreParentTitles = ref('')
@@ -472,14 +423,12 @@ const projectPlaceholder = computed(() =>
     : form.organization ? 'Select project…'
     : 'Enter organization first'
 )
-const areaPathOptions = computed(() => [
-  { value: '', label: 'All areas (no filter)' },
-  ...store.areaPaths.map(a => ({ value: a.path, label: a.path }))
-])
-const repoFilterOptions = computed(() => [
-  { value: '', label: 'All repositories' },
-  ...store.repos.map(r => ({ value: r.name, label: r.name }))
-])
+const areaPathOptions = computed(() =>
+  store.areaPaths.map(a => ({ value: a.path, label: a.path }))
+)
+const repoFilterOptions = computed(() =>
+  store.repos.map(r => ({ value: r.name, label: r.name }))
+)
 const dbServerOptions = computed(() =>
   [0, 1, 2].map(i => ({
     value: i,
@@ -613,6 +562,8 @@ function onProjectChange() {
     store.fetchRepos(form.organization.trim(), form.project)
   }
 }
+
+watch(() => form.project, () => onProjectChange())
 
 function checkLabel(checkType) {
   const ct = store.checkTypes.find(c => c.type_key === checkType)

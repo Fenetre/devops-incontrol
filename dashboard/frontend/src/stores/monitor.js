@@ -36,7 +36,6 @@ export const useMonitorStore = defineStore('monitor', {
     dbServers: [],  // [{index, configured, server}]
     emailFrom: '',
     emailFromConfigured: false,
-    toasts: [],  // { id, message, type: 'error'|'success'|'warning' }
     projects: [],
     auditDenylist: [],    // list of "org/project_id" composite keys
     auditProjects: [],     // [{ organization, project, project_id }] — all discoverable projects
@@ -192,12 +191,10 @@ export const useMonitorStore = defineStore('monitor', {
   },
 
   actions: {
-    // Toast helpers
     _toast(message, type = 'error') {
-      const id = Date.now() + Math.random()
-      this.toasts.push({ id, message, type })
-      const delay = type === 'error' ? 8000 : 3000
-      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id) }, delay)
+      if (this._toastFn) {
+        this._toastFn(message, type)
+      }
     },
 
     async fetchApiKeyStatus() {
@@ -310,6 +307,10 @@ export const useMonitorStore = defineStore('monitor', {
 
     async assignParent(projectId, workItemId, parentId) {
       return await api.post(`/api/checks/assign-parent/${encodeURIComponent(projectId)}`, { work_item_id: workItemId, parent_id: parentId })
+    },
+
+    async fetchWorkItemPreview(projectId, workItemId) {
+      return await api.get(`/api/checks/work-item-preview/${encodeURIComponent(projectId)}?work_item_id=${workItemId}`)
     },
 
     async fetchKnownOrganizations() {
@@ -550,6 +551,10 @@ export const useMonitorStore = defineStore('monitor', {
 
     async fetchDbProjectDatabases(projectId) {
       return await api.get(`/api/db-projects/${encodeURIComponent(projectId)}/databases`)
+    },
+
+    async toggleDbAllowlist(projectId, databaseName) {
+      return await api.post(`/api/db-projects/${encodeURIComponent(projectId)}/allowlist/toggle`, { database_name: databaseName })
     },
 
     async checkDbProjectRules(projectId) {
@@ -927,13 +932,15 @@ export const useMonitorStore = defineStore('monitor', {
       }
     },
 
+    async fetchVelocityProjectMetrics(projectId, team, sprints = 10) {
+      const data = await api.get(`/api/velocity/${encodeURIComponent(projectId)}/metrics?team=${encodeURIComponent(team)}&sprints=${sprints}`)
+      return data
+    },
+
     async fetchReleaseNotes() {
-      try {
-        return await api.get('/api/release-notes')
-      } catch (e) {
-        console.error('Failed to fetch release notes', e)
-        return []
-      }
+      // Skip SWR cache — this is rarely called and caching empty results causes intermittent failures
+      api.invalidate('/api/release-notes')
+      return await api.get('/api/release-notes')
     },
   },
 })

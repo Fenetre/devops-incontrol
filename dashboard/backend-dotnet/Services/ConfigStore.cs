@@ -21,6 +21,7 @@ public class ConfigStore
     private readonly object _lock = new();
     private DashboardConfig? _cached;
     private DateTime _cachedMtime;
+    private FileSystemWatcher? _watcher;
 
     public ConfigStore(string? configPath = null)
     {
@@ -31,6 +32,25 @@ public class ConfigStore
         // Resolve to absolute path relative to the project
         if (!Path.IsPathRooted(_configPath))
             _configPath = Path.GetFullPath(_configPath);
+
+        InitWatcher();
+    }
+
+    private void InitWatcher()
+    {
+        var dir = Path.GetDirectoryName(_configPath);
+        var file = Path.GetFileName(_configPath);
+        if (dir is null || !Directory.Exists(dir)) return;
+
+        _watcher = new FileSystemWatcher(dir, file)
+        {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+            EnableRaisingEvents = true,
+        };
+        _watcher.Changed += (_, _) =>
+        {
+            lock (_lock) { _cached = null; }
+        };
     }
 
     // --- Default WIQL templates per check type ---
@@ -245,5 +265,84 @@ public class ConfigStore
         };
     }
 
+    // --- Roadmap Config CRUD ---
+    public RoadmapConfig GetRoadmapConfig() => LoadConfig().Roadmap;
+
+    public RoadmapConfig SaveRoadmapConfig(RoadmapConfig roadmap)
+    {
+        var cfg = LoadConfig();
+        cfg.Roadmap = roadmap;
+        SaveConfig(cfg);
+        return cfg.Roadmap;
+    }
+
+    public RoadmapLaneConfig AddLane(RoadmapLaneConfig lane)
+    {
+        var cfg = LoadConfig();
+        lane.Id = Guid.NewGuid().ToString("N")[..12];
+        cfg.Roadmap.Lanes.Add(lane);
+        SaveConfig(cfg);
+        return lane;
+    }
+
+    public RoadmapLaneConfig? UpdateLane(string laneId, RoadmapLaneConfig updated)
+    {
+        var cfg = LoadConfig();
+        var idx = cfg.Roadmap.Lanes.FindIndex(l => l.Id == laneId);
+        if (idx < 0) return null;
+        updated.Id = laneId;
+        cfg.Roadmap.Lanes[idx] = updated;
+        SaveConfig(cfg);
+        return updated;
+    }
+
+    public bool DeleteLane(string laneId)
+    {
+        var cfg = LoadConfig();
+        var before = cfg.Roadmap.Lanes.Count;
+        cfg.Roadmap.Lanes.RemoveAll(l => l.Id == laneId);
+        if (cfg.Roadmap.Lanes.Count < before)
+        {
+            SaveConfig(cfg);
+            return true;
+        }
+        return false;
+    }
+
+    public List<RoadmapLaneConfig> ReorderLanes(List<string> laneIds)
+    {
+        var cfg = LoadConfig();
+        var lookup = cfg.Roadmap.Lanes.ToDictionary(l => l.Id);
+        var reordered = new List<RoadmapLaneConfig>();
+        foreach (var id in laneIds)
+        {
+            if (lookup.TryGetValue(id, out var lane))
+                reordered.Add(lane);
+        }
+        cfg.Roadmap.Lanes = reordered;
+        SaveConfig(cfg);
+        return cfg.Roadmap.Lanes;
+    }
+
+    public RoadmapProjectConfig AddRoadmapProject(RoadmapProjectConfig project)
+    {
+        var cfg = LoadConfig();
+        cfg.Roadmap.Projects.Add(project);
+        SaveConfig(cfg);
+        return project;
+    }
+
+    public bool RemoveRoadmapProject(string organization, string projectId)
+    {
+        var cfg = LoadConfig();
+        var before = cfg.Roadmap.Projects.Count;
+        cfg.Roadmap.Projects.RemoveAll(p => p.Organization == organization && p.ProjectId == projectId);
+        if (cfg.Roadmap.Projects.Count < before)
+        {
+            SaveConfig(cfg);
+            return true;
+        }
+        return false;
+    }
 
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pipelines — DevOps InControl</title>
+  <title>Pipelines &amp; Releases — DevOps InControl</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,38 +24,43 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html" class="active">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html" class="active">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html">Managing Projects</a>
 </nav>
 
 <main class="content">
-  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Pipelines</div>
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Pipelines &amp; Releases</div>
 
-  <h1>Pipelines</h1>
-  <p>The Pipelines screen shows the build history for a specific Azure DevOps project. Use it to quickly check whether recent builds have succeeded, failed, or are still running.</p>
+  <h1>Pipelines &amp; Releases</h1>
+  <p>This screen combines build pipeline history and release deployment status for a specific Azure DevOps project. Use the tabs at the top to switch between Pipelines and Releases.</p>
+
+  <h2>Pipelines</h2>
+  <p>The Pipelines tab shows your build history so you can quickly check whether recent builds have succeeded, failed, or are still running.</p>
 
   <img src="screenshots/pipelines.png" alt="Screenshot of the Pipelines screen showing a table of build runs with green and red status indicators" class="screenshot">
   <p class="screenshot-caption">Build pipeline history with colour-coded results.</p>
 
-  <h2>How to Use It</h2>
+  <h3>How to Use It</h3>
   <ol>
-    <li>Navigate to a project via the sidebar and click <span class="ui">Pipelines</span>.</li>
+    <li>Navigate to a project via the sidebar and click <span class="ui">Pipelines &amp; Releases</span>.</li>
     <li>The screen loads all recent build runs.</li>
     <li>Use the pipeline name tabs at the top to filter by a specific pipeline, or click <span class="ui">All</span> to see everything.</li>
     <li>Use the <span class="ui">Search</span> bar and date range filters to narrow down results.</li>
   </ol>
 
-  <h2>What the Status Colours Mean</h2>
+  <h3>Build Status Colours</h3>
   <table class="legend">
     <tr><th>Colour</th><th>Meaning</th></tr>
     <tr><td><span class="swatch swatch-green"></span> Succeeded</td><td>The build completed successfully.</td></tr>
@@ -65,7 +70,7 @@
     <tr><td><span class="swatch swatch-gray"></span> Cancelled</td><td>The build was cancelled before completion.</td></tr>
   </table>
 
-  <h2>Table Columns</h2>
+  <h3>Table Columns</h3>
   <table class="config">
     <tr><th>Column</th><th>Description</th></tr>
     <tr><td>Pipeline</td><td>The name of the build pipeline.</td></tr>
@@ -75,7 +80,38 @@
     <tr><td>Date / Time</td><td>When the build ran.</td></tr>
   </table>
 
-  <p>Click any column header to sort the table.</p>
+  <h2>Releases</h2>
+  <p>The Releases tab shows deployment history. It helps you track which releases have been deployed, to which environments, and whether they succeeded.</p>
+
+  <img src="screenshots/releases.png" alt="Screenshot of the Releases screen showing release names with environment status badges" class="screenshot">
+  <p class="screenshot-caption">Release deployment history with environment status badges.</p>
+
+  <h3>How to Use It</h3>
+  <ol>
+    <li>Switch to the <span class="ui">Releases</span> tab.</li>
+    <li>Use the release definition tabs at the top to filter by a specific release pipeline, or click <span class="ui">All</span> to see everything.</li>
+    <li>Use the <span class="ui">Search</span> bar and date range filters to narrow down results.</li>
+  </ol>
+
+  <h3>Release Table Columns</h3>
+  <table class="config">
+    <tr><th>Column</th><th>Description</th></tr>
+    <tr><td>Release name</td><td>The name of the release (e.g. "Release-42").</td></tr>
+    <tr><td>Definition</td><td>Which release pipeline created this release.</td></tr>
+    <tr><td>Status</td><td>The overall status of the release.</td></tr>
+    <tr><td>Environments</td><td>Small badges showing the deployment status for each environment (e.g. Dev, Test, Production). Each badge is colour-coded.</td></tr>
+    <tr><td>Created by</td><td>Who triggered the release.</td></tr>
+    <tr><td>Date / Time</td><td>When the release was created.</td></tr>
+  </table>
+
+  <h3>Environment Status Colours</h3>
+  <table class="legend">
+    <tr><th>Colour</th><th>Meaning</th></tr>
+    <tr><td><span class="swatch swatch-green"></span> Succeeded</td><td>Deployment to this environment succeeded.</td></tr>
+    <tr><td><span class="swatch swatch-red"></span> Failed / Rejected</td><td>Deployment failed or was rejected.</td></tr>
+    <tr><td><span class="swatch swatch-amber"></span> Pending / In progress</td><td>Deployment is waiting for approval or currently running.</td></tr>
+    <tr><td><span class="swatch swatch-gray"></span> Not deployed</td><td>This environment has not been deployed yet.</td></tr>
+  </table>
 
   <div class="callout tip">
     <strong>Tip</strong>

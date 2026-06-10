@@ -24,16 +24,18 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html">Managing Projects</a>
 </nav>
@@ -47,10 +49,17 @@
   <img src="screenshots/settings.png" alt="Screenshot of the Settings modal showing PAT, database, and email sections" class="screenshot">
   <p class="screenshot-caption">The Settings modal.</p>
 
-  <h2>Sections</h2>
+  <h2>Tabs</h2>
+  <p>Settings are organised into three tabs: <span class="ui">General</span>, <span class="ui">Database</span>, and <span class="ui">Email</span>.</p>
+
+  <h2>General Tab</h2>
+
+  <h3>Demo Mode</h3>
+  <p>When enabled, all names, project titles, and other identifying information are anonymised. This is useful when presenting the dashboard to an audience without revealing real data. Toggle it on or off with the switch.</p>
 
   <h3>Password (API Key)</h3>
   <p>This is the password you use to log in to the dashboard. You can change it here at any time. After changing it, you will need to use the new password the next time you log in.</p>
+  <p>Passwords are encrypted at rest using Windows DPAPI with an application-specific salt, bound to your user account.</p>
 
   <h3>Azure DevOps Connection (PAT)</h3>
   <p>Your Personal Access Token allows DevOps InControl to read data from Azure DevOps. A green <span class="ui">PAT OK</span> indicator in the header bar means the connection is active.</p>
@@ -65,6 +74,8 @@
     If your PAT expires, checks will stop working and you will see a red <span class="ui">PAT Missing</span> indicator. Replace the PAT to resume.
   </div>
 
+  <h2>Database Tab</h2>
+
   <h3>Database Servers</h3>
   <p>DevOps InControl can connect to up to three database servers for the <a href="db-monitor.html">DB Monitor</a> feature. For each server you can configure:</p>
   <table class="config">
@@ -77,15 +88,14 @@
   </table>
   <p>After entering the details, click <span class="ui">Test Connection</span> to verify that DevOps InControl can reach the server.</p>
 
+  <h2>Email Tab</h2>
+
   <h3>Email Sender</h3>
   <p>Some features (like sending reminders for missing estimates) can send emails. Enter the "From" email address here. The mail server (SMTP) is configured by your administrator.</p>
 
-  <h3>Demo Mode</h3>
-  <p>When enabled, all names, project titles, and other identifying information are anonymised. This is useful when presenting the dashboard to an audience without revealing real data.</p>
-
   <div class="callout tip">
     <strong>Tip</strong>
-    All credentials are stored securely on the server using Windows encryption. They are never sent back to your browser in plain text.
+    All credentials (password, PAT, database passwords) are stored securely on the server using Windows DPAPI encryption with an application-specific salt. They are never sent back to your browser in plain text.
   </div>
 </main>
 

@@ -14,6 +14,21 @@ public class SettingsController(ConfigStore configStore, ILogger<SettingsControl
     private static readonly ILogger AuditLog = LoggerFactory.Create(b => b.AddConsole())
         .CreateLogger("audit");
 
+    private static readonly string AuditLogPath = Path.Combine(
+        AppContext.BaseDirectory, "data", "audit.log");
+
+    private static void Audit(string eventName, string details)
+    {
+        AuditLog.LogWarning("{Event} {Details}", eventName, details);
+        try
+        {
+            var dir = Path.GetDirectoryName(AuditLogPath)!;
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            System.IO.File.AppendAllText(AuditLogPath, $"[{DateTime.UtcNow:O}] {eventName} {details}\n");
+        }
+        catch { /* best-effort file logging */ }
+    }
+
     private static bool AllowUnprotectedApi()
         => string.Equals(
             Environment.GetEnvironmentVariable("ALLOW_UNPROTECTED_API"),
@@ -70,7 +85,7 @@ public class SettingsController(ConfigStore configStore, ILogger<SettingsControl
         else
             CredentialManagerService.DeleteSecret("AZDO_PAT");
 
-        AuditLog.LogWarning("PAT_CHANGED remote_ip={Ip} configured={Configured}", ClientIp(), !string.IsNullOrEmpty(token));
+        Audit("PAT_CHANGED", $"remote_ip={ClientIp()} configured={!string.IsNullOrEmpty(token)}");
         AzureDevOpsClient.ResetHttpPool();
         HttpClientPool.Reset();
         return new(string.IsNullOrEmpty(token) ? "PAT cleared" : "PAT saved");
@@ -141,8 +156,7 @@ public class SettingsController(ConfigStore configStore, ILogger<SettingsControl
 
         config.DbServers[idx].Password = "";
         configStore.SaveConfig(config);
-        AuditLog.LogWarning("DB_CREDENTIALS_CHANGED remote_ip={Ip} index={Index} configured={Configured}",
-            ClientIp(), idx, !string.IsNullOrEmpty(body.Server.Trim()));
+        Audit("DB_CREDENTIALS_CHANGED", $"remote_ip={ClientIp()} index={idx} configured={!string.IsNullOrEmpty(body.Server.Trim())}");
         return new(string.IsNullOrEmpty(body.Server.Trim()) ? $"DB credentials #{idx + 1} cleared" : $"DB credentials #{idx + 1} saved");
     }
 
@@ -227,8 +241,7 @@ public class SettingsController(ConfigStore configStore, ILogger<SettingsControl
             ApiAuthSessionService.ClearSessionCookie(Response);
         }
 
-        AuditLog.LogWarning("API_KEY_CHANGED remote_ip={Ip} configured={Configured}",
-            ClientIp(), !string.IsNullOrEmpty(key));
+        Audit("API_KEY_CHANGED", $"remote_ip={ClientIp()} configured={!string.IsNullOrEmpty(key)}");
         return new(string.IsNullOrEmpty(key) ? "API key cleared" : "API key saved");
     }
 
@@ -268,7 +281,7 @@ public class SettingsController(ConfigStore configStore, ILogger<SettingsControl
         var config = configStore.LoadConfig();
         config.EmailFrom = body.EmailFrom.Trim();
         configStore.SaveConfig(config);
-        AuditLog.LogWarning("EMAIL_FROM_CHANGED remote_ip={Ip} value={Value}", ClientIp(), config.EmailFrom);
+        Audit("EMAIL_FROM_CHANGED", $"remote_ip={ClientIp()} value={config.EmailFrom}");
         return new(string.IsNullOrEmpty(config.EmailFrom) ? "Email from cleared" : "Email from saved");
     }
 }

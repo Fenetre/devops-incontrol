@@ -1,8 +1,6 @@
 <template>
-  <span v-if="timestamp" class="inline-flex items-center gap-1 text-xs" :class="isStale ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'">
-    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
+  <span v-if="timestamp" class="inline-flex items-center gap-1 text-xs" :class="isStale ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'">
+    <UIcon name="i-heroicons-clock" class="w-3 h-3" />
     {{ label }}
   </span>
 </template>

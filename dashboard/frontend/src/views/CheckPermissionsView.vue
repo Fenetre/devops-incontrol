@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Header -->
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">Check Permissions</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -11,56 +11,40 @@
     </div>
 
     <!-- PAT warning -->
-    <div v-if="!store.patConfigured" class="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700">
-      <p class="text-sm text-amber-800 dark:text-amber-200">
+    <UAlert v-if="!store.patConfigured" color="warning" icon="i-heroicons-exclamation-triangle" class="mb-6">
+      <template #description>
         A Personal Access Token (PAT) with <strong>Identity (Read)</strong>, <strong>Security (Manage)</strong>, and <strong>Graph (Read)</strong> scopes is required.
         Configure it in <router-link to="/config" class="underline font-medium">Settings</router-link>.
-      </p>
-    </div>
+      </template>
+    </UAlert>
 
     <!-- Tab bar -->
-    <div class="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-      <button @click="activeTab = 'person'" class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px"
-        :class="activeTab === 'person' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'">
-        Person Groups
-      </button>
-      <button @click="activeTab = 'audit'" class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px"
-        :class="activeTab === 'audit' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'">
-        Permission Audit
-      </button>
-    </div>
+    <UTabs :items="tabItems" v-model="activeTab" :content="false" variant="link" class="mb-6" />
 
     <!-- ======================================================= -->
     <!-- Tab 1: Person Groups                                      -->
     <!-- ======================================================= -->
     <div v-if="activeTab === 'person'">
       <!-- Loading people list -->
-      <div v-if="store.loadingPeople" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
-        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-        </svg>
+      <div v-if="store.loadingPeople" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300 mb-6">
+        <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
         Loading people from all organizations…
       </div>
 
       <!-- Person error -->
-      <div v-if="personError" class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-sm text-red-700 dark:text-red-300">
-        {{ personError }}
-      </div>
+      <UAlert v-if="personError" color="error" icon="i-heroicons-exclamation-circle" :description="personError" class="mb-4" />
 
       <!-- Person dropdown -->
       <div v-if="store.peopleList" class="mb-6">
         <div class="relative max-w-lg">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          </svg>
-          <input
+          <UInput
             v-autofocus
-            v-model="personFilter"
+            name="person-filter" v-model="personFilter"
             @focus="handleDropdownFocus"
-            type="text"
             placeholder="Search for a person…"
-            class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 outline-none"
+            icon="i-heroicons-magnifying-glass"
+            size="lg"
+            class="w-full"
           />
           <!-- Dropdown list -->
           <div v-if="dropdownOpen && filteredPeople.length > 0"
@@ -71,17 +55,17 @@
               :class="selectedPerson?.descriptor === p.descriptor ? 'bg-primary-100 dark:bg-primary-800/80 font-semibold border-l-3 border-primary-500' : ''">
               <div class="truncate">
                 <span class="font-medium text-gray-900 dark:text-gray-100">{{ p.display_name }}</span>
-                <span v-if="p.unique_name" class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ p.unique_name }}</span>
+                <span v-if="p.unique_name" class="ml-2 text-xs text-gray-500 dark:text-gray-300">{{ p.unique_name }}</span>
               </div>
               <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 shrink-0">{{ p.organization }}</span>
             </button>
           </div>
           <div v-else-if="dropdownOpen && personFilter.length >= 1 && filteredPeople.length === 0"
-            class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg px-4 py-3 text-sm text-gray-400 italic">
+            class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg px-4 py-3 text-sm text-gray-400 dark:text-gray-300 italic">
             No matching people
           </div>
         </div>
-        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ displayPeopleList?.people?.length ?? 0 }} people loaded across all organizations</p>
+        <p class="text-xs text-gray-500 dark:text-gray-300 mt-1">{{ displayPeopleList?.people?.length ?? 0 }} people loaded across all organizations</p>
       </div>
 
       <!-- Click-outside overlay to close dropdown -->
@@ -91,28 +75,25 @@
       <div v-if="selectedPerson" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
           <span class="font-semibold text-gray-900 dark:text-gray-100 text-lg">{{ displaySelectedPerson.display_name }}</span>
-          <span v-if="displaySelectedPerson.unique_name" class="ml-2 text-sm text-gray-500 dark:text-gray-400">{{ displaySelectedPerson.unique_name }}</span>
+          <span v-if="displaySelectedPerson.unique_name" class="ml-2 text-sm text-gray-500 dark:text-gray-300">{{ displaySelectedPerson.unique_name }}</span>
           <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">{{ displaySelectedPerson.organization }}</span>
         </div>
         <div class="px-5 py-4">
           <!-- Loading groups -->
-          <div v-if="store.personGroups[selectedPerson.descriptor]?.loading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-            </svg>
+          <div v-if="store.personGroups[selectedPerson.descriptor]?.loading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300">
+            <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
             Loading groups…
           </div>
           <!-- Groups loaded -->
           <div v-else-if="store.personGroups[selectedPerson.descriptor]?.groups">
-            <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-3">Permission Groups ({{ store.personGroups[selectedPerson.descriptor].groups.length }})</h4>
-            <div v-if="store.personGroups[selectedPerson.descriptor].groups.length === 0" class="text-sm text-gray-400 italic">No group memberships found</div>
+            <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-3">Permission Groups ({{ store.personGroups[selectedPerson.descriptor].groups.length }})</h4>
+            <div v-if="store.personGroups[selectedPerson.descriptor].groups.length === 0" class="text-sm text-gray-400 dark:text-gray-300 italic">No group memberships found</div>
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div v-for="pg in groupedPersonGroups" :key="pg.project"
                 class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div class="px-3 py-2 bg-primary-50 dark:bg-primary-900/20 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{{ pg.project }}</span>
-                  <span class="ml-2 px-1.5 py-0.5 text-[10px] rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-medium shrink-0">{{ pg.groups.length }}</span>
+                  <span class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-medium shrink-0">{{ pg.groups.length }}</span>
                 </div>
                 <ul class="px-3 py-2 space-y-1 bg-white dark:bg-gray-800">
                   <li v-for="g in pg.groups" :key="g" class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -132,47 +113,30 @@
     <!-- ======================================================= -->
     <div v-if="activeTab === 'audit'">
       <div class="flex items-center gap-3 mb-6">
-        <button @click="doAudit" :disabled="store.loadingPermissionAudit"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
-          :class="store.loadingPermissionAudit ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-          <svg v-if="store.loadingPermissionAudit" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-          </svg>
-          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+        <UButton @click="doAudit" :disabled="store.loadingPermissionAudit" :loading="store.loadingPermissionAudit"
+          icon="i-heroicons-check-circle">
           {{ store.loadingPermissionAudit ? 'Running Audit…' : 'Run Audit' }}
-        </button>
-        <button v-if="displayAuditResults" @click="doAudit(true)"
+        </UButton>
+        <UButton v-if="displayAuditResults" @click="doAudit(true)"
           :disabled="store.loadingPermissionAudit"
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors"
-          :class="store.loadingPermissionAudit ? 'border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750'">
+          icon="i-heroicons-arrow-path"
+          variant="outline" color="neutral">
           Force Refresh
-        </button>
-        <button @click="toggleScopePanel"
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors"
-          :class="showScopePanel
-            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 border-primary-300 dark:border-primary-600'
-            : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750'">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-          </svg>
+        </UButton>
+        <UButton @click="toggleScopePanel"
+          :variant="showScopePanel ? 'soft' : 'outline'"
+          :color="showScopePanel ? 'primary' : 'neutral'"
+          icon="i-heroicons-adjustments-horizontal">
           Manage Scope
-          <span v-if="store.auditDenylist.length" class="px-1.5 py-0.5 text-[10px] rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-medium">{{ store.auditDenylist.length }}</span>
-        </button>
-        <button @click="showConfigPanel = !showConfigPanel"
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors"
-          :class="showConfigPanel
-            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 border-primary-300 dark:border-primary-600'
-            : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750'">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+          <span v-if="store.auditDenylist.length" class="px-1.5 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-medium">{{ store.auditDenylist.length }}</span>
+        </UButton>
+        <UButton @click="showConfigPanel = !showConfigPanel"
+          :variant="showConfigPanel ? 'soft' : 'outline'"
+          :color="showConfigPanel ? 'primary' : 'neutral'"
+          icon="i-heroicons-cog-6-tooth">
           Configure Audit
-        </button>
-        <span v-if="displayAuditResults" class="text-xs text-gray-400 dark:text-gray-500">
+        </UButton>
+        <span v-if="displayAuditResults" class="text-xs text-gray-500 dark:text-gray-300">
           Last run: {{ formatTime(displayAuditResults.fetched_at) }}
         </span>
       </div>
@@ -181,11 +145,8 @@
       <div v-if="showScopePanel" class="mb-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Audit Scope</h3>
-          <div v-if="store.loadingAuditProjects" class="flex items-center gap-2 text-xs text-gray-400">
-            <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-            </svg>
+          <div v-if="store.loadingAuditProjects" class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-300">
+            <UIcon name="i-heroicons-arrow-path" class="w-3.5 h-3.5 animate-spin" />
             Loading projects…
           </div>
         </div>
@@ -194,18 +155,16 @@
           <div class="p-4">
             <h4 class="text-xs font-semibold uppercase text-green-600 dark:text-green-400 mb-2">In Scope ({{ scopeProjects.length }})</h4>
             <div class="space-y-1 max-h-64 overflow-y-auto">
-              <div v-if="scopeProjects.length === 0" class="text-xs text-gray-400 italic py-2">No projects in scope</div>
+              <div v-if="scopeProjects.length === 0" class="text-xs text-gray-400 dark:text-gray-300 italic py-2">No projects in scope</div>
               <button v-for="p in scopeProjects" :key="p.project_id"
                 @click="denylistAuditProject(p._realOrg || p.organization, p.project_id)"
                 class="w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group text-left"
                 title="Move to denylist">
                 <div class="truncate">
                   <span class="text-gray-800 dark:text-gray-200">{{ p.project }}</span>
-                  <span class="ml-1.5 text-xs text-gray-400">{{ p.organization }}</span>
+                  <span class="ml-1.5 text-xs text-gray-400 dark:text-gray-300">{{ p.organization }}</span>
                 </div>
-                <svg class="w-4 h-4 text-gray-300 group-hover:text-red-500 shrink-0 ml-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
+                <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 text-gray-300 group-hover:text-red-500 shrink-0 ml-2 transition-colors" />
               </button>
             </div>
           </div>
@@ -213,17 +172,15 @@
           <div class="p-4">
             <h4 class="text-xs font-semibold uppercase text-red-600 dark:text-red-400 mb-2">Denylisted ({{ denylistProjects.length }})</h4>
             <div class="space-y-1 max-h-64 overflow-y-auto">
-              <div v-if="denylistProjects.length === 0" class="text-xs text-gray-400 italic py-2">No denylisted projects</div>
+              <div v-if="denylistProjects.length === 0" class="text-xs text-gray-400 dark:text-gray-300 italic py-2">No denylisted projects</div>
               <button v-for="p in denylistProjects" :key="p.project_id"
                 @click="removeAuditProjectFromDenylist(p._realOrg || p.organization, p.project_id)"
                 class="w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors group text-left"
                 title="Move back to scope">
-                <svg class="w-4 h-4 text-gray-300 group-hover:text-green-500 shrink-0 mr-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
+                <UIcon name="i-heroicons-arrow-left" class="w-4 h-4 text-gray-300 group-hover:text-green-500 shrink-0 mr-2 transition-colors" />
                 <div class="truncate text-right">
                   <span class="text-gray-800 dark:text-gray-200">{{ p.project }}</span>
-                  <span class="ml-1.5 text-xs text-gray-400">{{ p.organization }}</span>
+                  <span class="ml-1.5 text-xs text-gray-400 dark:text-gray-300">{{ p.organization }}</span>
                 </div>
               </button>
             </div>
@@ -239,11 +196,11 @@
 
         <!-- Group Connections Matrix -->
         <div class="p-5">
-          <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-3">Group Connections</h4>
+          <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-3">Group Connections</h4>
           <div v-if="localGroupConfig.length" class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
-                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase">
                   <th class="pb-2 pr-4">Permission Group</th>
                   <th class="pb-2 px-4 text-center w-20">Area</th>
                   <th class="pb-2 px-4 text-center w-20">Repo</th>
@@ -253,109 +210,82 @@
               </thead>
               <tbody>
                 <tr v-for="(gc, idx) in localGroupConfig" :key="gc.group_name"
-                  class="border-t border-gray-100 dark:border-gray-750">
+                  class="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                   <td class="py-2 pr-4 text-gray-800 dark:text-gray-200">{{ gc.group_name }}</td>
                   <td class="py-2 px-4 text-center">
-                    <input type="checkbox" v-model="gc.area_connected" @change="persistConfig"
-                      class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600" />
+                    <UCheckbox v-model="gc.area_connected" @update:model-value="persistConfig" />
                   </td>
                   <td class="py-2 px-4 text-center">
-                    <input type="checkbox" v-model="gc.repo_connected" @change="persistConfig"
-                      class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600" />
+                    <UCheckbox v-model="gc.repo_connected" @update:model-value="persistConfig" />
                   </td>
                   <td class="py-2 px-4 text-center">
-                    <input type="checkbox" v-model="gc.wiki_connected" @change="persistConfig"
-                      class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600" />
+                    <UCheckbox v-model="gc.wiki_connected" @update:model-value="persistConfig" />
                   </td>
                   <td class="py-2 pl-4 text-center">
-                    <button @click="removeGroupFromMatrix(idx)"
-                      class="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none" title="Remove group">&times;</button>
+                    <UButton @click="removeGroupFromMatrix(idx)" variant="ghost" color="error" size="xs" icon="i-heroicons-x-mark" title="Remove group" />
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p v-else class="text-xs text-gray-400 italic">No group connections configured yet.</p>
+          <p v-else class="text-xs text-gray-400 dark:text-gray-300 italic">No group connections configured yet.</p>
           <div v-if="availableGroupsForMatrix.length" class="mt-3 flex items-center gap-2">
-            <SelectMenu v-model="newGroupForMatrix" :options="matrixGroupOptions" placeholder="Add group…" size="sm" class="w-64" />
-            <button v-if="newGroupForMatrix" @click="addGroupToMatrix"
-              class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">Add</button>
+            <USelectMenu v-model="newGroupForMatrix" :items="matrixGroupOptions" value-key="value" placeholder="Add group…" size="sm" class="w-64" />
+            <UButton v-if="newGroupForMatrix" @click="addGroupToMatrix" size="sm">Add</UButton>
           </div>
         </div>
 
         <!-- Audit Rules -->
         <div class="px-5 pb-5 border-t border-gray-200 dark:border-gray-700 pt-4">
-          <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-3">Audit Rules</h4>
+          <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-3">Audit Rules</h4>
 
           <!-- Team deny (single toggle) -->
-          <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-100/60 dark:bg-gray-750">
+          <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-100/60 dark:bg-gray-700/50">
             <span class="text-sm text-gray-700 dark:text-gray-300">Teams are not allowed in permission groups</span>
-            <button @click="toggleTeamDeny"
-              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500"
-              :class="teamDenyEnabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'"
-              role="switch" :aria-checked="teamDenyEnabled">
-              <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                :class="teamDenyEnabled ? 'translate-x-4' : 'translate-x-0'"></span>
-            </button>
+            <USwitch :model-value="teamDenyEnabled" @update:model-value="toggleTeamDeny" />
           </div>
 
           <!-- Customer deny rules -->
           <div class="mt-4">
-            <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Customer deny rules</div>
+            <div class="text-xs font-medium text-gray-500 dark:text-gray-300 mb-2">Customer deny rules</div>
             <div v-for="(r, idx) in customerDenyRules" :key="'cd-' + idx"
-              class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-750 transition-colors">
-              <button @click="toggleRuleEnabled(r)"
-                class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500"
-                :class="r.enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'"
-                role="switch" :aria-checked="r.enabled">
-                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  :class="r.enabled ? 'translate-x-4' : 'translate-x-0'"></span>
-              </button>
+              class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-700/40 transition-colors">
+              <USwitch :model-value="r.enabled" @update:model-value="toggleRuleEnabled(r)" />
               <span class="text-sm text-gray-700 dark:text-gray-300 flex-1">Customer not allowed in <span class="font-semibold text-gray-900 dark:text-gray-100">{{ r.group_name }}</span></span>
-              <button @click="removeRule('customer_deny', idx)" class="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none" title="Remove rule">&times;</button>
+              <UButton @click="removeRule('customer_deny', idx)" variant="ghost" color="error" size="xs" icon="i-heroicons-x-mark" title="Remove rule" />
             </div>
-            <div v-if="!customerDenyRules.length" class="text-xs text-gray-400 italic px-3 py-1">No customer deny rules configured.</div>
+            <div v-if="!customerDenyRules.length" class="text-xs text-gray-400 dark:text-gray-300 italic px-3 py-1">No customer deny rules configured.</div>
             <div class="flex items-center gap-2 mt-2">
-              <SelectMenu v-model="newCustomerDenyGroup" :options="customerDenyGroupOptions" placeholder="Add customer deny rule…" size="sm" class="w-64" />
-              <button v-if="newCustomerDenyGroup" @click="addRule('customer_deny', newCustomerDenyGroup); newCustomerDenyGroup = ''"
-                class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">Add</button>
+              <USelectMenu v-model="newCustomerDenyGroup" :items="customerDenyGroupOptions" value-key="value" placeholder="Add customer deny rule…" size="sm" class="w-64" />
+              <UButton v-if="newCustomerDenyGroup" @click="addRule('customer_deny', newCustomerDenyGroup); newCustomerDenyGroup = ''" size="sm">Add</UButton>
             </div>
           </div>
 
           <!-- Mandatory group rules -->
           <div class="mt-4">
-            <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Mandatory group rules</div>
+            <div class="text-xs font-medium text-gray-500 dark:text-gray-300 mb-2">Mandatory group rules</div>
             <div v-for="(r, idx) in mandatoryGroupRules" :key="'mg-' + idx"
-              class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-750 transition-colors">
-              <button @click="toggleRuleEnabled(r)"
-                class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500"
-                :class="r.enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'"
-                role="switch" :aria-checked="r.enabled">
-                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  :class="r.enabled ? 'translate-x-4' : 'translate-x-0'"></span>
-              </button>
+              class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-700/40 transition-colors">
+              <USwitch :model-value="r.enabled" @update:model-value="toggleRuleEnabled(r)" />
               <span class="text-sm text-gray-700 dark:text-gray-300 flex-1">Group <span class="font-semibold text-gray-900 dark:text-gray-100">{{ r.group_name }}</span> is mandatory for every project</span>
-              <button @click="removeRule('mandatory_group', idx)" class="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none" title="Remove rule">&times;</button>
+              <UButton @click="removeRule('mandatory_group', idx)" variant="ghost" color="error" size="xs" icon="i-heroicons-x-mark" title="Remove rule" />
             </div>
-            <div v-if="!mandatoryGroupRules.length" class="text-xs text-gray-400 italic px-3 py-1">No mandatory group rules configured.</div>
+            <div v-if="!mandatoryGroupRules.length" class="text-xs text-gray-400 dark:text-gray-300 italic px-3 py-1">No mandatory group rules configured.</div>
             <div class="flex items-center gap-2 mt-2">
-              <SelectMenu v-model="newMandatoryGroup" :options="mandatoryGroupOptions" placeholder="Add mandatory group rule…" size="sm" class="w-64" />
-              <button v-if="newMandatoryGroup" @click="addRule('mandatory_group', newMandatoryGroup); newMandatoryGroup = ''"
-                class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">Add</button>
+              <USelectMenu v-model="newMandatoryGroup" :items="mandatoryGroupOptions" value-key="value" placeholder="Add mandatory group rule…" size="sm" class="w-64" />
+              <UButton v-if="newMandatoryGroup" @click="addRule('mandatory_group', newMandatoryGroup); newMandatoryGroup = ''" size="sm">Add</UButton>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Audit error -->
-      <div v-if="auditError" class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-sm text-red-700 dark:text-red-300">
-        {{ auditError }}
-      </div>
+      <UAlert v-if="auditError" color="error" icon="i-heroicons-exclamation-circle" :description="auditError" class="mb-4" />
 
       <!-- Audit summary + filter -->
       <div v-if="displayAuditResults && displayAuditResults.projects.length > 0" class="flex items-center gap-3 mb-4">
-        <SelectMenu v-model="auditFilter" :options="auditFilterOptions" size="sm" class="w-40" />
-        <span class="text-xs text-gray-500 dark:text-gray-400">
+        <USelectMenu v-model="auditFilter" :items="auditFilterOptions" value-key="value" size="sm" class="w-40" />
+        <span class="text-xs text-gray-500 dark:text-gray-300">
           {{ filteredAuditProjects.length }} of {{ displayAuditResults.projects.length }} projects
         </span>
         <span v-if="issueCount > 0" class="px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-medium">
@@ -368,7 +298,7 @@
 
       <!-- Audit results -->
       <div v-if="displayAuditResults && !store.loadingPermissionAudit" class="space-y-3">
-        <div v-if="filteredAuditProjects.length === 0" class="text-center py-12 text-gray-400 dark:text-gray-500">
+        <div v-if="filteredAuditProjects.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-300">
           <p class="text-sm">No projects match the current filter.</p>
         </div>
 
@@ -376,18 +306,14 @@
           class="bg-white dark:bg-gray-800 rounded-lg border overflow-hidden"
           :class="hasIssues(project) ? 'border-red-200 dark:border-red-800' : 'border-green-200 dark:border-green-800'">
           <button @click="toggleProject(project.project_id)"
-            class="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+            class="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
             <div class="flex items-center gap-3">
               <!-- Status icon -->
               <span v-if="hasIssues(project)" class="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/40">
-                <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <UIcon name="i-heroicons-x-mark" class="w-4 h-4 text-red-500" />
               </span>
               <span v-else class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/40">
-                <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
+                <UIcon name="i-heroicons-check" class="w-4 h-4 text-green-500" />
               </span>
               <div>
                 <span class="font-semibold text-gray-900 dark:text-gray-100">{{ project.project }}</span>
@@ -396,22 +322,17 @@
             </div>
             <div class="flex items-center gap-3">
               <!-- Denylist project -->
-              <button @click.stop="denylistAuditProject(project._realOrg || project.organization, project.project_id)"
-                class="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                title="Denylist this project">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
-              </button>
+              <UButton @click.stop="denylistAuditProject(project._realOrg || project.organization, project.project_id)"
+                variant="ghost" color="error" size="xs"
+                icon="i-heroicons-no-symbol"
+                title="Denylist this project" />
               <!-- Refresh single project -->
-              <button @click.stop="refreshProject(project)"
+              <UButton @click.stop="refreshProject(project)"
                 :disabled="refreshingProjects.has(project.project_id)"
-                class="p-1 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50"
-                title="Refresh this project">
-                <svg class="w-4 h-4" :class="{ 'animate-spin': refreshingProjects.has(project.project_id) }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M20.015 4.356v4.992" />
-                </svg>
-              </button>
+                :loading="refreshingProjects.has(project.project_id)"
+                variant="ghost" color="neutral" size="xs"
+                icon="i-heroicons-arrow-path"
+                title="Refresh this project" />
               <!-- Check summary badges -->
               <span v-if="project.checks.missing_groups.length" class="px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
                 {{ project.checks.missing_groups.length }} missing group{{ project.checks.missing_groups.length !== 1 ? 's' : '' }}
@@ -425,45 +346,39 @@
               <span v-if="wikiIssues(project).length || project.checks.wiki_unwanted_groups?.length" class="px-2 py-0.5 text-xs rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
                 wiki
               </span>
-              <span v-else-if="wikiSkipped(project)" class="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+              <span v-else-if="wikiSkipped(project)" class="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
                 wiki skipped
               </span>
               <span v-if="project.checks.areas_missing_groups?.length" class="px-2 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300">
                 {{ project.checks.areas_missing_groups.length }} area{{ project.checks.areas_missing_groups.length !== 1 ? 's' : '' }}
               </span>
-              <svg class="w-4 h-4 transition-transform text-gray-400" :class="{ 'rotate-180': expandedProjects.has(project.project_id) }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-              </svg>
+              <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 transition-transform text-gray-400 dark:text-gray-300" :class="{ 'rotate-180': expandedProjects.has(project.project_id) }" />
             </div>
           </button>
 
           <!-- Expanded detail -->
-          <div v-if="expandedProjects.has(project.project_id)" class="border-t border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-750">
+          <div v-if="expandedProjects.has(project.project_id)" class="border-t border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
 
             <!-- Check 1: Missing Groups -->
             <div class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Mandatory Permission Groups</h4>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">Mandatory Permission Groups</h4>
               <div v-if="mandatoryGroupNames.length" class="flex flex-wrap gap-2">
                 <span v-for="g in mandatoryGroupNames" :key="g"
                   class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full"
                   :class="project.checks.missing_groups.includes(g)
                     ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
                     : 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'">
-                  <svg v-if="!project.checks.missing_groups.includes(g)" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                  <svg v-else class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <UIcon v-if="!project.checks.missing_groups.includes(g)" name="i-heroicons-check" class="w-3 h-3" />
+                  <UIcon v-else name="i-heroicons-x-mark" class="w-3 h-3" />
                   {{ g }}
                 </span>
               </div>
-              <p v-else class="text-xs text-gray-400 italic">No mandatory group rules configured. Set up rules in <button @click="showConfigPanel = true" class="underline text-primary-500">Configure Audit</button>.</p>
+              <p v-else class="text-xs text-gray-400 dark:text-gray-300 italic">No mandatory group rules configured. Set up rules in <UButton @click="showConfigPanel = true" variant="link" size="xs">Configure Audit</UButton>.</p>
             </div>
 
             <!-- Available Groups -->
             <div v-if="project.checks.available_groups?.length" class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">All Available Permission Groups ({{ project.checks.available_groups.length }})</h4>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">All Available Permission Groups ({{ project.checks.available_groups.length }})</h4>
               <div class="flex flex-wrap gap-1.5">
                 <span v-for="g in project.checks.available_groups" :key="g"
                   class="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
@@ -474,12 +389,12 @@
 
             <!-- Check 2: Teams in Groups -->
             <div v-if="project.checks.teams_in_groups.length" class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Teams Found in Groups (not allowed)</h4>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">Teams Found in Groups (not allowed)</h4>
               <ul class="space-y-1">
                 <li v-for="t in project.checks.teams_in_groups" :key="t.group + t.team_name" class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
                   <span class="font-medium">{{ t.group }}</span>
-                  <span class="text-gray-400">contains team</span>
+                  <span class="text-gray-400 dark:text-gray-300">contains team</span>
                   <span class="font-medium text-amber-600 dark:text-amber-400">{{ t.team_name }}</span>
                 </li>
               </ul>
@@ -487,11 +402,11 @@
 
             <!-- Check 3: Repos Missing Groups -->
             <div v-if="project.checks.repos_missing_groups.length" class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Repositories Missing Permission Groups</h4>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">Repositories Missing Permission Groups</h4>
               <div class="space-y-2 max-h-60 overflow-y-auto">
                 <div v-for="r in project.checks.repos_missing_groups" :key="r.repo_name" class="text-sm">
                   <span class="font-medium text-gray-900 dark:text-gray-100">{{ r.repo_name }}</span>
-                  <span class="text-gray-400 mx-1">—</span>
+                  <span class="text-gray-400 dark:text-gray-300 mx-1">—</span>
                   <span v-for="(mg, mi) in r.missing_groups" :key="mg" class="text-orange-600 dark:text-orange-400 text-xs">
                     {{ mg }}<span v-if="mi < r.missing_groups.length - 1">, </span>
                   </span>
@@ -501,7 +416,7 @@
 
             <!-- Check 4: Wiki Missing Groups -->
             <div v-if="wikiIssues(project).length" class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Wiki Security — Missing Board Groups</h4>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">Wiki Security — Missing Board Groups</h4>
               <ul class="space-y-1">
                 <li v-for="w in wikiIssues(project)" :key="w" class="text-sm text-purple-600 dark:text-purple-400 flex items-center gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0"></span>
@@ -510,7 +425,7 @@
               </ul>
             </div>
             <div v-if="project.checks.wiki_unwanted_groups?.length" class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Wiki Security — Unwanted Repository Groups</h4>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">Wiki Security — Unwanted Repository Groups</h4>
               <ul class="space-y-1">
                 <li v-for="w in project.checks.wiki_unwanted_groups" :key="w" class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>
@@ -519,17 +434,17 @@
               </ul>
             </div>
             <div v-else-if="wikiSkipped(project)" class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Wiki Security</h4>
-              <p class="text-sm text-gray-400 dark:text-gray-500 italic">Skipped — PAT requires 'vso.wiki' scope</p>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">Wiki Security</h4>
+              <p class="text-sm text-gray-500 dark:text-gray-300 italic">Skipped — PAT requires 'vso.wiki' scope</p>
             </div>
 
             <!-- Check 5: Areas Missing Board Groups -->
             <div v-if="project.checks.areas_missing_groups?.length" class="px-5 py-3">
-              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Area Paths Missing Board Groups</h4>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-2">Area Paths Missing Board Groups</h4>
               <div class="space-y-2 max-h-60 overflow-y-auto">
                 <div v-for="a in project.checks.areas_missing_groups" :key="a.area_path" class="text-sm">
                   <span class="font-medium text-gray-900 dark:text-gray-100">{{ a.area_path }}</span>
-                  <span class="text-gray-400 mx-1">—</span>
+                  <span class="text-gray-400 dark:text-gray-300 mx-1">—</span>
                   <span v-for="(mg, mi) in a.missing_groups" :key="mg" class="text-teal-600 dark:text-teal-400 text-xs">
                     {{ mg }}<span v-if="mi < a.missing_groups.length - 1">, </span>
                   </span>
@@ -553,12 +468,15 @@ import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useDemoMode, anonName, anonEmail, anonOrg, anonProject } from '../composables/useDemoMode.js'
 import { transformPeopleList, transformPersonGroups, transformPermissionAudit, transformAuditProjects } from '../composables/demoTransform.js'
-import SelectMenu from '../components/SelectMenu.vue'
 
 const store = useMonitorStore()
 const { isDemoMode } = useDemoMode()
 
 const activeTab = ref('person')
+const tabItems = [
+  { label: 'Person Groups', value: 'person', icon: 'i-heroicons-user-group' },
+  { label: 'Permission Audit', value: 'audit', icon: 'i-heroicons-shield-check' },
+]
 const personFilter = ref('')
 const dropdownOpen = ref(false)
 const selectedPerson = ref(null)

@@ -24,16 +24,18 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html">Managing Projects</a>
 </nav>
@@ -58,10 +60,25 @@
   <h2>Available Actions</h2>
   <table class="config">
     <tr><th>Action</th><th>When Available</th><th>What It Does</th></tr>
+    <tr><td><span class="ui">Preview</span></td><td>Orphan Check</td><td>Opens a preview modal showing the work item's full description, comments, and metadata without leaving the page.</td></tr>
     <tr><td><span class="ui">Copy parent done items</span></td><td>Orphan Check</td><td>Copies a list of items whose parent is Done, for easy pasting into a message.</td></tr>
     <tr><td><span class="ui">Copy all items with links</span></td><td>Orphan Check</td><td>Copies all flagged items with clickable Azure DevOps links.</td></tr>
     <tr><td><span class="ui">Send email</span></td><td>Missing Estimate Check</td><td>Sends a reminder email to the assigned person asking them to add an estimate.</td></tr>
+    <tr><td><span class="ui">Assign Parent</span></td><td>Orphan Check (no parent)</td><td>Opens a dialog with smart candidate suggestions ranked by relevance. Select a parent to link the work item.</td></tr>
+    <tr><td><span class="ui">Change Parent</span></td><td>Orphan Check (parent Done)</td><td>Same as Assign Parent, but for items whose parent is already Done — lets you re-parent them to an active item.</td></tr>
   </table>
+
+  <h2>Work Item Preview Modal</h2>
+  <p>The <span class="ui">Preview</span> button (available on the Orphan Check) opens a large modal showing the full details of a work item without leaving the page:</p>
+  <ul>
+    <li><strong>Header bar</strong> — Coloured header showing <code>#ID Title</code>, work item type badge, state badge, assigned person, and iteration path. Tags appear as coloured pills below.</li>
+    <li><strong>Description</strong> — Full rich-text description rendered with images and formatting. If no description exists, shows "No description available."</li>
+    <li><strong>Comments</strong> — All comments shown chronologically with author and date.</li>
+    <li><strong>Footer</strong> — Shows "Press <kbd>Esc</kbd> to close" on the left and a Close button on the right.</li>
+  </ul>
+
+  <img src="screenshots/orphan-preview.png" alt="Screenshot of the work item preview modal showing header bar with badges, description, and comments" class="screenshot">
+  <p class="screenshot-caption">The work item preview modal with coloured header, description, and comments.</p>
 
   <h2>Tagging Items</h2>
   <p>You can add tags to work items directly from this screen to help you track them. Tags are saved back to Azure DevOps. See <a href="tags.html">Working with Tags</a> for more details.</p>

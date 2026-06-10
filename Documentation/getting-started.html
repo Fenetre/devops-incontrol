@@ -24,16 +24,18 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html">Managing Projects</a>
 </nav>
@@ -66,11 +68,17 @@
         <li>Go to your Azure DevOps portal and click your profile picture in the top-right corner.</li>
         <li>Select <span class="ui">Personal access tokens</span>.</li>
         <li>Click <span class="ui">New Token</span>.</li>
-        <li>Give it a name (e.g. "DevOps InControl"), set an expiration date, and grant at least these permissions:
+        <li>Give it a name (e.g. "DevOps InControl"), set an expiration date, click <strong>Show all scopes</strong>, and grant these permissions:
           <ul>
-            <li><strong>Project and Team</strong> — Read</li>
-            <li><strong>Work Items</strong> — Read &amp; Write</li>
-            <li><strong>Code</strong> — Read</li>
+            <li><strong>Build</strong> — Read (pipeline runs overview)</li>
+            <li><strong>Code</strong> — Read (pull request monitoring)</li>
+            <li><strong>Graph</strong> — Read (group membership resolution)</li>
+            <li><strong>Identity</strong> — Read (permission checks)</li>
+            <li><strong>Project and Team</strong> — Read (project and team listing)</li>
+            <li><strong>Release</strong> — Read (release deployments overview)</li>
+            <li><strong>Security</strong> — Manage (repo &amp; area permission audits)</li>
+            <li><strong>Wiki</strong> — Read (wiki permission checks)</li>
+            <li><strong>Work Items</strong> — Read &amp; Write (backlog checks, sprint monitoring, tag management)</li>
           </ul>
         </li>
         <li>Click <span class="ui">Create</span> and copy the token.</li>
@@ -92,8 +100,9 @@
   <table class="config">
     <tr><th>Setting</th><th>Where to Find It</th></tr>
     <tr><td>Password (API Key)</td><td>Click the <span class="ui">gear icon</span> in the top-right corner to open Settings.</td></tr>
-    <tr><td>Azure DevOps connection (PAT)</td><td>Settings &rarr; <span class="ui">Azure DevOps Connection</span> section.</td></tr>
+    <tr><td>Azure DevOps connection (PAT)</td><td>Settings &rarr; <span class="ui">General</span> tab.</td></tr>
     <tr><td>Projects and checks</td><td><span class="ui">Configuration</span> screen in the sidebar menu.</td></tr>
+    <tr><td>Dark mode</td><td>Click the <span class="ui">sun/moon icon</span> in the top-right corner of the header bar.</td></tr>
   </table>
 
   <div class="callout tip">

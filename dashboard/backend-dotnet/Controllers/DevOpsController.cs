@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -13,6 +14,21 @@ public partial class DevOpsController(ConfigStore configStore) : ControllerBase
 {
     private static readonly int Timeout = int.Parse(
         Environment.GetEnvironmentVariable("AZDO_TIMEOUT") ?? "30");
+
+    private static readonly long CacheTtlTicks = TimeSpan.FromMinutes(5).Ticks;
+    private static readonly ConcurrentDictionary<string, (long Ticks, object Data)> _cache = new();
+
+    private static T? GetCached<T>(string key) where T : class
+    {
+        if (_cache.TryGetValue(key, out var entry) && DateTime.UtcNow.Ticks - entry.Ticks < CacheTtlTicks)
+            return entry.Data as T;
+        return null;
+    }
+
+    private static void SetCached(string key, object data)
+    {
+        _cache[key] = (DateTime.UtcNow.Ticks, data);
+    }
 
     [GeneratedRegex(@"^[a-zA-Z0-9 .\-_êéèëàáâäöüïîôçñ]{1,256}$")]
     private static partial Regex SafeNameRegex();
@@ -51,6 +67,10 @@ public partial class DevOpsController(ConfigStore configStore) : ControllerBase
     public async Task<IActionResult> ListOrgProjects(string org, CancellationToken cancellationToken = default)
     {
         org = ValidateName(org, "organization name");
+        var cacheKey = $"projects|{org}";
+        var cached = GetCached<List<ProjectInfo>>(cacheKey);
+        if (cached is not null) return Ok(cached);
+
         var pat = SettingsController.GetPat(configStore);
         if (string.IsNullOrEmpty(pat))
             return BadRequest(new { detail = "PAT not configured." });
@@ -79,6 +99,7 @@ public partial class DevOpsController(ConfigStore configStore) : ControllerBase
             }
         }
         projects.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        SetCached(cacheKey, projects);
         return Ok(projects);
     }
 
@@ -87,6 +108,10 @@ public partial class DevOpsController(ConfigStore configStore) : ControllerBase
     {
         org = ValidateName(org, "organization name");
         project = ValidateName(project, "project name");
+        var cacheKey = $"areas|{org}|{project}";
+        var cached = GetCached<List<AreaInfo>>(cacheKey);
+        if (cached is not null) return Ok(cached);
+
         var pat = SettingsController.GetPat(configStore);
         if (string.IsNullOrEmpty(pat))
             return BadRequest(new { detail = "PAT not configured." });
@@ -122,7 +147,49 @@ public partial class DevOpsController(ConfigStore configStore) : ControllerBase
         }
 
         Walk(doc.RootElement);
+        SetCached(cacheKey, areas);
         return Ok(areas);
+    }
+
+    [HttpGet("organizations/{org}/projects/{project}/teams")]
+    public async Task<IActionResult> ListProjectTeams(string org, string project, CancellationToken cancellationToken = default)
+    {
+        org = ValidateName(org, "organization name");
+        project = ValidateName(project, "project name");
+        var cacheKey = $"teams|{org}|{project}";
+        var cached = GetCached<List<TeamInfo>>(cacheKey);
+        if (cached is not null) return Ok(cached);
+
+        var pat = SettingsController.GetPat(configStore);
+        if (string.IsNullOrEmpty(pat))
+            return BadRequest(new { detail = "PAT not configured." });
+
+        var url = $"https://dev.azure.com/{Uri.EscapeDataString(org)}/_apis/projects/{Uri.EscapeDataString(project)}/teams?api-version=7.1-preview.1&$top=300";
+        var http = HttpClientPool.Get(pat, int.Parse(Environment.GetEnvironmentVariable("AZDO_TIMEOUT") ?? "30"));
+        var auth = AuthHeader(pat);
+
+        var req = new HttpRequestMessage(HttpMethod.Get, url);
+        foreach (var h in auth) req.Headers.TryAddWithoutValidation(h.Key, h.Value);
+
+        HttpResponseMessage resp;
+        try { resp = await http.SendAsync(req); AzureDevOpsClient.ThrowIfPatScopeError(resp, url); resp.EnsureSuccessStatusCode(); }
+        catch (AzureDevOpsPatScopeException ex) { return StatusCode(403, new { detail = ex.Message }); }
+        catch { return StatusCode(502, new { detail = "Failed to list teams from Azure DevOps. Ensure your PAT includes: Project and Team (Read) — scope 'vso.project'." }); }
+
+        var doc = await JsonDocument.ParseAsync(await resp.Content.ReadAsStreamAsync());
+        var teams = new List<TeamInfo>();
+        if (doc.RootElement.TryGetProperty("value", out var items))
+        {
+            foreach (var item in items.EnumerateArray())
+            {
+                var name = item.GetProperty("name").GetString() ?? "";
+                var id = item.TryGetProperty("id", out var tid) ? tid.GetString() ?? "" : "";
+                teams.Add(new TeamInfo(name, id));
+            }
+        }
+        teams.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        SetCached(cacheKey, teams);
+        return Ok(teams);
     }
 
     [HttpGet("organizations/{org}/projects/{project}/repos")]
@@ -130,6 +197,10 @@ public partial class DevOpsController(ConfigStore configStore) : ControllerBase
     {
         org = ValidateName(org, "organization name");
         project = ValidateName(project, "project name");
+        var cacheKey = $"repos|{org}|{project}";
+        var cached = GetCached<List<RepoInfo>>(cacheKey);
+        if (cached is not null) return Ok(cached);
+
         var pat = SettingsController.GetPat(configStore);
         if (string.IsNullOrEmpty(pat))
             return BadRequest(new { detail = "PAT not configured." });
@@ -158,6 +229,7 @@ public partial class DevOpsController(ConfigStore configStore) : ControllerBase
             }
         }
         repos.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        SetCached(cacheKey, repos);
         return Ok(repos);
     }
 

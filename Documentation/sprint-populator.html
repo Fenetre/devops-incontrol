@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sprint Populator — DevOps InControl</title>
+  <title>Sprint Manager — DevOps InControl</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,59 +24,88 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html" class="active">Sprint Populator</a>
+  <a href="sprint-populator.html" class="active">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html">Managing Projects</a>
 </nav>
 
 <main class="content">
-  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Sprint Populator</div>
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Sprint Manager</div>
 
-  <h1>Sprint Populator</h1>
-  <p>The Sprint Populator helps you set up a new sprint by automatically copying template user stories and their tasks from a previous sprint. If your team has recurring sprint tasks (like "Sprint Planning", "Retrospective", or "Deploy to Production"), you only need to create them once as templates. Templates can come from the same project as your sprint or from a different configured project.</p>
+  <h1>Sprint Manager</h1>
+  <p>The Sprint Manager combines two tools: the <strong>Sprint Creator</strong> for adding new sprints to Azure DevOps, and the <strong>Sprint Populator</strong> for filling sprints with template work items. Switch between tabs at the top of the page.</p>
+
+  <h2>Sprint Creator</h2>
+  <p>Create new iterations (sprints) in Azure DevOps directly from the dashboard without navigating to the Azure DevOps admin settings.</p>
+
+  <h3>How to Use It</h3>
+  <ol>
+    <li>Open <span class="ui">Sprint Manager</span> from the sidebar and select the <span class="ui">Sprint Creator</span> tab.</li>
+    <li><strong>Select Project &amp; Team</strong> — Choose the project and team for the new sprint.</li>
+    <li>Review the <strong>Existing Sprints</strong> table to see what already exists.</li>
+    <li><strong>Sprint Details</strong> — The system auto-suggests a name, parent path, and dates based on existing sprint patterns. Adjust as needed.</li>
+    <li>Click <span class="ui">Create Sprint</span> to create the iteration only, or <span class="ui">Create &amp; Add to Team</span> to also assign it to the selected team immediately.</li>
+  </ol>
+
+  <h3>Auto-Inference</h3>
+  <p>The Sprint Creator analyses your existing sprints and automatically suggests:</p>
+  <ul>
+    <li>The next sprint name (based on naming patterns like "Sprint 15" → "Sprint 16")</li>
+    <li>The parent path in the iteration hierarchy</li>
+    <li>Start and end dates (continuing from the last sprint's end date)</li>
+  </ul>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    After creating a sprint, click <span class="ui">Create another</span> to immediately set up the next one — the auto-inference updates automatically.
+  </div>
+
+  <h2>Sprint Populator</h2>
+  <p>The Sprint Populator helps you set up a new sprint by automatically copying template user stories and their tasks. If your team has recurring sprint tasks (like "Sprint Planning", "Retrospective", or "Deploy to Production"), you only need to create them once as templates.</p>
 
   <img src="screenshots/sprint-populator.png" alt="Screenshot of the Sprint Populator wizard showing template preview" class="screenshot">
   <p class="screenshot-caption">Previewing sprint templates before cloning into a new sprint.</p>
 
-  <h2>How Templates Work</h2>
+  <h3>How Templates Work</h3>
   <p>A template is simply a User Story in Azure DevOps that has the tag <strong>sprint template</strong>. All child tasks under that story are included as part of the template.</p>
   <p>When you use the Sprint Populator, it clones these template stories (and their tasks) into your target sprint.</p>
   <p>You can optionally select a different <strong>source project</strong> for template lookup. This is useful when one project acts as your template library for multiple delivery projects.</p>
 
-  <h3>Automatic Title Replacement</h3>
+  <h4>Automatic Title Replacement</h4>
   <p>If a template title contains the letter <strong>X</strong> as a standalone word, it is replaced with the target sprint number. For example:</p>
   <ul>
     <li>"Sprint X Planning" becomes "Sprint 15 Planning" (if your target is Sprint 15).</li>
     <li>"Deploy Release X" becomes "Deploy Release 15".</li>
   </ul>
 
-  <h2>How to Use It</h2>
+  <h3>How to Use It</h3>
   <ol>
-    <li>Open <span class="ui">Sprint Populator</span> from the sidebar.</li>
-    <li><strong>Step 1</strong> — Select your <strong>target project</strong> (where new work items are created).</li>
-    <li><strong>Step 2</strong> — Optionally select a <strong>template source project</strong>. If you do nothing, it defaults to the target project.</li>
-    <li><strong>Step 3</strong> — Select your target team.</li>
-    <li><strong>Step 4</strong> — Select the target sprint. The sprint dates are shown to help you pick the right one.</li>
-    <li><strong>Step 5</strong> — Preview which templates will be cloned and what the new titles will look like. Check the confirmation box and click <span class="ui">Apply</span>.</li>
+    <li>Select the <span class="ui">Sprint Populator</span> tab.</li>
+    <li><strong>Step 1</strong> — Select your <strong>source project</strong> (where templates live) and <strong>target project</strong> (where new work items are created). These can be the same project.</li>
+    <li><strong>Step 2</strong> — Select the target team.</li>
+    <li><strong>Step 3</strong> — Select the target sprint. The sprint dates are shown to help you pick the right one.</li>
+    <li><strong>Step 4</strong> — Preview which templates will be cloned. Use the checkboxes to include or exclude individual stories and tasks. Click <span class="ui">Apply</span>.</li>
   </ol>
 
-  <h2>What Gets Created</h2>
+  <h3>What Gets Created</h3>
   <ul>
-    <li>A new User Story for each template, placed in the target sprint.</li>
-    <li>All child Tasks from the template are cloned under the new story.</li>
+    <li>A new User Story for each selected template, placed in the target sprint.</li>
+    <li>All selected child Tasks from the template are cloned under the new story.</li>
     <li>The <em>sprint template</em> tag is removed from cloned items so they are not treated as templates.</li>
   </ul>
 
-  <h2>Setting Up Templates</h2>
+  <h3>Setting Up Templates</h3>
   <p>To create a sprint template in Azure DevOps:</p>
   <ol>
     <li>Create a User Story with the tasks you want to repeat every sprint.</li>

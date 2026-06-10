@@ -19,14 +19,41 @@ public class OrphanCheck : ICheckCase
 
     private static async Task<CaseResult> CheckProjectAsync(DevOpsProjectConfig projectCfg, string pat, HashSet<string> excludeTypes)
     {
+        var client = new AzureDevOpsClient(projectCfg.Organization, projectCfg.Project, pat, projectCfg.ApiVersion);
+
         var wiql = projectCfg.Wiql;
+
+        // When no custom WIQL or ParentTypeMappings, load types from the process
+        // configuration so all configured work item types (including custom ones
+        // like Request) are checked automatically.
+        if (projectCfg.LoadTypesFromProcess)
+        {
+            try
+            {
+                var hierarchy = await client.GetProcessConfigurationAsync();
+                if (hierarchy.Count > 0)
+                {
+                    var types = string.Join(",", hierarchy.Keys.Select(t => $"'{t}'"));
+                    wiql =
+                        "SELECT [System.Id]\n" +
+                        "FROM WorkItems\n" +
+                        "WHERE [System.TeamProject] = @project\n" +
+                        $"  AND [System.WorkItemType] IN ({types})\n" +
+                        "  AND [System.State] NOT IN ('Closed','Removed','Done','Completed')";
+                }
+            }
+            catch
+            {
+                // Fall back to the default WIQL if process config cannot be loaded
+            }
+        }
+
         if (!string.IsNullOrEmpty(projectCfg.AreaPath) && !wiql.Contains("System.AreaPath"))
         {
             var areaClause = Helpers.BuildAreaFilter(projectCfg.AreaPath, projectCfg.IncludeChildAreas).TrimEnd();
             wiql = wiql.TrimEnd().TrimEnd(';') + $"\n  {areaClause}";
         }
 
-        var client = new AzureDevOpsClient(projectCfg.Organization, projectCfg.Project, pat, projectCfg.ApiVersion);
         var ids = await client.RunWiqlAsync(wiql);
         var rawItems = await client.GetWorkItemsAsync(ids);
 

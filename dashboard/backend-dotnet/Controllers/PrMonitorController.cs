@@ -134,6 +134,7 @@ public partial class PrMonitorController(ConfigStore configStore, ILogger<PrMoni
             .Where(c => c.Enabled && c.CheckType is "pr_approval_check" or "stale_pr_check" or "unreviewed_pr_check")
             .ToDictionary(c => c.CheckType);
 
+        var checksEnabled = prChecks.Count > 0;
         var repository = prChecks.Values.FirstOrDefault(c => !string.IsNullOrEmpty(c.Repository))?.Repository ?? "";
         var staleDays = prChecks.TryGetValue("stale_pr_check", out var sc) ? sc.StaleDays : 14;
         if (staleDays == 0) staleDays = 14;
@@ -166,8 +167,15 @@ public partial class PrMonitorController(ConfigStore configStore, ILogger<PrMoni
                 CreationDate = pr.TryGetProperty("creationDate", out var cd) ? cd.GetString() ?? "" : "",
                 IsDraft = pr.TryGetProperty("isDraft", out var draft) && draft.GetBoolean(),
                 ReviewerCount = reviewerCount,
+                Reviewers = (pr.TryGetProperty("reviewers", out var revList) ? revList.EnumerateArray().ToList() : [])
+                    .Select(r => new PrReviewer
+                    {
+                        Name = r.TryGetProperty("displayName", out var rdn) ? rdn.GetString() ?? "" : "",
+                        Vote = r.TryGetProperty("vote", out var rv) ? rv.GetInt32() : 0,
+                        IsRequired = r.TryGetProperty("isRequired", out var rq) && rq.GetBoolean(),
+                    }).ToList(),
                 DaysInactive = daysInactive,
-                Flags = ComputeFlags(pr, staleDays, ignoreReviewers, daysInactive),
+                Flags = checksEnabled ? ComputeFlags(pr, staleDays, ignoreReviewers, daysInactive) : [],
             };
         }).ToList();
 
@@ -187,10 +195,7 @@ public partial class PrMonitorController(ConfigStore configStore, ILogger<PrMoni
         if (string.IsNullOrEmpty(pat))
             throw new BadHttpRequestException("PAT not configured.");
 
-        var projects = configStore.ListProjects()
-            .Where(p => p.Checks.Any(c => c.Enabled &&
-                c.CheckType is "pr_approval_check" or "stale_pr_check" or "unreviewed_pr_check"))
-            .ToList();
+        var projects = configStore.ListProjects();
 
         if (projects.Count == 0) return [];
 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roadmap — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html" class="active">Roadmap</a>
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permissions.html">Permissions</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Roadmap</div>
+
+  <h1>Roadmap</h1>
+  <p>The Roadmap provides a portfolio-level timeline view of your Epics and Features across multiple Azure DevOps projects and teams. Plan work visually, reschedule by dragging, create dependency links, and push changes back to Azure DevOps when ready.</p>
+
+  <!-- TODO: SCREENSHOT NEEDED — roadmap-overview.png — Full roadmap board showing epics with feature bars across quarters -->
+  <img src="screenshots/roadmap.png" alt="Screenshot of the Roadmap board showing epics with feature bars positioned across quarterly columns" class="screenshot">
+  <p class="screenshot-caption">The Roadmap board in Quarter view with sprint overlay enabled.</p>
+
+  <h2>Getting Started with the Roadmap</h2>
+  <ol>
+    <li>Open the Roadmap from the sidebar menu.</li>
+    <li>Switch to the <span class="ui">Configuration</span> tab.</li>
+    <li>Add one or more Azure DevOps projects and select which work item types to display (typically Epic and Feature).</li>
+    <li>Optionally add Sprint Views (project + team pairs) to enable the Sprint view mode.</li>
+    <li>Return to the <span class="ui">Roadmap</span> tab — your items appear on the timeline.</li>
+  </ol>
+
+  <h2>View Modes</h2>
+
+  <h3>Quarter Overview (Default)</h3>
+  <p>Displays a timeline divided into calendar quarters (e.g. "2025 Q1", "2025 Q2"). Best for high-level planning spanning multiple months. You can toggle a <span class="ui">Sprint Overlay</span> that shows sprint boundaries as thin coloured bands for each configured team.</p>
+
+  <h3>Sprint View</h3>
+  <p>Displays a timeline divided by sprint boundaries for a specific team. Use the view mode selector in the filter bar to switch between Quarter view and individual team sprint views. Individual sprints can be hidden in the Configuration tab.</p>
+
+  <h2>Board Layout</h2>
+  <ul>
+    <li><strong>Timeline Header</strong> — Shows quarter labels (or sprint dates). In Sprint view, month headers appear above.</li>
+    <li><strong>Epic Rows</strong> — One row per Epic. Each row shows all child Features as horizontal bars positioned on the timeline.</li>
+    <li><strong>Feature Bars</strong> — Positioned based on start/target date. Colour-coded by project. Shows title, ID, state, and type badge.</li>
+    <li><strong>Unparented Row</strong> — Features without a parent Epic are grouped in a "No Parent Epic" row at the bottom.</li>
+    <li><strong>Unplanned Column</strong> — Features without dates appear as stacked cards (not bars) in the right-most column.</li>
+  </ul>
+
+  <h2>Drag-to-Reschedule</h2>
+  <p>Reschedule Features by dragging them to a different timeline column:</p>
+  <ol>
+    <li>Grab a Feature bar and drag it to the target quarter or sprint column.</li>
+    <li>The bar repositions and gains an <strong>amber ring</strong> to indicate an unsaved change.</li>
+    <li>Use the <strong>resize handles</strong> (left/right edges of the bar, visible on hover) to fine-tune start and target dates.</li>
+    <li>The unsaved changes counter at the top updates. Changes are <em>staged</em> locally.</li>
+    <li>Click <span class="ui">Push to DevOps</span> when ready to write all date changes back to Azure DevOps.</li>
+  </ol>
+
+  <!-- TODO: SCREENSHOT NEEDED — roadmap-drag.png — A feature bar being dragged with amber ring showing unsaved state -->
+  <img src="screenshots/roadmap-drag.png" alt="Screenshot of a feature bar being dragged to a different column with amber ring indicating unsaved state" class="screenshot">
+  <p class="screenshot-caption">Drag a feature bar to reschedule it. The amber ring indicates an unsaved change.</p>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    Click <span class="ui">Show Changes</span> to review all pending date and link changes before pushing. You can revert individual items from this view.
+  </div>
+
+  <h2>Dependency Linking</h2>
+  <p>Create predecessor/successor relationships between Features directly on the board:</p>
+  <ol>
+    <li>Hover over a Feature bar and click the <strong>chain icon</strong> (🔗). A "linking from…" banner appears.</li>
+    <li>Click the chain icon on the target Feature.</li>
+    <li>A confirmation modal shows both items with a directional arrow. Use <span class="ui">Swap Direction</span> to reverse the relationship if needed.</li>
+    <li>Confirm to create the link. It appears as an SVG arrow between the bars.</li>
+    <li>Pending links show as <strong>dashed arrows</strong> until pushed to Azure DevOps.</li>
+  </ol>
+  <p>To remove a link, hover over the arrow and click the ✕ icon at the midpoint. The removal is staged until you push.</p>
+
+  <!-- TODO: SCREENSHOT NEEDED — roadmap-links.png — Dependency arrows between features with the linking confirmation modal -->
+  <img src="screenshots/roadmap-links.png" alt="Screenshot showing dependency arrows between features and the linking confirmation modal" class="screenshot">
+  <p class="screenshot-caption">Dependency arrows between features with the link confirmation modal.</p>
+
+  <h2>Creating New Items</h2>
+  <p>Add new Epics or Features directly from the Roadmap board:</p>
+  <ol>
+    <li>Hover over an Epic row's label and click the <strong>+ Create Feature</strong> button that appears, or use the <strong>Add Epic</strong> button in the timeline header.</li>
+    <li>Choose whether to start from a clean form or use an existing work item template.</li>
+    <li>Fill in the title, description (with @mention and image paste support), iteration path, and any custom fields.</li>
+    <li>Click <span class="ui">Create</span> — the item appears on the board immediately.</li>
+  </ol>
+  <p>The create modal features:</p>
+  <ul>
+    <li>A coloured header bar showing "Create [type]".</li>
+    <li>The <strong>Iteration Path</strong> field pre-selects the team's default iteration (backlog iteration from Azure DevOps team settings). All iterations are available in the dropdown, sorted newest-first.</li>
+    <li>Custom fields with type <code>html</code>, <code>plaintext</code>, or <code>string</code> render as full-width rich text editors with @mention and image paste support.</li>
+    <li>Custom fields with allowed values render as dropdown selectors in a side-by-side grid.</li>
+    <li>System-managed fields (state change date, activated date, resolved date, etc.) are hidden from the form.</li>
+    <li>Footer shows "Press <kbd>Esc</kbd> to close" on the left and action buttons on the right.</li>
+  </ul>
+
+  <!-- TODO: SCREENSHOT NEEDED — roadmap-create.png — The create modal showing template selection and form fields -->
+  <img src="screenshots/roadmap-create.png" alt="Screenshot of the create modal with coloured header bar, form fields, and iteration pre-selected" class="screenshot">
+  <p class="screenshot-caption">The create modal with iteration pre-selected and custom fields.</p>
+
+  <h2>Detail Modal</h2>
+  <p>Click any Feature bar or Epic label to open the detail modal. The modal has a coloured header bar showing the work item ID, title, type badge, state badge, assigned person, iteration path, tags, and <strong>last changed date</strong> (in orange).</p>
+
+  <img src="screenshots/roadmap-detail-view.png" alt="Screenshot of the detail modal in view mode showing header bar with badges, description and comments" class="screenshot">
+  <p class="screenshot-caption">The detail modal in view mode with coloured header bar.</p>
+
+  <h3>View Mode</h3>
+  <p>By default the modal opens in read-only view showing the work item description, dependency links, and comments. Click <span class="ui">Edit</span> in the header to switch to edit mode.</p>
+
+  <h3>Edit Mode</h3>
+  <p>In edit mode you can change:</p>
+  <ul>
+    <li>Title, State, Assigned To, Iteration Path</li>
+    <li>Tags (multi-select)</li>
+    <li>Description (rich editor with @mentions and image paste)</li>
+    <li>Custom fields (rich text or dropdowns, based on field type)</li>
+    <li>Dependencies (add/remove predecessor/successor links)</li>
+  </ul>
+  <p>Comments can be added from both view and edit mode using the comment box at the bottom (supports @mentions and image paste).</p>
+
+  <img src="screenshots/roadmap-detail-edit.png" alt="Screenshot of the detail modal in edit mode showing form fields, custom fields, and action buttons" class="screenshot">
+  <p class="screenshot-caption">The detail modal in edit mode with editable fields and custom field editors.</p>
+
+  <h3>Modal Footer</h3>
+  <p>The footer shows "Press <kbd>Esc</kbd> to close" on the left. In edit mode, Cancel and Save buttons appear on the right. In view mode, a Close button is shown.</p>
+
+  <h2>Filtering &amp; Search</h2>
+  <table class="config">
+    <tr><th>Filter</th><th>Description</th></tr>
+    <tr><td>View mode</td><td>Switch between Quarter and Sprint views.</td></tr>
+    <tr><td>Project filter</td><td>Multi-select to show only items from specific projects.</td></tr>
+    <tr><td>State filter</td><td>Multi-select to show only items in specific states (e.g. New, Active, Closed).</td></tr>
+    <tr><td>Search</td><td>Real-time filter by title or work item ID.</td></tr>
+    <tr><td>Show unplanned</td><td>Toggle to show/hide items without dates.</td></tr>
+  </table>
+
+  <h2>Configuration Tab</h2>
+
+  <h3>Projects</h3>
+  <p>Add Azure DevOps projects to the Roadmap. For each project, select which work item types to display (typically Epic and Feature). Items of these types are fetched and shown on the board.</p>
+
+  <h3>Sprint Views</h3>
+  <p>Define project + team pairs to enable Sprint view mode. Once added, that team's sprints appear as a selectable view in the filter bar. Expand a sprint view entry to hide specific sprints from the timeline.</p>
+
+  <h3>Quarters</h3>
+  <p>Select which calendar quarters to show in Quarter view. By default, the current quarter plus 1 past and 3 future are displayed. Toggle <span class="ui">Sprint Overlay</span> to show sprint boundaries on the Quarter view.</p>
+
+  <!-- TODO: SCREENSHOT NEEDED — roadmap-config.png — Configuration tab showing project and sprint view settings -->
+  <img src="screenshots/roadmap-config.png" alt="Screenshot of the Roadmap configuration tab showing project and sprint view settings" class="screenshot">
+  <p class="screenshot-caption">The Configuration tab with projects and sprint views.</p>
+
+  <h2>Pushing Changes to Azure DevOps</h2>
+  <p>All date changes and dependency links are <strong>staged locally</strong> until you explicitly push them:</p>
+  <ol>
+    <li>The header shows a badge with the number of unsaved changes.</li>
+    <li>Click <span class="ui">Show Changes</span> to review: date shifts, link additions, and link removals.</li>
+    <li>Revert individual items if needed.</li>
+    <li>Click <span class="ui">Push to DevOps</span> to write all changes to Azure DevOps in one batch.</li>
+  </ol>
+
+  <div class="callout important">
+    <strong>Important</strong>
+    Closing the browser without pushing discards all staged changes. The amber rings on bars remind you which items have unsaved changes.
+  </div>
+</main>
+
+</body>
+</html>

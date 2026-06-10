@@ -9,25 +9,10 @@
     </div>
 
     <!-- PAT Warning -->
-    <div v-if="!store.patConfigured" class="mb-6 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-3 flex items-center gap-3">
-      <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-      </svg>
-      <p class="text-sm text-amber-800 dark:text-amber-200">PAT not configured. Set it in Settings first.</p>
-    </div>
+    <UAlert v-if="!store.patConfigured" color="warning" icon="i-heroicons-exclamation-triangle" description="PAT not configured. Set it in Settings first." class="mb-6" />
 
     <!-- Tab bar -->
-    <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
-      <nav class="flex gap-6 -mb-px">
-        <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
-          class="pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
-          :class="activeTab === tab.id
-            ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'">
-          {{ tab.label }}
-        </button>
-      </nav>
-    </div>
+    <UTabs :items="tabs" v-model="activeTab" :content="false" variant="link" class="mb-6" />
 
     <!-- =============== CAPACITY TAB =============== -->
     <div v-if="activeTab === 'capacity'">
@@ -36,20 +21,20 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Project -->
           <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Project</label>
-            <SelectMenu autofocus v-model="capProjectId" :options="projectOptions" @change="onCapProjectChange"
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1">Project</label>
+            <USelectMenu autofocus v-model="capProjectId" :items="projectOptions" value-key="value"
               placeholder="Choose a project…" class="w-full" />
           </div>
           <!-- Team -->
           <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Team</label>
-            <SelectMenu v-model="capTeam" :options="capTeamOptions" @change="onCapTeamChange"
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1">Team</label>
+            <USelectMenu v-model="capTeam" :items="capTeamOptions" value-key="value" placeholder="Choose a team…"
               :loading="capLoadingTeams" :disabled="!capProjectId || capLoadingTeams" class="w-full" />
           </div>
           <!-- Sprint -->
           <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Sprint</label>
-            <SelectMenu v-model="capIterationId" :options="capIterationOptions" @change="onCapSprintChange"
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1">Sprint</label>
+            <USelectMenu v-model="capIterationId" :items="capIterationOptions" value-key="value" placeholder="Choose a sprint…"
               :loading="capLoadingIterations" :disabled="!capTeam || capLoadingIterations" class="w-full" />
           </div>
         </div>
@@ -62,7 +47,7 @@
             Team Capacity — {{ isDemoMode ? anonIterationPath(capData.iteration_name) : capData.iteration_name }}
           </h3>
           <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500 dark:text-gray-400">
+            <span class="text-xs text-gray-500 dark:text-gray-300">
               Total: <strong>{{ capTotalAll }}</strong>
               <template v-if="capTotalDev > 0"> · Dev: <strong>{{ capTotalDev }}</strong></template>
               <template v-if="capTotalTest > 0"> · Test: <strong>{{ capTotalTest }}</strong></template>
@@ -75,7 +60,7 @@
         <div class="overflow-x-auto">
           <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
             <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <tr class="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 <th class="py-2 pr-4">Team Member</th>
                 <th class="py-2 pr-2 text-right">Activity</th>
                 <th class="py-2 pr-4">Capacity / Day</th>
@@ -86,33 +71,28 @@
             <tbody>
               <template v-for="(member, mi) in capMembers" :key="member.member_id">
                 <tr v-for="(act, ai) in member.activities" :key="member.member_id + '-' + ai"
-                  class="border-b border-gray-100 dark:border-gray-700/50">
+                  class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                   <td v-if="ai === 0" :rowspan="Math.max(member.activities.length, 1)" class="py-2 pr-4 font-medium text-gray-800 dark:text-gray-200 align-top">
                     {{ isDemoMode ? anonName(member.display_name) : cleanName(member.display_name) }}
                   </td>
                   <td class="py-2 pr-2 text-right">
-                    <SelectMenu v-model="act.name" :options="activityOptions" size="sm" />
+                    <USelectMenu v-model="act.name" :items="activityOptions" value-key="value" size="sm" placeholder="Unassigned" />
                   </td>
                   <td class="py-2 pr-4">
-                    <input type="number" v-model.number="act.capacity_per_day" min="0" max="24" step="0.5"
-                      class="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none" />
+                    <UInput type="number" v-model.number="act.capacity_per_day" :min="0" :max="24" :step="0.5" size="sm" class="w-24" />
                   </td>
                   <td v-if="ai === 0" :rowspan="Math.max(member.activities.length, 1)" class="py-2 align-top">
-                    <button @click="toggleDaysOff(mi)"
-                      class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors"
-                      :class="capExpandedDaysOff === mi
-                        ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300'
-                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'">
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                      </svg>
+                    <UButton @click="toggleDaysOff(mi)" size="xs"
+                      :variant="capExpandedDaysOff === mi ? 'soft' : 'ghost'"
+                      :color="capExpandedDaysOff === mi ? 'primary' : 'neutral'"
+                      icon="i-heroicons-calendar">
                       {{ countDaysOff(member) }} day{{ countDaysOff(member) !== 1 ? 's' : '' }}
-                    </button>
+                    </UButton>
                   </td>
                   <td v-if="ai === 0" :rowspan="Math.max(member.activities.length, 1)" class="py-2 align-top">
                     <div class="flex items-center gap-1">
-                      <button v-if="member.activities.length < 2" @click="addActivity(mi)" class="text-primary-500 hover:text-primary-700 text-xs" title="Add activity">+</button>
-                      <button @click="removeMember(mi)" class="text-red-400 hover:text-red-600 text-xs" title="Remove member">✕</button>
+                      <UButton v-if="member.activities.length < 2" @click="addActivity(mi)" variant="ghost" color="primary" size="xs" title="Add activity">+</UButton>
+                      <UButton @click="removeMember(mi)" variant="ghost" color="error" size="xs" title="Remove member">✕</UButton>
                     </div>
                   </td>
                 </tr>
@@ -122,7 +102,7 @@
                     <div class="space-y-3">
                       <!-- Standard days off (weekday toggles) -->
                       <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Standard days off (weekly)</label>
+                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1.5 block">Standard days off (weekly)</label>
                         <div class="flex gap-1">
                           <button v-for="(day, di) in weekdayLabels.slice(0, 5)" :key="di"
                             @click="toggleStandardDayOff(mi, di)"
@@ -136,16 +116,16 @@
                       </div>
                       <!-- Sprint calendar -->
                       <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Sprint calendar (click to toggle)</label>
+                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1.5 block">Sprint calendar (click to toggle)</label>
                         <div class="flex flex-wrap gap-1">
                           <div v-for="d in sprintDays" :key="d.iso" class="text-center">
-                            <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-0.5">{{ d.weekdayShort }}</div>
+                            <div class="text-[10px] text-gray-500 dark:text-gray-300 mb-0.5">{{ d.weekdayShort }}</div>
                             <button @click="toggleDateOff(mi, d.iso)"
                               class="w-9 h-8 text-xs font-medium rounded-md border transition-colors"
                               :class="isDayOff(mi, d.iso)
                                 ? 'bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300'
                                 : d.isWeekend
-                                  ? 'bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-500 text-gray-400 dark:text-gray-500'
+                                  ? 'bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-500 text-gray-500 dark:text-gray-300'
                                   : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'"
                               :title="d.iso">
                               {{ d.day }}
@@ -154,7 +134,7 @@
                         </div>
                       </div>
                       <!-- Summary -->
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                      <div class="text-xs text-gray-500 dark:text-gray-300">
                         {{ countDaysOff(member) }} working day{{ countDaysOff(member) !== 1 ? 's' : '' }} off this sprint
                         <span v-if="getStandardDaysOff(mi).length > 0" class="ml-1">(incl. {{ getStandardDaysOff(mi).map(d => weekdayLabels[d]).join(', ') }} every week)</span>
                       </div>
@@ -165,12 +145,12 @@
                   <td class="py-2 pr-4 font-medium text-gray-800 dark:text-gray-200">
                     {{ isDemoMode ? anonName(member.display_name) : cleanName(member.display_name) }}
                   </td>
-                  <td colspan="3" class="py-2 text-gray-400 italic text-xs">
+                  <td colspan="3" class="py-2 text-gray-400 dark:text-gray-300 italic text-xs">
                     No activity set
-                    <button @click="addActivity(mi)" class="ml-2 text-primary-500 hover:text-primary-700 text-xs">+ Add</button>
+                    <UButton @click="addActivity(mi)" variant="link" color="primary" size="xs" class="ml-2">+ Add</UButton>
                   </td>
                   <td class="py-2 align-top">
-                    <button @click="removeMember(mi)" class="text-red-400 hover:text-red-600 text-xs" title="Remove member">✕</button>
+                    <UButton @click="removeMember(mi)" variant="ghost" color="error" size="xs" title="Remove member">✕</UButton>
                   </td>
                 </tr>
               </template>
@@ -180,52 +160,56 @@
 
         <!-- Add member + actions -->
         <div class="flex items-center gap-2 mt-3 flex-wrap">
-          <SelectMenu v-model="capAddMemberId" :options="capAddMemberOptions"
+          <USelectMenu v-model="capAddMemberId" :items="capAddMemberOptions" value-key="value"
             :loading="capLoadingAllMembers" :disabled="capAvailableMembers.length === 0 && !capLoadingAllMembers"
             placeholder="Add a team member…" class="flex-1 max-w-xs" />
-          <button @click="addMember" :disabled="!capAddMemberId"
-            class="px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <UButton @click="addMember" :disabled="!capAddMemberId" size="sm">
             + Add
-          </button>
+          </UButton>
           <span class="mx-1 text-gray-300 dark:text-gray-600">|</span>
-          <button @click="copyFromLastSprint" :disabled="capPushing || capCopying"
-            class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
-            <svg v-if="capCopying" class="animate-spin w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+          <UButton @click="copyFromLastSprint" :disabled="capPushing || capCopying" :loading="capCopying"
+            variant="outline" color="neutral" size="sm" icon="i-heroicons-document-duplicate">
             {{ capCopying ? 'Copying…' : 'Copy capacity from last sprint' }}
-          </button>
-          <button @click="loadCapacity" :disabled="capPushing"
-            class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+          </UButton>
+          <UButton @click="loadCapacity" :disabled="capPushing"
+            variant="outline" color="neutral" size="sm" icon="i-heroicons-arrow-path">
             Reload from DevOps
-          </button>
+          </UButton>
           <span v-if="capResult" class="text-sm" :class="capResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
             {{ capResult.message }}
           </span>
         </div>
         <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <label class="flex items-start gap-3 mb-3 cursor-pointer select-none">
-            <input type="checkbox" v-model="capConfirmed" :disabled="capPushing"
-              class="mt-0.5 w-4 h-4 text-primary-600 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-500" />
-            <span class="text-sm text-gray-700 dark:text-gray-300" v-if="capMembers.length > 0">
-              I confirm I want to overwrite the capacity for <strong>{{ capMembers.length }} member{{ capMembers.length !== 1 ? 's' : '' }}</strong>
-              in DevOps. <span class="text-red-500 font-medium">This replaces existing capacity data.</span>
-            </span>
-            <span class="text-sm text-gray-700 dark:text-gray-300" v-else>
-              I confirm I want to <strong>clear all capacity</strong> in DevOps for this sprint.
-              <span class="text-red-500 font-medium">This removes all members.</span>
-            </span>
-          </label>
-          <button @click="pushCapacity" :disabled="!capConfirmed || capPushing"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-colors shadow-sm"
-            :class="capConfirmed && !capPushing ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-400 cursor-not-allowed'">
-            <svg v-if="capPushing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+          <UButton @click="capShowConfirm = true" :disabled="capPushing" :loading="capPushing"
+            icon="i-heroicons-cloud-arrow-up">
             {{ capPushing ? 'Sending…' : 'Send to DevOps' }}
-          </button>
+          </UButton>
+
+          <UModal :open="capShowConfirm" @update:open="v => { if (!v) capShowConfirm = false }" title="Are you sure?" description="Confirm sending capacity to DevOps">
+            <template #body>
+              <p class="text-sm text-gray-700 dark:text-gray-300" v-if="capMembers.length > 0">
+                This will overwrite the capacity for <strong>{{ capMembers.length }} member{{ capMembers.length !== 1 ? 's' : '' }}</strong>
+                in DevOps. <span class="text-red-500 font-medium">This replaces existing capacity data.</span>
+              </p>
+              <p class="text-sm text-gray-700 dark:text-gray-300" v-else>
+                This will <strong>clear all capacity</strong> in DevOps for this sprint.
+                <span class="text-red-500 font-medium">This removes all members.</span>
+              </p>
+              <p v-if="isDemoMode" class="text-sm text-amber-600 dark:text-amber-400 mt-2">Disabled in demo mode</p>
+            </template>
+            <template #footer>
+              <div class="flex justify-end gap-2">
+                <UButton variant="outline" color="neutral" label="Cancel" @click="capShowConfirm = false" />
+                <UButton label="Yes, send to DevOps" :disabled="isDemoMode" @click="capShowConfirm = false; pushCapacity()" />
+              </div>
+            </template>
+          </UModal>
         </div>
       </div>
 
       <!-- Loading capacity -->
       <div v-else-if="capLoadingData" class="flex items-center gap-2 text-sm text-gray-500 py-8 justify-center">
-        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin" />
         Loading capacity…
       </div>
     </div>
@@ -237,44 +221,38 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <!-- Project -->
           <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Project</label>
-            <SelectMenu v-model="calcProjectId" :options="projectOptions" @change="onCalcProjectChange"
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1">Project</label>
+            <USelectMenu v-model="calcProjectId" :items="projectOptions" value-key="value"
               placeholder="Choose a project…" class="w-full" />
           </div>
           <!-- Team -->
           <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Team</label>
-            <SelectMenu v-model="calcTeam" :options="calcTeamOptions" @change="onCalcTeamChange"
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1">Team</label>
+            <USelectMenu v-model="calcTeam" :items="calcTeamOptions" value-key="value" placeholder="Choose a team…"
               :loading="calcLoadingTeams" :disabled="!calcProjectId || calcLoadingTeams" class="w-full" />
           </div>
         </div>
         <!-- Sprint selectors -->
         <div v-if="calcTeam" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Last Sprint (completed)</label>
-            <SelectMenu v-model="calcLastIterId" :options="calcIterationOptions"
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1">Last Sprint (completed)</label>
+            <USelectMenu v-model="calcLastIterId" :items="calcIterationOptions" value-key="value" placeholder="Last sprint…"
               :loading="calcLoadingIterations" :disabled="calcLoadingIterations" class="w-full" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Target Sprint</label>
-            <SelectMenu v-model="calcTargetIterId" :options="calcIterationOptions"
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-1">Target Sprint</label>
+            <USelectMenu v-model="calcTargetIterId" :items="calcIterationOptions" value-key="value" placeholder="Target sprint…"
               :disabled="calcLoadingIterations" class="w-full" />
           </div>
         </div>
 
         <!-- Calculate button + options -->
         <div v-if="calcLastIterId && calcTargetIterId" class="mt-4 flex items-center gap-4">
-          <button @click="runCalc" :disabled="calcLoading"
-            class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50"
-            :class="calcLoading ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-            <svg v-if="calcLoading" class="animate-spin w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+          <UButton @click="runCalc" :disabled="calcLoading" :loading="calcLoading"
+            icon="i-heroicons-calculator">
             {{ calcLoading ? 'Calculating…' : 'Calculate Velocity' }}
-          </button>
-          <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
-            <input type="checkbox" v-model="calcIncludeUnassigned"
-              class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
-            Include unassigned capacity
-          </label>
+          </UButton>
+          <UCheckbox v-model="calcIncludeUnassigned" label="Include unassigned capacity" class="text-sm text-gray-600 dark:text-gray-300" />
         </div>
       </div>
 
@@ -282,23 +260,22 @@
       <div v-if="calcResult" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-4">
         <div class="flex items-center gap-2 mb-4">
           <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Velocity Calculation</h3>
-          <span class="text-xs text-gray-400 dark:text-gray-500">{{ calcIncludeUnassigned ? '(including unassigned capacity)' : '(based on Development + Testing capacity only)' }}</span>
+          <span class="text-xs text-gray-500 dark:text-gray-300">{{ calcIncludeUnassigned ? '(including unassigned capacity)' : '(based on Development + Testing capacity only)' }}</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Last sprint -->
           <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-            <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Last Sprint</h4>
+            <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase mb-2">Last Sprint</h4>
             <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">{{ isDemoMode ? anonIterationPath(calcResult.last_sprint.name) : calcResult.last_sprint.name }}</p>
-            <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <div class="space-y-1 text-sm text-gray-600 dark:text-gray-300">
               <div class="flex justify-between"><span>Dev capacity:</span><span class="font-medium">{{ calcResult.last_sprint.capacity_dev }}</span></div>
               <div class="flex justify-between"><span>Test capacity:</span><span class="font-medium">{{ calcResult.last_sprint.capacity_test }}</span></div>
               <div v-if="calcIncludeUnassigned" class="flex justify-between"><span>Unassigned capacity:</span><span class="font-medium">{{ calcResult.last_sprint.capacity_unassigned }}</span></div>
               <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 pt-1"><span>Total capacity:</span><span class="font-bold">{{ calcResult.last_sprint.capacity_total }}</span></div>
               <div class="flex justify-between items-center mt-2">
                 <span>Story points:</span>
-                <input type="number" v-model.number="calcOverridePoints" min="0" step="0.5"
-                  class="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 outline-none text-right font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                <UInput type="number" v-model.number="calcOverridePoints" :min="0" :step="0.5" size="sm" class="w-20 text-right font-bold" />
               </div>
             </div>
           </div>
@@ -306,19 +283,19 @@
           <!-- Velocity ratio -->
           <div class="flex flex-col items-center justify-center">
             <div class="text-4xl font-bold text-primary-600 dark:text-primary-400">{{ displayRatio }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">velocity ratio</div>
-            <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">points / capacity</div>
+            <div class="text-xs text-gray-500 dark:text-gray-300 mt-1">velocity ratio</div>
+            <div class="text-xs text-gray-500 dark:text-gray-300 mt-0.5">points / capacity</div>
             <div class="mt-4 text-center">
               <div class="text-3xl font-bold text-green-600 dark:text-green-400">{{ displayProjected }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">projected points</div>
+              <div class="text-xs text-gray-500 dark:text-gray-300 mt-1">projected points</div>
             </div>
           </div>
 
           <!-- Target sprint -->
           <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-            <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Target Sprint</h4>
+            <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase mb-2">Target Sprint</h4>
             <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">{{ isDemoMode ? anonIterationPath(calcResult.target_sprint.name) : calcResult.target_sprint.name }}</p>
-            <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <div class="space-y-1 text-sm text-gray-600 dark:text-gray-300">
               <div class="flex justify-between"><span>Dev capacity:</span><span class="font-medium">{{ calcResult.target_sprint.capacity_dev }}</span></div>
               <div class="flex justify-between"><span>Test capacity:</span><span class="font-medium">{{ calcResult.target_sprint.capacity_test }}</span></div>
               <div v-if="calcIncludeUnassigned" class="flex justify-between"><span>Unassigned capacity:</span><span class="font-medium">{{ calcResult.target_sprint.capacity_unassigned }}</span></div>
@@ -330,14 +307,12 @@
 
       <!-- Loading calc -->
       <div v-else-if="calcLoading" class="flex items-center gap-2 text-sm text-gray-500 py-8 justify-center">
-        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin" />
         Calculating velocity…
       </div>
 
       <!-- Error -->
-      <div v-if="calcError" class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3 text-sm text-red-700 dark:text-red-300 mt-4">
-        {{ calcError }}
-      </div>
+      <UAlert v-if="calcError" color="error" icon="i-heroicons-exclamation-circle" :description="calcError" class="mt-4" />
     </div>
 
     <!-- =============== METRICS TAB =============== -->
@@ -345,38 +320,32 @@
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Velocity Metrics — Scope vs Burned Story Points</h3>
-        <button @click="loadMetrics(true)" :disabled="metricsLoading"
-          class="px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200"
-          :class="metricsLoading
-            ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 cursor-not-allowed'
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'">
-          <svg v-if="metricsLoading" class="animate-spin w-3 h-3 inline mr-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-          {{ metricsLoading ? 'Loading…' : 'Refresh' }}
-        </button>
+        <UButton icon="i-heroicons-arrow-path" :loading="metricsLoading" :disabled="metricsLoading" @click="loadMetrics(true)" :label="metricsLoading ? 'Loading...' : 'Refresh'" />
       </div>
 
       <!-- Project filter -->
       <div v-if="allMetricsProjectNames.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
-        <button @click="metricsFilterOpen = !metricsFilterOpen" class="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-          <span class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        <UButton @click="metricsFilterOpen = !metricsFilterOpen" variant="ghost" color="neutral"
+          class="w-full !justify-between !px-4 !py-2.5">
+          <span class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
             Projects
             <span v-if="metricsExcludedCount > 0" class="ml-1 text-amber-500 dark:text-amber-400">({{ metricsExcludedCount }} hidden)</span>
           </span>
-          <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': metricsFilterOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-        </button>
+          <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-gray-400 dark:text-gray-300 transition-transform" :class="{ 'rotate-180': metricsFilterOpen }" />
+        </UButton>
         <div v-if="metricsFilterOpen" class="px-4 pb-3 border-t border-gray-100 dark:border-gray-700">
           <div class="flex items-center justify-between py-2">
-            <button @click="toggleAllMetricsProjects" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
+            <UButton @click="toggleAllMetricsProjects" variant="link" size="xs">
               {{ allMetricsProjectsEnabled ? 'Deselect all' : 'Select all' }}
-            </button>
+            </UButton>
           </div>
           <div class="flex flex-wrap gap-2">
             <label v-for="name in allMetricsProjectNames" :key="name"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition-colors select-none"
               :class="isMetricsProjectEnabled(name)
                 ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300'
-                : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 line-through'">
-              <input type="checkbox" :checked="isMetricsProjectEnabled(name)" @change="toggleMetricsProject(name)" class="w-3 h-3 rounded" />
+                : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 line-through'">
+              <UCheckbox :model-value="isMetricsProjectEnabled(name)" @update:model-value="toggleMetricsProject(name)" class="w-3 h-3" />
               {{ isDemoMode ? anonProject(name) : name }}
             </label>
           </div>
@@ -385,8 +354,8 @@
 
       <!-- Loading -->
       <div v-if="metricsLoading && !metricsData" class="flex flex-col items-center gap-3 py-16">
-        <svg class="animate-spin w-6 h-6 text-indigo-500 dark:text-indigo-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        <span class="text-sm text-gray-500 dark:text-gray-400">Loading velocity metrics…</span>
+        <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 text-indigo-500 dark:text-indigo-400 animate-spin" />
+        <span class="text-sm text-gray-500 dark:text-gray-300">Loading velocity metrics…</span>
       </div>
 
       <!-- Project cards with charts -->
@@ -404,31 +373,54 @@
                   {{ isDemoMode ? anonTeam(proj.team_name) : proj.team_name }}
                 </p>
               </div>
+              <UIcon v-if="metricsTeamLoading.has(proj.project_id)" name="i-heroicons-arrow-path" class="w-4 h-4 ml-auto text-indigo-500 animate-spin" />
+            </div>
+          </div>
+          <!-- Team filter for this project -->
+          <div v-if="proj.available_teams && proj.available_teams.length > 1" class="mx-5 mb-2 rounded-lg border border-primary-200 dark:border-primary-700/50 bg-primary-50/30 dark:bg-primary-900/10 overflow-hidden">
+            <UButton @click="teamFilterOpenProjects.has(proj.project_id) ? teamFilterOpenProjects.delete(proj.project_id) : teamFilterOpenProjects.add(proj.project_id)"
+              variant="ghost" color="neutral" class="w-full !justify-between !px-3 !py-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
+                Team
+              </span>
+              <UIcon name="i-heroicons-chevron-down" class="w-3.5 h-3.5 text-gray-400 dark:text-gray-300 transition-transform" :class="{ 'rotate-180': teamFilterOpenProjects.has(proj.project_id) }" />
+            </UButton>
+            <div v-if="teamFilterOpenProjects.has(proj.project_id)" class="px-3 pb-2.5 border-t border-gray-100 dark:border-gray-700/50">
+              <div class="flex flex-wrap gap-1.5 pt-1.5">
+                <UButton v-for="t in proj.available_teams" :key="t"
+                  @click="onMetricsTeamChange(proj, t)"
+                  :disabled="metricsTeamLoading.has(proj.project_id)"
+                  size="xs"
+                  :variant="t === proj.team_name ? 'soft' : 'outline'"
+                  :color="t === proj.team_name ? 'primary' : 'neutral'">
+                  {{ isDemoMode ? anonTeam(t) : t }}
+                </UButton>
+              </div>
             </div>
           </div>
           <!-- Sprint filter for this project -->
           <div class="mx-5 mb-2 rounded-lg border border-primary-200 dark:border-primary-700/50 bg-primary-50/30 dark:bg-primary-900/10 overflow-hidden">
-            <button @click="sprintFilterOpenProjects.has(proj.project_id) ? sprintFilterOpenProjects.delete(proj.project_id) : sprintFilterOpenProjects.add(proj.project_id)"
-              class="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+            <UButton @click="sprintFilterOpenProjects.has(proj.project_id) ? sprintFilterOpenProjects.delete(proj.project_id) : sprintFilterOpenProjects.add(proj.project_id)"
+              variant="ghost" color="neutral" class="w-full !justify-between !px-3 !py-2">
               <span class="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
                 Sprints
                 <span v-if="sprintExcludedCount(proj) > 0" class="ml-1 text-amber-500 dark:text-amber-400">({{ sprintExcludedCount(proj) }} hidden)</span>
               </span>
-              <svg class="w-3.5 h-3.5 text-gray-400 transition-transform" :class="{ 'rotate-180': sprintFilterOpenProjects.has(proj.project_id) }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            </button>
+              <UIcon name="i-heroicons-chevron-down" class="w-3.5 h-3.5 text-gray-400 dark:text-gray-300 transition-transform" :class="{ 'rotate-180': sprintFilterOpenProjects.has(proj.project_id) }" />
+            </UButton>
             <div v-if="sprintFilterOpenProjects.has(proj.project_id)" class="px-3 pb-2.5 border-t border-gray-100 dark:border-gray-700/50">
               <div class="flex items-center justify-between py-1.5">
-                <button @click="toggleAllSprints(proj)" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
+                <UButton @click="toggleAllSprints(proj)" variant="link" size="xs">
                   {{ allSprintsEnabled(proj) ? 'Deselect all' : 'Select all' }}
-                </button>
+                </UButton>
               </div>
               <div class="flex flex-wrap gap-1.5">
                 <label v-for="s in proj.sprints" :key="s.name"
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-colors select-none"
                   :class="isSprintEnabled(proj.project_id, s.name)
                     ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300'
-                    : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 line-through'">
-                  <input type="checkbox" :checked="isSprintEnabled(proj.project_id, s.name)" @change="toggleSprint(proj.project_id, s.name)" class="w-3 h-3 rounded" />
+                    : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 line-through'">
+                  <UCheckbox :model-value="isSprintEnabled(proj.project_id, s.name)" @update:model-value="toggleSprint(proj.project_id, s.name)" class="w-3 h-3" />
                   {{ isDemoMode ? sprintLabel(anonIterationPath(s.name)) : sprintLabel(s.name) }}
                 </label>
               </div>
@@ -441,16 +433,14 @@
       </div>
 
       <!-- Empty -->
-      <div v-else-if="metricsData" class="flex flex-col items-center py-16 text-gray-400 dark:text-gray-500">
-        <svg class="w-10 h-10 mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <div v-else-if="metricsData" class="flex flex-col items-center py-16 text-gray-500 dark:text-gray-300">
+        <UIcon name="i-heroicons-chart-bar" class="w-10 h-10 mb-3 text-gray-300 dark:text-gray-600" />
         <span class="text-sm">No velocity data available</span>
         <span class="text-xs text-gray-400 dark:text-gray-600 mt-1">Ensure projects have past sprints with story points</span>
       </div>
 
       <!-- Error -->
-      <div v-if="metricsError" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl px-5 py-4 text-sm text-red-600 dark:text-red-300 mt-4">
-        {{ metricsError }}
-      </div>
+      <UAlert v-if="metricsError" color="error" icon="i-heroicons-exclamation-circle" :description="metricsError" class="mt-4" />
     </div>
   </div>
 </template>
@@ -458,9 +448,9 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
+import { useVelocityStore } from '../stores/velocity.js'
 import { useDemoMode, anonName, anonProject, anonTeam, anonIterationPath } from '../composables/useDemoMode.js'
 import DataFreshness from '../components/DataFreshness.vue'
-import SelectMenu from '../components/SelectMenu.vue'
 import { useTheme } from '../composables/useTheme.js'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, LineController, BarController, Title, Tooltip, Legend, Filler } from 'chart.js'
@@ -469,6 +459,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineEleme
 
 const { dark: isDark } = useTheme()
 const store = useMonitorStore()
+const velocityStore = useVelocityStore()
 const { isDemoMode } = useDemoMode()
 
 function cleanName(name) {
@@ -477,9 +468,9 @@ function cleanName(name) {
 
 // Tabs
 const tabs = [
-  { id: 'capacity', label: 'Capacity' },
-  { id: 'calculate', label: 'Calculate Velocity' },
-  { id: 'metrics', label: 'Velocity Metrics' },
+  { value: 'capacity', label: 'Capacity', icon: 'i-heroicons-users' },
+  { value: 'calculate', label: 'Calculate Velocity', icon: 'i-heroicons-calculator' },
+  { value: 'metrics', label: 'Velocity Metrics', icon: 'i-heroicons-chart-bar' },
 ]
 const activeTab = ref('capacity')
 
@@ -490,7 +481,6 @@ const projectOptions = computed(() =>
   projects.value.map(p => ({ value: p.id, label: isDemoMode.value ? anonProject(p.project) : p.project }))
 )
 const activityOptions = [
-  { value: '', label: 'Unassigned' },
   { value: 'Development', label: 'Development' },
   { value: 'Testing', label: 'Testing' },
   { value: 'Design', label: 'Design' },
@@ -502,13 +492,12 @@ const activityOptions = [
 onMounted(async () => {
   loadSavedExcludedProjects()
   loadSavedExcludedSprints()
-  await store.fetchVelocityProjects()
-  projects.value = store.velocityProjects
+  loadSavedSelectedTeams()
+  await velocityStore.fetchVelocityProjects()
+  projects.value = velocityStore.velocityProjects
   if (projects.value.length === 1) {
     capProjectId.value = projects.value[0].id
     calcProjectId.value = projects.value[0].id
-    await onCapProjectChange()
-    await onCalcProjectChange()
   }
 })
 
@@ -526,24 +515,22 @@ const capLoadingData = ref(false)
 const capPushing = ref(false)
 const capCopying = ref(false)
 const capResult = ref(null)
-const capConfirmed = ref(false)
+const capShowConfirm = ref(false)
 const capAllMembers = ref([])
 const capLoadingAllMembers = ref(false)
 const capAddMemberId = ref('')
 const capExpandedDaysOff = ref(null) // member index or null
 const capStandardDaysOff = ref({}) // { member_id: Set<weekdayIndex> }
 
-const capTeamOptions = computed(() => [
-  { value: '', label: 'Choose a team…' },
-  ...capTeams.value.map(t => ({ value: t.name, label: isDemoMode.value ? anonTeam(t.name) : t.name }))
-])
-const capIterationOptions = computed(() => [
-  { value: '', label: 'Choose a sprint…' },
-  ...capIterations.value.map(it => ({
+const capTeamOptions = computed(() =>
+  capTeams.value.map(t => ({ value: t.name, label: isDemoMode.value ? anonTeam(t.name) : t.name }))
+)
+const capIterationOptions = computed(() =>
+  capIterations.value.map(it => ({
     value: it.id,
     label: `${isDemoMode.value ? anonIterationPath(it.name) : it.name}${it.timeframe ? ` (${it.timeframe})` : ''}`
   }))
-])
+)
 
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -726,10 +713,9 @@ const capAvailableMembers = computed(() => {
   const existingIds = new Set(capMembers.value.map(m => m.member_id))
   return capAllMembers.value.filter(m => !existingIds.has(m.id))
 })
-const capAddMemberOptions = computed(() => [
-  { value: '', label: capLoadingAllMembers.value ? 'Loading members…' : capAvailableMembers.value.length === 0 ? 'All team members added' : 'Add a team member…' },
-  ...capAvailableMembers.value.map(m => ({ value: m.id, label: isDemoMode.value ? anonName(m.display_name) : cleanName(m.display_name) }))
-])
+const capAddMemberOptions = computed(() =>
+  capAvailableMembers.value.map(m => ({ value: m.id, label: isDemoMode.value ? anonName(m.display_name) : cleanName(m.display_name) }))
+)
 
 const capTotalDev = computed(() => {
   let total = 0
@@ -786,10 +772,9 @@ async function onCapProjectChange() {
   if (!capProjectId.value) return
   capLoadingTeams.value = true
   try {
-    capTeams.value = await store.fetchVelocityTeams(capProjectId.value)
+    capTeams.value = await velocityStore.fetchVelocityTeams(capProjectId.value)
     if (capTeams.value.length === 1) {
       capTeam.value = capTeams.value[0].name
-      await onCapTeamChange()
     }
   } finally { capLoadingTeams.value = false }
 }
@@ -807,8 +792,8 @@ async function onCapTeamChange() {
   capLoadingAllMembers.value = true
   try {
     const [iterations] = await Promise.all([
-      store.fetchVelocityIterations(capProjectId.value, capTeam.value),
-      store.fetchVelocityTeamMembers(capProjectId.value, capTeam.value).then(m => { capAllMembers.value = m; capLoadingAllMembers.value = false }),
+      velocityStore.fetchVelocityIterations(capProjectId.value, capTeam.value),
+      velocityStore.fetchVelocityTeamMembers(capProjectId.value, capTeam.value).then(m => { capAllMembers.value = m; capLoadingAllMembers.value = false }),
     ])
     capIterations.value = iterations
     // Auto-select current or next future sprint
@@ -816,7 +801,6 @@ async function onCapTeamChange() {
     const future = capIterations.value.find(i => i.timeframe === 'future')
     if (current) capIterationId.value = current.id
     else if (future) capIterationId.value = future.id
-    if (capIterationId.value) await onCapSprintChange()
   } finally { capLoadingIterations.value = false; capLoadingAllMembers.value = false }
 }
 
@@ -828,19 +812,24 @@ async function onCapSprintChange() {
   await loadCapacity()
 }
 
+watch(capProjectId, () => onCapProjectChange())
+watch(capTeam, () => onCapTeamChange())
+watch(capIterationId, () => onCapSprintChange())
+
 async function loadCapacity() {
   capLoadingData.value = true
   capExpandedDaysOff.value = null
   capResult.value = null
-  capConfirmed.value = false
+  capShowConfirm.value = false
   try {
-    const data = await store.fetchVelocityCapacity(capProjectId.value, capTeam.value, capIterationId.value)
+    const data = await velocityStore.fetchVelocityCapacity(capProjectId.value, capTeam.value, capIterationId.value)
     capData.value = data
     // Deep-copy members for editing
     capMembers.value = JSON.parse(JSON.stringify(data.members))
     // Ensure every member has at least one activity slot
     for (const m of capMembers.value) {
-      if (m.activities.length === 0) m.activities.push({ name: '', capacity_per_day: 0 })
+      if (m.activities.length === 0) m.activities.push({ name: null, capacity_per_day: 0 })
+      for (const a of m.activities) { if (a.name === '') a.name = null }
     }
     // Detect standard days off from existing data
     capStandardDaysOff.value = {}
@@ -851,7 +840,7 @@ async function loadCapacity() {
 }
 
 function addActivity(memberIdx) {
-  capMembers.value[memberIdx].activities.push({ name: '', capacity_per_day: 0 })
+  capMembers.value[memberIdx].activities.push({ name: null, capacity_per_day: 0 })
 }
 
 function removeMember(memberIdx) {
@@ -868,7 +857,7 @@ function addMember() {
   capMembers.value.push({
     member_id: m.id,
     display_name: m.display_name,
-    activities: [{ name: '', capacity_per_day: 0 }],
+    activities: [{ name: null, capacity_per_day: 0 }],
     days_off: [],
   })
   capAddMemberId.value = ''
@@ -877,9 +866,9 @@ function addMember() {
 async function copyFromLastSprint() {
   capCopying.value = true
   capResult.value = null
-  capConfirmed.value = false
+  capShowConfirm.value = false
   try {
-    const data = await store.fetchPreviousCapacity(capProjectId.value, capTeam.value, capIterationId.value)
+    const data = await velocityStore.fetchPreviousCapacity(capProjectId.value, capTeam.value, capIterationId.value)
     if (!data.members || data.members.length === 0) {
       capResult.value = { success: false, message: 'No previous sprint with capacity found.' }
       return
@@ -893,7 +882,7 @@ async function copyFromLastSprint() {
     }))
     // Ensure every member has at least one activity slot
     for (const m of capMembers.value) {
-      if (m.activities.length === 0) m.activities.push({ name: '', capacity_per_day: 0 })
+      if (m.activities.length === 0) m.activities.push({ name: null, capacity_per_day: 0 })
     }
     capStandardDaysOff.value = {}
     capExpandedDaysOff.value = null
@@ -931,7 +920,7 @@ async function pushCapacity() {
         days_off: m.days_off,
       })),
     }
-    const resp = await store.pushVelocityCapacity(capProjectId.value, body)
+    const resp = await velocityStore.pushVelocityCapacity(capProjectId.value, body)
     // Reload from DevOps to sync UI with actual state
     // KNOWN BUG: DevOps re-populates capacity after clearing via empty PUT.
     // The API confirms 0 members, but DevOps restores them server-side.
@@ -939,7 +928,7 @@ async function pushCapacity() {
     capResult.value = { success: true, message: resp.detail || 'Capacity updated!' }
   } catch (e) {
     capResult.value = { success: false, message: e?.message || 'Failed to push capacity' }
-  } finally { capPushing.value = false; capConfirmed.value = false }
+  } finally { capPushing.value = false }
 }
 
 // =============== CALCULATE VELOCITY TAB STATE ===============
@@ -961,17 +950,15 @@ watch(calcIncludeUnassigned, v => {
   else localStorage.removeItem('velocity_includeUnassigned')
 })
 
-const calcTeamOptions = computed(() => [
-  { value: '', label: 'Choose a team…' },
-  ...calcTeams.value.map(t => ({ value: t.name, label: isDemoMode.value ? anonTeam(t.name) : t.name }))
-])
-const calcIterationOptions = computed(() => [
-  { value: '', label: 'Choose…' },
-  ...calcIterations.value.map(it => ({
+const calcTeamOptions = computed(() =>
+  calcTeams.value.map(t => ({ value: t.name, label: isDemoMode.value ? anonTeam(t.name) : t.name }))
+)
+const calcIterationOptions = computed(() =>
+  calcIterations.value.map(it => ({
     value: it.id,
     label: `${isDemoMode.value ? anonIterationPath(it.name) : it.name}${it.timeframe ? ` (${it.timeframe})` : ''}`
   }))
-])
+)
 
 const displayRatio = computed(() => {
   if (!calcResult.value) return '—'
@@ -1002,10 +989,9 @@ async function onCalcProjectChange() {
   if (!calcProjectId.value) return
   calcLoadingTeams.value = true
   try {
-    calcTeams.value = await store.fetchVelocityTeams(calcProjectId.value)
+    calcTeams.value = await velocityStore.fetchVelocityTeams(calcProjectId.value)
     if (calcTeams.value.length === 1) {
       calcTeam.value = calcTeams.value[0].name
-      await onCalcTeamChange()
     }
   } finally { calcLoadingTeams.value = false }
 }
@@ -1019,7 +1005,7 @@ async function onCalcTeamChange() {
   if (!calcTeam.value) return
   calcLoadingIterations.value = true
   try {
-    calcIterations.value = await store.fetchVelocityIterations(calcProjectId.value, calcTeam.value)
+    calcIterations.value = await velocityStore.fetchVelocityIterations(calcProjectId.value, calcTeam.value)
     // Auto-detect: current sprint as last, first future sprint as target
     const current = calcIterations.value.find(i => i.timeframe === 'current')
     const future = calcIterations.value.find(i => i.timeframe === 'future')
@@ -1028,13 +1014,16 @@ async function onCalcTeamChange() {
   } finally { calcLoadingIterations.value = false }
 }
 
+watch(calcProjectId, () => onCalcProjectChange())
+watch(calcTeam, () => onCalcTeamChange())
+
 async function runCalc() {
   calcLoading.value = true
   calcError.value = ''
   try {
     const override = calcResult.value && calcOverridePoints.value !== calcResult.value.last_sprint.story_points
       ? calcOverridePoints.value : null
-    const data = await store.calculateVelocity(
+    const data = await velocityStore.calculateVelocity(
       calcProjectId.value, calcTeam.value, calcLastIterId.value, calcTargetIterId.value, override, calcIncludeUnassigned.value)
     calcResult.value = data
     calcOverridePoints.value = data.last_sprint.story_points
@@ -1048,6 +1037,48 @@ const metricsData = ref(null)
 const metricsLoading = ref(false)
 const metricsError = ref('')
 const metricsFilterOpen = ref(false)
+const metricsTeamLoading = reactive(new Set())
+
+const LS_SELECTED_TEAMS = 'velocity_selectedTeams'
+const metricsSelectedTeams = reactive(new Map()) // projectId -> teamName
+
+function loadSavedSelectedTeams() {
+  const saved = localStorage.getItem(LS_SELECTED_TEAMS)
+  if (!saved) return
+  try {
+    const obj = JSON.parse(saved)
+    for (const [pid, team] of Object.entries(obj)) {
+      if (typeof team === 'string' && team) metricsSelectedTeams.set(pid, team)
+    }
+  } catch { /* ignore */ }
+}
+
+function saveSelectedTeams() {
+  const obj = Object.fromEntries(metricsSelectedTeams)
+  if (Object.keys(obj).length === 0) localStorage.removeItem(LS_SELECTED_TEAMS)
+  else localStorage.setItem(LS_SELECTED_TEAMS, JSON.stringify(obj))
+}
+
+async function onMetricsTeamChange(proj, newTeam) {
+  if (newTeam === proj.team_name) return
+  metricsTeamLoading.add(proj.project_id)
+  try {
+    const updated = await velocityStore.fetchVelocityProjectMetrics(proj.project_id, newTeam, 10)
+    // Clear sprint exclusions since sprints differ per team
+    metricsExcludedSprints.delete(proj.project_id)
+    saveExcludedSprints()
+    // Save selected team
+    metricsSelectedTeams.set(proj.project_id, newTeam)
+    saveSelectedTeams()
+    // Replace the project data in metricsData
+    const idx = metricsData.value.projects.findIndex(p => p.project_id === proj.project_id)
+    if (idx !== -1) metricsData.value.projects.splice(idx, 1, updated)
+  } catch (e) {
+    console.error('Failed to switch team', e)
+  } finally {
+    metricsTeamLoading.delete(proj.project_id)
+  }
+}
 
 const LS_EXCLUDED_VELOCITY_PROJECTS = 'velocity_excludedProjects'
 const metricsExcludedProjects = reactive(new Set())
@@ -1103,6 +1134,9 @@ const visibleMetricsProjects = computed(() => {
   if (!metricsData.value?.projects) return []
   return metricsData.value.projects.filter(p => !metricsExcludedProjects.has(p.project_name))
 })
+
+// =============== TEAM FILTER (per-project) ===============
+const teamFilterOpenProjects = reactive(new Set())
 
 // =============== SPRINT FILTER (per-project) ===============
 const LS_EXCLUDED_SPRINTS = 'velocity_excludedSprints'
@@ -1183,7 +1217,6 @@ const computedChartOptions = computed(() => {
           color: textColor,
           font: { size: 11, family: 'Inter, system-ui, sans-serif', weight: '500' },
           usePointStyle: true,
-          pointStyleWidth: 8,
           padding: 16,
         },
       },
@@ -1337,8 +1370,16 @@ async function loadMetrics(force = false) {
   metricsLoading.value = true
   metricsError.value = ''
   try {
-    const data = await store.fetchVelocityMetrics(10)
+    const data = await velocityStore.fetchVelocityMetrics(10)
     metricsData.value = data
+    // Apply saved team selections
+    if (data?.projects) {
+      const teamSwitches = data.projects
+        .filter(p => metricsSelectedTeams.has(p.project_id) && metricsSelectedTeams.get(p.project_id) !== p.team_name
+          && p.available_teams?.includes(metricsSelectedTeams.get(p.project_id)))
+        .map(p => onMetricsTeamChange(p, metricsSelectedTeams.get(p.project_id)))
+      await Promise.allSettled(teamSwitches)
+    }
   } catch (e) {
     metricsError.value = e?.message || 'Failed to load velocity metrics'
   } finally { metricsLoading.value = false }

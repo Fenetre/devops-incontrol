@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Template Manager — DevOps InControl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2><a href="index.html">DevOps InControl Docs</a></h2>
+  <h3>Getting Started</h3>
+  <a href="getting-started.html">First-Time Setup</a>
+  <a href="settings.html">Settings</a>
+  <h3>Daily Monitoring</h3>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="issue-detail.html">Viewing Flagged Issues</a>
+  <a href="tags.html">Working with Tags</a>
+  <h3>Pull Requests</h3>
+  <a href="pr-monitor.html">PR Monitor</a>
+  <a href="pr-details.html">PR Details</a>
+  <h3>Database Cleanup</h3>
+  <a href="db-monitor.html">DB Monitor</a>
+  <a href="db-project.html">DB Project</a>
+  <h3>Sprint Planning</h3>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html" class="active">Template Manager</a>
+  <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
+  <h3>Team Insights</h3>
+  <a href="dev-assessment.html">Developer Assessment</a>
+  <h3>Security</h3>
+  <a href="permissions.html">Permissions</a>
+  <h3>Build &amp; Release</h3>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
+  <h3>Configuration</h3>
+  <a href="managing-projects.html">Managing Projects</a>
+</nav>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">Home</a> &rsaquo; Template Manager</div>
+
+  <h1>Template Manager</h1>
+  <p>The Template Manager lets you create, delete, copy, and migrate Azure DevOps work item templates across projects and teams. Templates define default field values for new work items and are scoped to a specific team and work item type.</p>
+
+  <img src="screenshots/template-manager.png" alt="Screenshot of the Template Manager showing the create template form and existing templates list" class="screenshot">
+  <p class="screenshot-caption">The Template Manager overview.</p>
+
+  <h2>Create Template Tab</h2>
+  <p>Use the <span class="ui">Create Template</span> tab to build new templates or manage existing ones.</p>
+
+  <h3>How to Create a Template</h3>
+  <ol>
+    <li><strong>Select Project &amp; Team</strong> — Choose the project and team that will own the template.</li>
+    <li><strong>Work Item Type</strong> — Pick the type of work item the template applies to (e.g. Bug, User Story, Task).</li>
+    <li><strong>Review Existing Templates</strong> — See templates already defined for this team/type. You can <span class="ui">Use as base</span> to clone an existing template's fields into the editor, or <span class="ui">Delete</span> a template you no longer need.</li>
+    <li><strong>Template Details</strong> — Enter a name, optional description, and add default field values.</li>
+  </ol>
+
+  <h3>Field Editor</h3>
+  <p>The field editor lets you define which fields receive default values when the template is applied:</p>
+  <ul>
+    <li>Click <span class="ui">Add Field</span> to add a new row.</li>
+    <li>Select the field name from the dropdown (only fields not already in use are shown).</li>
+    <li>Enter the default value.</li>
+    <li>Click the remove button to delete a field row.</li>
+  </ul>
+
+  <h3>Using an Existing Template as a Starting Point</h3>
+  <p>Click <span class="ui">Use as base</span> next to any existing template. This pre-fills the editor with that template's name (with " (copy)" appended), description, and all field values. Modify as needed and save as a new template.</p>
+
+  <div class="callout tip">
+    <strong>Tip</strong>
+    This is the fastest way to create variations of an existing template — for example, a "Bug – Critical" variant based on your standard Bug template.
+  </div>
+
+  <h2>Template Migrator Tab</h2>
+  <p>Use the <span class="ui">Template Migrator</span> tab to copy templates from one project/team to one or more target projects.</p>
+
+  <h3>How to Migrate Templates</h3>
+  <ol>
+    <li><strong>Source Project</strong> — Select the project to copy templates from.</li>
+    <li><strong>Source Team</strong> — Select the team that owns the source templates.</li>
+    <li><strong>Select Templates</strong> — Check the templates you want to copy. Use <span class="ui">Select all</span> to include everything.</li>
+    <li><strong>Target Projects</strong> — Select one or more target projects and choose a team for each.</li>
+    <li><strong>Preview &amp; Apply</strong> — Review the migration table showing what will be created, what already exists, and apply.</li>
+  </ol>
+
+  <h3>Overwrite Existing</h3>
+  <p>Enable the <span class="ui">Overwrite existing</span> checkbox to update templates that already exist in the target (matched by name). When disabled, existing templates are skipped.</p>
+
+  <h3>Missing Fields Warning</h3>
+  <p>If a source template uses custom fields that do not exist in a target project, a warning is displayed. The migration will still proceed, but those fields may not be applied correctly.</p>
+
+  <h3>Results</h3>
+  <p>After migration completes, results are grouped into:</p>
+  <ul>
+    <li><strong>Created</strong> — New templates that were successfully created.</li>
+    <li><strong>Overwritten</strong> — Existing templates that were updated.</li>
+    <li><strong>Skipped</strong> — Templates that already existed (when overwrite is off).</li>
+    <li><strong>Failed</strong> — Templates that could not be created (with error details).</li>
+  </ul>
+
+  <div class="callout important">
+    <strong>Important</strong>
+    Templates are team-scoped in Azure DevOps. When migrating, make sure you select the correct target team — templates assigned to the wrong team won't appear for that team's members.
+  </div>
+
+  <div class="callout note">
+    <strong>Note</strong>
+    In demo mode, create and delete operations are disabled to prevent accidental changes to real data.
+  </div>
+</main>
+
+</body>
+</html>

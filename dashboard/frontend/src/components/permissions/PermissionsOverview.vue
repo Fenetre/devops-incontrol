@@ -1,0 +1,517 @@
+<template>
+  <div>
+    <!-- Error -->
+    <UAlert v-if="tabError" color="error" icon="i-heroicons-exclamation-circle" :description="tabError" class="mb-6" />
+
+    <!-- ================================================================ -->
+    <!-- SIMPLE MODE -->
+    <!-- ================================================================ -->
+    <div v-if="simpleMode">
+      <div class="flex items-center gap-3 mb-4 flex-wrap">
+        <UInput v-autofocus name="simple-search" v-model="simpleSearch" placeholder="Search members…" size="sm" icon="i-heroicons-magnifying-glass" class="w-64 app-search" />
+
+        <UButton @click="loadSimpleData(true)" :disabled="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions"
+          :loading="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions"
+          icon="i-heroicons-arrow-path">
+          {{ (store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) ? 'Loading…' : 'Refresh permissions' }}
+        </UButton>
+
+        <span v-if="teamData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-400">
+          Fetched: {{ new Date(teamData.fetched_at).toLocaleString() }}
+        </span>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <span class="text-xs font-medium" :class="simpleMode ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-400'">Simple</span>
+          <USwitch :model-value="!simpleMode" @update:model-value="simpleMode = !$event" />
+          <span class="text-xs font-medium" :class="simpleMode ? 'text-gray-400 dark:text-gray-400' : 'text-primary-600 dark:text-primary-400'">Advanced</span>
+        </div>
+      </div>
+
+      <div v-if="(store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) && !teamData" class="flex flex-col items-center py-8">
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
+        <p class="text-sm text-gray-500 dark:text-gray-400">Fetching permissions…</p>
+      </div>
+
+      <div v-else-if="teamData && simpleFilteredMembers.length" class="overflow-x-auto">
+        <table class="text-xs table-fixed w-full">
+          <thead>
+            <!-- Group header row -->
+            <tr class="bg-gray-50 dark:bg-gray-700/50">
+              <th class="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700/50 w-[200px]" rowspan="2"></th>
+              <template v-for="group in SIMPLE_CAPABILITIES" :key="group.group">
+                <th :colspan="group.items.length"
+                  class="px-1 pt-2 pb-0.5 text-center text-xs font-bold uppercase tracking-wider border-l border-gray-200 dark:border-gray-700"
+                  :class="groupColorClass(group.group)">
+                  {{ group.group }}
+                </th>
+              </template>
+            </tr>
+            <!-- Capability label row -->
+            <tr class="bg-gray-100 dark:bg-gray-700/50">
+              <template v-for="group in SIMPLE_CAPABILITIES" :key="'h-' + group.group">
+                <th v-for="(cap, ci) in group.items" :key="cap.label"
+                  class="w-[52px] px-1 py-2 font-medium text-gray-600 dark:text-gray-300 text-center whitespace-nowrap"
+                  :class="ci === 0 ? 'border-l border-gray-200 dark:border-gray-700' : ''"
+                  :title="cap.source === 'repo' ? 'Repo: ' + cap.repoPerm : cap.source === 'area' ? 'Area: ' + cap.areaPerm : (cap.checks || []).map(c => c.ns + ' → ' + c.perm).join(', ')">
+                  <span class="inline-block max-w-[48px] truncate text-xs">{{ cap.label }}</span>
+                </th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="member in simpleFilteredMembers" :key="member.id"
+              class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/40">
+              <td class="sticky left-0 z-10 bg-white dark:bg-gray-900 px-3 py-2 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap w-[200px]">
+                <div class="truncate">{{ member.display_name }}</div>
+                <div class="text-xs text-gray-400 dark:text-gray-400 font-normal truncate">{{ member.team_names.join(', ') }}</div>
+              </td>
+              <template v-for="group in SIMPLE_CAPABILITIES" :key="'c-' + group.group">
+                <td v-for="(cap, ci) in group.items" :key="cap.label"
+                  class="w-[52px] px-1 py-2 text-center"
+                  :class="ci === 0 ? 'border-l border-gray-100 dark:border-gray-700/50' : ''">
+                  <span :class="simpleCellClass(getSimpleEffective(member.id, cap))"
+                    :title="cap.label + ': ' + getSimpleEffective(member.id, cap)"
+                    class="inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-bold">
+                    {{ simpleCellIcon(getSimpleEffective(member.id, cap)) }}
+                  </span>
+                </td>
+              </template>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else-if="teamData && !simpleFilteredMembers.length" class="text-center py-12 text-sm text-gray-400 dark:text-gray-300">No members match the search.</div>
+      <div v-else-if="!store.loadingPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No data available. Click Refresh.</div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- ADVANCED MODE -->
+    <!-- ================================================================ -->
+    <template v-else>
+
+    <!-- Toggle + Tab bar -->
+    <div class="flex items-center justify-between mb-6">
+      <UTabs :items="advancedTabs" v-model="activeTab" :content="false" variant="link" />
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-medium" :class="simpleMode ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-400'">Simple</span>
+        <USwitch :model-value="!simpleMode" @update:model-value="simpleMode = !$event" />
+        <span class="text-xs font-medium" :class="simpleMode ? 'text-gray-400 dark:text-gray-400' : 'text-primary-600 dark:text-primary-400'">Advanced</span>
+      </div>
+    </div>
+
+    <!-- TAB: Teams & Permissions -->
+    <div v-if="activeTab === 'teams'">
+      <div class="flex items-center gap-3 mb-4">
+        <UButton @click="loadTeams(true)" :disabled="store.loadingPermissions"
+          :loading="store.loadingPermissions"
+          icon="i-heroicons-arrow-path">
+          {{ store.loadingPermissions ? 'Loading…' : 'Refresh' }}
+        </UButton>
+        <UInput name="team-search" v-model="teamSearch" placeholder="Search members…" size="sm" icon="i-heroicons-magnifying-glass" class="w-64 app-search" />
+        <span v-if="teamData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-400 ml-auto">
+          Fetched: {{ new Date(teamData.fetched_at).toLocaleString() }}
+        </span>
+      </div>
+
+      <div v-if="store.loadingPermissions && !teamData" class="flex flex-col items-center py-8">
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
+        <p class="text-sm text-gray-500 dark:text-gray-400">Fetching teams & permissions…</p>
+      </div>
+
+      <!-- Tree: Team → Category → Permission → Members -->
+      <div v-else-if="teamData && teamData.teams?.length" class="space-y-3">
+        <div v-for="team in teamData.teams" :key="team.id" class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <button @click="toggle('team', team.id)" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors text-left">
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+              <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': opened.team?.has(team.id) }" />
+              {{ team.name }}
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-300">{{ teamMemberCount(team.name) }} members</span>
+          </button>
+
+          <div v-if="opened.team?.has(team.id)" class="pl-4">
+            <div v-for="cat in teamData.categories" :key="cat.namespace_id" class="border-t border-gray-100 dark:border-gray-700/50">
+              <button @click="toggle('cat', team.id + '|' + cat.namespace_id)" class="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors text-left">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                  <UIcon name="i-heroicons-chevron-right" class="w-3 h-3 transition-transform" :class="{ 'rotate-90': opened.cat?.has(team.id + '|' + cat.namespace_id) }" />
+                  {{ cat.display_name || cat.name }}
+                </span>
+                <span class="text-xs text-gray-400 dark:text-gray-300">{{ cat.permissions.length }} permissions</span>
+              </button>
+
+              <div v-if="opened.cat?.has(team.id + '|' + cat.namespace_id)" class="pl-6 pb-2">
+                <div v-for="perm in cat.permissions" :key="perm.name" class="py-1.5 px-3">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ perm.display_name || perm.name }}</div>
+                  <div class="flex flex-wrap gap-1">
+                    <template v-for="member in teamMembersOf(team.name)" :key="member.id">
+                      <span v-if="matchesMemberSearch(member) && getEffective(member.id, cat.namespace_id, perm.name) !== 'not_set'"
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                        :class="getEffective(member.id, cat.namespace_id, perm.name) === 'allow'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'">
+                        {{ getEffective(member.id, cat.namespace_id, perm.name) === 'allow' ? '✓' : '✕' }}
+                        {{ member.display_name }}
+                      </span>
+                    </template>
+                    <span v-if="noVisibleMembers(team.name, cat.namespace_id, perm.name)" class="text-xs text-gray-400 dark:text-gray-300 italic">No explicit permissions</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="!store.loadingPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No team data available.</div>
+    </div>
+
+    <!-- TAB 2: Repositories -->
+    <div v-if="activeTab === 'repos'">
+      <div class="flex items-center gap-3 mb-4">
+        <UButton @click="loadRepos(true)" :disabled="store.loadingRepoPermissions"
+          :loading="store.loadingRepoPermissions"
+          icon="i-heroicons-arrow-path">
+          {{ store.loadingRepoPermissions ? 'Loading…' : 'Refresh' }}
+        </UButton>
+        <UInput name="repo-search" v-model="repoSearch" placeholder="Search repos…" size="sm" icon="i-heroicons-magnifying-glass" class="w-64 app-search" />
+        <span v-if="repoData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-400 ml-auto">
+          Fetched: {{ new Date(repoData.fetched_at).toLocaleString() }}
+        </span>
+      </div>
+
+      <div v-if="store.loadingRepoPermissions && !repoData" class="flex flex-col items-center py-8">
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
+        <p class="text-sm text-gray-500 dark:text-gray-400">Fetching repository permissions…</p>
+      </div>
+
+      <div v-else-if="repoData && filteredRepos.length" class="space-y-3">
+        <div v-for="repo in filteredRepos" :key="repo.repo_id" class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <button @click="toggle('repo', repo.repo_id)" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors text-left">
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+              <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': opened.repo?.has(repo.repo_id) }" />
+              <UIcon name="i-heroicons-code-bracket" class="w-4 h-4 text-gray-400 dark:text-gray-300" />
+              {{ repo.repo_name }}
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-300">{{ repo.permissions?.length || 0 }} permissions</span>
+          </button>
+
+          <div v-show="opened.repo?.has(repo.repo_id)" class="pl-6 pb-3">
+            <div v-for="perm in repo.permissions" :key="perm.name" class="py-1.5 px-3">
+              <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ perm.display_name || perm.name }}</div>
+              <div class="flex flex-wrap gap-1">
+                <span v-for="name in perm.members_allowed" :key="'a-' + name"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                  ✓ {{ name }}
+                </span>
+                <span v-for="name in perm.members_denied" :key="'d-' + name"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                  ✕ {{ name }}
+                </span>
+                <span v-if="!perm.members_allowed?.length && !perm.members_denied?.length" class="text-xs text-gray-400 dark:text-gray-300 italic">No explicit permissions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="!store.loadingRepoPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No repositories found.</div>
+    </div>
+
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useMonitorStore } from '../../stores/monitor.js'
+import { transformPermissionMatrix, transformRepoPermissions, transformAreaPermissions } from '../../composables/demoTransform.js'
+
+const props = defineProps({
+  projectId: { type: String, required: true },
+  selectedRepoId: { type: String, default: '' },
+  selectedAreaId: { type: String, default: '' },
+})
+
+const store = useMonitorStore()
+
+// --- Simple / Advanced toggle ---
+const simpleMode = ref(true)
+
+// --- Computed data (used by both modes) ---
+const teamData = computed(() => {
+  const raw = store.permissionData[props.projectId]
+  return raw ? transformPermissionMatrix(raw) : null
+})
+
+const repoData = computed(() => {
+  const raw = store.repoPermissionData[props.projectId]
+  return raw ? transformRepoPermissions(raw) : null
+})
+
+// --- Matrix index for teams tab ---
+const matrixIndex = computed(() => {
+  if (!teamData.value?.matrix) return {}
+  const idx = {}
+  for (const e of teamData.value.matrix) {
+    idx[`${e.member_id}|${e.namespace_id}|${e.permission_name}`] = e.effective
+  }
+  return idx
+})
+
+// --- Simple Mode: Capability mapping ---
+const SIMPLE_CAPABILITIES = [
+  { group: 'Code', items: [
+    { label: 'View', source: 'repo', repoPerm: 'GenericRead' },
+    { label: 'Push', source: 'repo', repoPerm: 'GenericContribute' },
+    { label: 'Branches', source: 'repo', repoPerm: 'CreateBranch' },
+    { label: 'PRs', source: 'repo', repoPerm: 'PullRequestContribute' },
+  ]},
+  { group: 'Work Items', items: [
+    { label: 'View', source: 'area', areaPerm: 'WORK_ITEM_READ' },
+    { label: 'Edit', source: 'area', areaPerm: 'WORK_ITEM_WRITE' },
+    { label: 'Delete', checks: [{ ns: 'Project', perm: 'WORK_ITEM_DELETE' }] },
+  ]},
+  { group: 'Boards', items: [
+    { label: 'View', checks: [{ ns: 'Project', perm: 'GENERIC_READ' }] },
+  ]},
+  { group: 'Pipelines', items: [
+    { label: 'View', checks: [{ ns: 'Build', perm: 'ViewBuilds' }] },
+    { label: 'Run', checks: [{ ns: 'Build', perm: 'QueueBuilds' }] },
+    { label: 'Edit', checks: [{ ns: 'Build', perm: 'EditBuildDefinition' }] },
+  ]},
+  { group: 'Releases', items: [
+    { label: 'View', checks: [{ ns: 'ReleaseManagement', perm: 'ViewReleaseDefinition' }] },
+    { label: 'Edit', checks: [{ ns: 'ReleaseManagement', perm: 'EditReleaseDefinition' }] },
+    { label: 'Create', checks: [{ ns: 'ReleaseManagement', perm: 'CreateReleases' }] },
+    { label: 'Delete', checks: [{ ns: 'ReleaseManagement', perm: 'DeleteReleaseDefinition' }] },
+    { label: 'Deploy', checks: [{ ns: 'ReleaseManagement', perm: 'ManageDeployments' }] },
+    { label: 'Manage', checks: [{ ns: 'ReleaseManagement', perm: 'ManageReleases' }] },
+  ]},
+  { group: 'Dashboards', items: [
+    { label: 'View', checks: [{ ns: 'DashboardsPrivileges', perm: 'Read' }] },
+    { label: 'Edit', checks: [{ ns: 'DashboardsPrivileges', perm: 'Edit' }] },
+  ]},
+  { group: 'Analytics', items: [
+    { label: 'View', checks: [{ ns: 'Analytics', perm: 'Read' }] },
+  ]},
+  { group: 'Tags', items: [
+    { label: 'Create', checks: [{ ns: 'Tagging', perm: 'Create' }] },
+  ]},
+]
+
+// --- Simple Mode: Selection (received from parent via props) ---
+
+const areaData = computed(() => {
+  const raw = store.areaPermissionData[props.projectId]
+  return raw ? transformAreaPermissions(raw) : null
+})
+
+// --- Simple Mode: Selected item data ---
+const selectedRepo = computed(() => {
+  if (!repoData.value?.repos || !props.selectedRepoId) return null
+  return repoData.value.repos.find(r => r.repo_id === props.selectedRepoId) ?? null
+})
+
+const selectedArea = computed(() => {
+  if (!areaData.value?.areas || !props.selectedAreaId) return null
+  return areaData.value.areas.find(a => a.area_id === props.selectedAreaId) ?? null
+})
+
+const memberNameById = computed(() => {
+  if (!teamData.value?.members) return {}
+  const map = {}
+  for (const m of teamData.value.members) map[m.id] = m.display_name
+  return map
+})
+
+const nsNameToId = computed(() => {
+  if (!teamData.value?.categories) return {}
+  const map = {}
+  for (const cat of teamData.value.categories) {
+    map[cat.name] = cat.namespace_id
+  }
+  return map
+})
+
+function getSimpleEffective(memberId, cap) {
+  if (cap.source === 'repo') {
+    const repo = selectedRepo.value
+    if (!repo) return 'not_set'
+    const name = memberNameById.value[memberId]
+    if (!name) return 'not_set'
+    const perm = repo.permissions.find(p => p.name === cap.repoPerm)
+    if (!perm) return 'not_set'
+    if (perm.members_denied?.includes(name)) return 'deny'
+    if (perm.members_allowed?.includes(name)) return 'allow'
+    return 'not_set'
+  }
+  if (cap.source === 'area') {
+    const area = selectedArea.value
+    if (!area) return 'not_set'
+    const name = memberNameById.value[memberId]
+    if (!name) return 'not_set'
+    const perm = area.permissions.find(p => p.name === cap.areaPerm)
+    if (!perm) return 'not_set'
+    if (perm.members_denied?.includes(name)) return 'deny'
+    if (perm.members_allowed?.includes(name)) return 'allow'
+    return 'not_set'
+  }
+  const checks = cap.checks || []
+  let hasAllow = false
+  for (const check of checks) {
+    const nsId = nsNameToId.value[check.ns]
+    if (!nsId) continue
+    const eff = matrixIndex.value[`${memberId}|${nsId}|${check.perm}`]
+    if (eff === 'deny') return 'deny'
+    if (eff === 'allow') hasAllow = true
+  }
+  return hasAllow ? 'allow' : 'not_set'
+}
+
+function simpleCellIcon(eff) {
+  if (eff === 'allow') return '✓'
+  if (eff === 'deny') return '✕'
+  return '–'
+}
+
+function simpleCellClass(eff) {
+  if (eff === 'allow') return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+  if (eff === 'deny') return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+  return 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-400'
+}
+
+function groupColorClass(group) {
+  const colors = {
+    'Code': 'text-blue-600 dark:text-blue-400',
+    'Work Items': 'text-purple-600 dark:text-purple-400',
+    'Boards': 'text-indigo-600 dark:text-indigo-400',
+    'Pipelines': 'text-cyan-600 dark:text-cyan-400',
+    'Releases': 'text-orange-600 dark:text-orange-400',
+    'Dashboards': 'text-pink-600 dark:text-pink-400',
+    'Analytics': 'text-emerald-600 dark:text-emerald-400',
+    'Tags': 'text-amber-600 dark:text-amber-400',
+  }
+  return colors[group] || 'text-gray-600 dark:text-gray-400'
+}
+
+const simpleSearch = ref('')
+
+const simpleFilteredMembers = computed(() => {
+  if (!teamData.value?.members) return []
+  if (!simpleSearch.value.trim()) return teamData.value.members
+  const q = simpleSearch.value.trim().toLowerCase()
+  return teamData.value.members.filter(m =>
+    m.display_name.toLowerCase().includes(q) || m.unique_name?.toLowerCase().includes(q) ||
+    m.team_names.some(t => t.toLowerCase().includes(q))
+  )
+})
+
+// --- Advanced mode state ---
+const advancedTabs = [
+  { value: 'teams', label: 'Teams & Permissions', icon: 'i-heroicons-user-group' },
+  { value: 'repos', label: 'Repositories', icon: 'i-heroicons-code-bracket' },
+]
+const activeTab = ref('teams')
+const tabError = ref('')
+
+const opened = reactive({
+  team: new Set(),
+  cat: new Set(),
+  repo: new Set(),
+})
+
+function toggle(type, key) {
+  if (opened[type].has(key)) opened[type].delete(key)
+  else opened[type].add(key)
+  opened[type] = new Set(opened[type])
+}
+
+function getEffective(memberId, nsId, permName) {
+  return matrixIndex.value[`${memberId}|${nsId}|${permName}`] || 'not_set'
+}
+
+function teamMembersOf(teamName) {
+  if (!teamData.value?.members) return []
+  return teamData.value.members.filter(m => m.team_names.includes(teamName))
+}
+
+function teamMemberCount(teamName) {
+  return teamMembersOf(teamName).length
+}
+
+const teamSearch = ref('')
+const repoSearch = ref('')
+
+function matchesMemberSearch(member) {
+  if (!teamSearch.value.trim()) return true
+  const q = teamSearch.value.trim().toLowerCase()
+  return member.display_name.toLowerCase().includes(q) || member.unique_name?.toLowerCase().includes(q)
+}
+
+function noVisibleMembers(teamName, nsId, permName) {
+  return teamMembersOf(teamName).filter(m => matchesMemberSearch(m) && getEffective(m.id, nsId, permName) !== 'not_set').length === 0
+}
+
+const filteredRepos = computed(() => {
+  if (!repoData.value?.repos) return []
+  if (!repoSearch.value.trim()) return repoData.value.repos
+  const q = repoSearch.value.trim().toLowerCase()
+  return repoData.value.repos.filter(r => r.repo_name.toLowerCase().includes(q))
+})
+
+// --- Loading ---
+async function loadTeams(force = false) {
+  tabError.value = ''
+  try { await store.fetchPermissions(props.projectId, force) }
+  catch (e) { tabError.value = e?.message || 'Failed to fetch team permissions' }
+}
+
+async function loadRepos(force = false) {
+  tabError.value = ''
+  try { await store.fetchRepoPermissions(props.projectId, force) }
+  catch (e) { tabError.value = e?.message || 'Failed to fetch repo permissions' }
+}
+
+async function loadAreas(force = false) {
+  try { await store.fetchAreaPermissions(props.projectId, force) }
+  catch (e) { console.error('Failed to fetch area permissions', e) }
+}
+
+async function loadSimpleData(force = false) {
+  if (!force) {
+    store.fetchRepoList(props.projectId)
+    store.fetchAreaList(props.projectId)
+  }
+  await Promise.all([loadTeams(force), loadRepos(force), loadAreas(force)])
+}
+
+watch(activeTab, (tab) => {
+  tabError.value = ''
+  if (tab === 'teams' && !teamData.value) loadTeams()
+  if (tab === 'repos' && !repoData.value) loadRepos()
+})
+
+onMounted(() => {
+  if (simpleMode.value) loadSimpleData()
+  else loadTeams()
+})
+
+watch(() => props.projectId, () => {
+  tabError.value = ''
+  if (simpleMode.value) loadSimpleData()
+  else if (activeTab.value === 'teams') loadTeams()
+  else if (activeTab.value === 'repos') loadRepos()
+})
+
+watch(simpleMode, (isSimple) => {
+  if (isSimple && !repoData.value) {
+    store.fetchRepoList(props.projectId)
+    loadRepos()
+  }
+  if (isSimple && !areaData.value) {
+    store.fetchAreaList(props.projectId)
+    loadAreas()
+  }
+})
+</script>

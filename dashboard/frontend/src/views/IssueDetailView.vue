@@ -3,20 +3,16 @@
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
       <router-link to="/" class="hover:text-primary-600 transition-colors">Dashboard</router-link>
-      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-      </svg>
+      <UIcon name="i-heroicons-chevron-right" class="w-3 h-3" />
       <span class="text-gray-700 dark:text-gray-200 font-medium">{{ checkData?.project_name || projectId }}</span>
-      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-      </svg>
+      <UIcon name="i-heroicons-chevron-right" class="w-3 h-3" />
       <span class="text-gray-700 dark:text-gray-200 font-medium">{{ checkData?.check_label || checkType }}</span>
     </nav>
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ checkData?.check_label || checkType }}</h2>
+        <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">{{ checkData?.check_label || checkType }}</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
           {{ checkData?.project_name || 'Unknown project' }}
           <span v-if="checkData" class="ml-2">· {{ checkData.flagged_items.length }} issue{{ checkData.flagged_items.length !== 1 ? 's' : '' }}</span>
@@ -25,85 +21,63 @@
 
       <div class="flex items-center gap-2">
         <template v-if="checkType === 'missing_estimate_check' && store.emailFromConfigured && assignees.length > 0 && !isDemoMode">
-          <button
+          <UButton
             v-for="a in assignees" :key="a.name"
             @click="openPersonMail(a.name, a.email)"
             :disabled="sendingMailFor === a.name"
-            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 bg-white dark:bg-gray-800 border border-primary-300 dark:border-primary-600 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors disabled:opacity-50"
-          >
-            <svg v-if="sendingMailFor !== a.name" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
-            {{ sendingMailFor === a.name ? 'Sending…' : a.firstName }}
-          </button>
+            :loading="sendingMailFor === a.name"
+            variant="outline" color="primary"
+            :icon="sendingMailFor !== a.name ? 'i-heroicons-envelope' : undefined"
+            :label="sendingMailFor === a.name ? 'Sending…' : a.firstName"
+          />
         </template>
 
-        <button
+        <UButton
           v-if="checkType === 'orphan_check' && parentDoneItems.length > 0"
           @click="copyParentDoneItems"
-          class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          variant="outline"
+          color="neutral"
+          :icon="copied ? 'i-heroicons-check-circle' : 'i-heroicons-clipboard'"
           :title="`Copy ${parentDoneItems.length} parent-done item(s) to clipboard`"
         >
-          <svg v-if="!copied" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-          </svg>
-          <svg v-else class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
           {{ copied ? 'Copied!' : `Copy parent done (${parentDoneItems.length})` }}
-        </button>
+        </UButton>
 
-        <button
+        <UButton
           v-if="checkType === 'orphan_check' && checkData?.flagged_items?.length > 0"
           @click="copyAllItems"
-          class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          variant="outline"
+          color="neutral"
+          :icon="copiedAll ? 'i-heroicons-check-circle' : 'i-heroicons-clipboard-document-list'"
           :title="`Copy all ${checkData.flagged_items.length} item(s) with links to clipboard`"
         >
-          <svg v-if="!copiedAll" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z" />
-          </svg>
-          <svg v-else class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
           {{ copiedAll ? 'Copied!' : `Copy all (${checkData.flagged_items.length})` }}
-        </button>
+        </UButton>
 
-        <button
+        <UButton
           v-if="checkData && checkData.flagged_items.length"
           @click="exportIssues"
-          class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          variant="outline"
+          color="neutral"
+          icon="i-heroicons-arrow-down-tray"
           title="Export to CSV"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
           CSV
-        </button>
+        </UButton>
 
-        <router-link
-          to="/"
-          class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
+        <UButton to="/" variant="outline" color="neutral" icon="i-heroicons-arrow-left">
           Back
-        </router-link>
+        </UButton>
       </div>
     </div>
 
     <!-- Operation status banner -->
-    <div v-if="operationLoading" class="mb-4 flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-sm text-blue-700 dark:text-blue-300">
-      <svg class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-      </svg>
+    <div v-if="operationLoading" class="mb-4 flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+      <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin flex-shrink-0" />
       {{ operationMessage }}
     </div>
-    <div v-if="operationError" class="mb-4 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-sm text-red-700 dark:text-red-300">
-      {{ operationError }}
-    </div>
-    <div v-if="operationSuccess" class="mb-4 px-4 py-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-sm text-green-700 dark:text-green-300">
-      {{ operationSuccess }}
-    </div>
+    <UAlert v-if="operationError" color="error" icon="i-heroicons-x-circle" :description="operationError" class="mb-4" />
+    <UAlert v-if="operationSuccess" color="success" icon="i-heroicons-check-circle" :description="operationSuccess" class="mb-4" />
 
     <!-- Loading skeleton (store still running checks) -->
     <div v-if="!checkData && store.runningChecks" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
@@ -134,6 +108,7 @@
         @remove-tag="onBulkRemoveTag"
         @rename-tag="onBulkRenameTag"
         @assign-parent="onAssignParent"
+        @preview-item="onPreviewItem"
       />
     </div>
 
@@ -148,12 +123,11 @@
         <div class="px-6 py-5 space-y-3">
           <div>
             <label for="mailTo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To</label>
-            <input
+            <UInput
               id="mailTo"
-              v-model="mailTo"
+              name="mail-to" v-model="mailTo"
               type="email"
               placeholder="recipient@example.com"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
             />
           </div>
           <p v-if="mailAssignedTo" class="text-xs text-gray-500 dark:text-gray-400">
@@ -164,12 +138,12 @@
           <p v-if="mailResult" class="text-xs" :class="mailSuccess ? 'text-green-600' : 'text-red-600'">{{ mailResult }}</p>
         </div>
         <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-          <button @click="closeMailDialog" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+          <UButton variant="outline" color="neutral" @click="closeMailDialog">
             Cancel
-          </button>
-          <button @click="sendMail" :disabled="sendingMail || !mailTo || !store.emailFromConfigured || isDemoMode" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">
-            {{ isDemoMode ? 'Disabled in demo mode' : sendingMail ? 'Sending…' : 'Send' }}
-          </button>
+          </UButton>
+          <UButton icon="i-heroicons-paper-airplane" @click="sendMail" :disabled="!mailTo || !store.emailFromConfigured || isDemoMode" :loading="sendingMail">
+            {{ isDemoMode ? 'Disabled in demo mode' : 'Send' }}
+          </UButton>
         </div>
       </div>
     </div>
@@ -192,8 +166,8 @@
               <p class="text-base font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{{ selectedParentCandidate.title }}</p>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ selectedParentCandidate.work_item_type }} #{{ selectedParentCandidate.id }}</p>
             </div>
-            <div class="flex items-center gap-2 text-gray-400">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            <div class="flex items-center gap-2 text-gray-400 dark:text-gray-300">
+              <UIcon name="i-heroicons-link" class="w-4 h-4" />
             </div>
             <div>
               <span class="text-xs font-bold uppercase tracking-wider text-primary-500 dark:text-primary-400">Child</span>
@@ -203,40 +177,33 @@
           </div>
           <p v-if="parentAssignError" class="text-xs text-red-600 dark:text-red-400">{{ parentAssignError }}</p>
           <div class="flex justify-end gap-3 pt-1">
-            <button @click="selectedParentCandidate = null; parentAssignError = ''" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+            <UButton variant="outline" color="neutral" @click="selectedParentCandidate = null; parentAssignError = ''">
               Back
-            </button>
-            <button @click="confirmAssignParent" :disabled="assigningParent" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">
-              {{ assigningParent ? 'Assigning…' : 'Confirm' }}
-            </button>
+            </UButton>
+            <UButton @click="confirmAssignParent" :loading="assigningParent">
+              Confirm
+            </UButton>
           </div>
         </div>
 
         <!-- Candidate list -->
         <div v-else>
           <div class="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
-            <div class="relative">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-              <input
-                ref="parentSearchInput"
-                v-model="parentSearch"
-                type="text"
-                placeholder="Filter candidates…"
-                class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
-              />
-            </div>
+            <UInput
+              ref="parentSearchInput"
+              name="parent-search" v-model="parentSearch"
+              type="text"
+              placeholder="Filter candidates…"
+              icon="i-heroicons-magnifying-glass"
+              class="w-full"
+            />
           </div>
           <div class="max-h-[30rem] overflow-y-auto">
             <div v-if="loadingCandidates" class="flex items-center gap-2 px-6 py-8 justify-center text-sm text-gray-500">
-              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-              </svg>
+              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
               Loading candidates…
             </div>
-            <div v-else-if="filteredCandidates.length === 0" class="px-6 py-8 text-center text-sm text-gray-400">
+            <div v-else-if="filteredCandidates.length === 0" class="px-6 py-8 text-center text-sm text-gray-400 dark:text-gray-300">
               No candidate parents found.
             </div>
             <div v-else>
@@ -250,7 +217,7 @@
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ c.work_item_type }}</span>
                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ c.title }}</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ c.state }}</span>
-                <span class="text-xs text-gray-400 dark:text-gray-500">{{ formatCandidateArea(c.area_path) }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-400">{{ formatCandidateArea(c.area_path) }}</span>
               </button>
             </div>
           </div>
@@ -258,9 +225,63 @@
 
         <div v-if="!selectedParentCandidate" class="px-6 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <span class="text-xs text-gray-500 dark:text-gray-400">Press <kbd class="px-1 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">Esc</kbd> to close</span>
-          <button @click="closeParentDialog" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+          <UButton variant="outline" color="neutral" @click="closeParentDialog">
             Cancel
-          </button>
+          </UButton>
+        </div>
+      </div>
+    </div>
+    <!-- Work item preview dialog -->
+    <div v-if="showPreviewDialog" class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center" @click.self="closePreviewDialog">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-[95vw] max-w-7xl max-h-[90vh] mx-4 overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-primary-200 dark:border-gray-700 bg-primary-50 dark:bg-transparent shrink-0">
+          <h3 class="text-lg font-semibold text-primary-900 dark:text-gray-100">
+            #{{ previewItem?.id }}
+            <span class="font-normal text-primary-600 dark:text-gray-100 ml-2">{{ previewItem?.title }}</span>
+          </h3>
+          <div class="flex items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
+            <span class="inline-block px-2 py-0.5 rounded-md font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{{ previewData?.work_item_type || previewItem?.work_item_type }}</span>
+            <span class="inline-block px-2 py-0.5 rounded-md font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{{ previewData?.state || previewItem?.state || '—' }}</span>
+            <span v-if="previewData?.assigned_to">{{ isDemoMode ? anonName(previewData.assigned_to) : previewData.assigned_to }}</span>
+            <span v-if="previewData?.iteration_path">{{ isDemoMode ? anonIterationPath(previewData.iteration_path) : previewData.iteration_path }}</span>
+          </div>
+          <div v-if="previewTags.length" class="flex flex-wrap items-center gap-1.5 mt-2">
+            <UIcon name="i-heroicons-tag" class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+            <span v-for="tag in previewTags" :key="tag" class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">{{ tag }}</span>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto px-6 py-5">
+          <div v-if="loadingPreview" class="flex items-center gap-2 py-8 justify-center text-sm text-gray-500">
+            <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
+            Loading description…
+          </div>
+          <div v-else-if="previewError" class="text-sm text-red-600 dark:text-red-400">{{ previewError }}</div>
+          <template v-else>
+            <div v-if="!sanitizedDescription" class="text-sm text-gray-400 dark:text-gray-500 italic">No description available.</div>
+            <div v-else class="prose dark:prose-invert max-w-none work-item-description" v-html="sanitizedDescription"></div>
+            <!-- Comments -->
+            <div v-if="previewData?.comments?.length" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+                <UIcon name="i-heroicons-chat-bubble-left-right" class="w-4 h-4" />
+                Comments ({{ previewData.comments.length }})
+              </h4>
+              <div class="space-y-3">
+                <div v-for="(comment, idx) in previewData.comments" :key="idx" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-4 py-3">
+                  <div class="flex items-center gap-2 mb-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ comment.author || 'Unknown' }}</span>
+                    <span v-if="comment.created_date">· {{ formatCommentDate(comment.created_date) }}</span>
+                  </div>
+                  <div class="prose dark:prose-invert prose-sm max-w-none work-item-description" v-html="sanitizeHtml(comment.text)"></div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="px-6 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
+          <span class="text-xs text-gray-500 dark:text-gray-400">Press <kbd class="px-1 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">Esc</kbd> to close</span>
+          <UButton variant="outline" color="neutral" @click="closePreviewDialog">
+            Close
+          </UButton>
         </div>
       </div>
     </div>
@@ -269,9 +290,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import DOMPurify from 'dompurify'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useApi } from '../composables/useApi.js'
-import { useDemoMode } from '../composables/useDemoMode.js'
+import { useDemoMode, anonIterationPath, anonName } from '../composables/useDemoMode.js'
 import { useCsvExport } from '../composables/useCsvExport.js'
 import IssueTable from '../components/IssueTable.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -529,7 +551,10 @@ async function onAssignParent(item) {
     parentAssignError.value = e.message || 'Failed to load candidates'
   } finally {
     loadingCandidates.value = false
-    nextTick(() => parentSearchInput.value?.focus())
+    nextTick(() => {
+      const el = parentSearchInput.value?.$el?.querySelector('input') || parentSearchInput.value
+      el?.focus()
+    })
   }
 }
 
@@ -538,6 +563,71 @@ function closeParentDialog() {
   parentAssignItem.value = null
   selectedParentCandidate.value = null
   parentAssignError.value = ''
+}
+
+// --- Work item preview ---
+const showPreviewDialog = ref(false)
+const previewItem = ref(null)
+const previewData = ref(null)
+const loadingPreview = ref(false)
+const previewError = ref('')
+
+const sanitizedDescription = computed(() => {
+  if (!previewData.value?.description) return ''
+  return DOMPurify.sanitize(previewData.value.description, {
+    ADD_TAGS: ['img'],
+    ADD_ATTR: ['src', 'alt', 'width', 'height', 'style'],
+  })
+})
+
+const previewTags = computed(() => {
+  if (!previewData.value?.tags) return []
+  return previewData.value.tags.split(';').map(t => t.trim()).filter(Boolean)
+})
+
+function sanitizeHtml(html) {
+  return DOMPurify.sanitize(html || '', {
+    ADD_TAGS: ['img'],
+    ADD_ATTR: ['src', 'alt', 'width', 'height', 'style'],
+  })
+}
+
+function formatCommentDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (isNaN(d)) return dateStr
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) +
+    ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+}
+
+function onEscPreview(e) {
+  if (e.key === 'Escape' && showPreviewDialog.value) closePreviewDialog()
+}
+watch(showPreviewDialog, (open) => {
+  if (open) document.addEventListener('keydown', onEscPreview)
+  else document.removeEventListener('keydown', onEscPreview)
+})
+
+async function onPreviewItem(item) {
+  previewItem.value = item
+  previewData.value = null
+  previewError.value = ''
+  showPreviewDialog.value = true
+  loadingPreview.value = true
+  try {
+    previewData.value = await store.fetchWorkItemPreview(props.projectId, item.id)
+  } catch (e) {
+    previewError.value = e.message || 'Failed to load work item preview'
+  } finally {
+    loadingPreview.value = false
+  }
+}
+
+function closePreviewDialog() {
+  showPreviewDialog.value = false
+  previewItem.value = null
+  previewData.value = null
+  previewError.value = ''
 }
 
 async function confirmAssignParent() {

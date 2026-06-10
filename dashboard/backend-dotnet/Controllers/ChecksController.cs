@@ -32,7 +32,22 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
         var checkCfg = project.Checks.FirstOrDefault(c => c.CheckType == checkType && c.Enabled);
         var wiql = checkCfg?.CustomWiql ?? "";
         if (string.IsNullOrEmpty(wiql))
+        {
             wiql = ConfigStore.DefaultWiql.GetValueOrDefault(checkType, "unused");
+
+            // For orphan_check: if ParentTypeMappings is configured, replace the
+            // hardcoded type list in the default WIQL with the configured types.
+            if (checkType == "orphan_check" && checkCfg?.ParentTypeMappings is { Count: > 0 })
+            {
+                var types = string.Join(",", checkCfg.ParentTypeMappings.Keys.Select(t => $"'{t}'"));
+                wiql =
+                    "SELECT [System.Id]\n" +
+                    "FROM WorkItems\n" +
+                    "WHERE [System.TeamProject] = @project\n" +
+                    $"  AND [System.WorkItemType] IN ({types})\n" +
+                    "  AND [System.State] NOT IN ('Closed','Removed','Done','Completed')";
+            }
+        }
 
         var excludeTypes = checkCfg?.ExcludeTypes ?? [];
         var apiVersion = checkCfg?.ApiVersion ?? "7.1";
@@ -40,6 +55,11 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
         var staleDays = checkCfg?.StaleDays ?? 14;
         var ignoreReviewers = checkCfg?.IgnoreReviewers ?? [];
         var estimateMode = checkCfg?.EstimateMode ?? "both";
+        // When no custom WIQL and no ParentTypeMappings, signal the orphan check
+        // to load types from the Azure DevOps process configuration at runtime.
+        var loadTypesFromProcess = checkType == "orphan_check"
+            && string.IsNullOrEmpty(checkCfg?.CustomWiql)
+            && (checkCfg?.ParentTypeMappings is null || checkCfg.ParentTypeMappings.Count == 0);
 
         return new CaseConfig
         {
@@ -54,6 +74,7 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
                 IncludeChildAreas = project.IncludeChildAreas,
                 IgnoreTitleContains = project.IgnoreTitleContains,
                 IgnoreParentTitleContains = project.IgnoreParentTitleContains,
+                LoadTypesFromProcess = loadTypesFromProcess,
             }],
             ExcludeTypes = excludeTypes,
             Repository = repository,
@@ -645,6 +666,110 @@ public partial class ChecksController(ConfigStore configStore, ILogger<ChecksCon
             .Select(c => c.Item).ToList();
 
         return Ok(new CandidateParentResponse { Candidates = sorted });
+    }
+
+    [HttpGet("work-item-preview/{projectId}")]
+    public async Task<IActionResult> WorkItemPreview(string projectId, [FromQuery(Name = "work_item_id")] int workItemId)
+    {
+        var pat = SettingsController.GetPat(configStore);
+        if (string.IsNullOrEmpty(pat))
+            return BadRequest(new { detail = "PAT not configured." });
+
+        // Try internal id first, then fall back to roadmap project_id (GUID)
+        string organization;
+        string projectName;
+        var project = configStore.GetProject(projectId);
+        if (project is not null)
+        {
+            organization = project.Organization;
+            projectName = project.Project;
+        }
+        else
+        {
+            var roadmapProj = configStore.LoadConfig().Roadmap.Projects
+                .FirstOrDefault(p => string.Equals(p.ProjectId, projectId, StringComparison.OrdinalIgnoreCase));
+            if (roadmapProj is null)
+                return NotFound(new { detail = "Project not found" });
+            organization = roadmapProj.Organization;
+            projectName = roadmapProj.Project;
+        }
+
+        var cacheKey = $"work-item-preview|{projectId}|{workItemId}";
+        if (memoryCache.TryGetValue(cacheKey, out WorkItemPreviewResponse? cached))
+            return Ok(cached);
+
+        try
+        {
+            var client = new AzureDevOpsClient(organization, projectName, pat);
+            var fields = new List<string>
+            {
+                "System.Id", "System.Title", "System.WorkItemType", "System.State",
+                "System.AssignedTo", "System.IterationPath", "System.Description",
+                "Microsoft.VSTS.TCM.ReproSteps", "System.CreatedDate", "System.ChangedDate", "System.Tags"
+            };
+
+            var items = await client.GetWorkItemsAsync([workItemId], fields: fields);
+            if (items.Count == 0)
+                return NotFound(new { detail = "Work item not found." });
+
+            var item = items[0];
+            var description = Helpers.GetField(item, "System.Description");
+            if (string.IsNullOrWhiteSpace(description))
+                description = Helpers.GetField(item, "Microsoft.VSTS.TCM.ReproSteps");
+
+            // Fetch comments
+            var commentsUrl = $"{client.BaseUrl}/wit/workitems/{workItemId}/comments?api-version=7.1-preview";
+            var comments = new List<WorkItemComment>();
+            try
+            {
+                var commentsResp = await client.HttpClient.GetAsync(commentsUrl);
+                if (commentsResp.IsSuccessStatusCode)
+                {
+                    var commentsDoc = await System.Text.Json.JsonDocument.ParseAsync(
+                        await commentsResp.Content.ReadAsStreamAsync());
+                    if (commentsDoc.RootElement.TryGetProperty("comments", out var commentsArr))
+                    {
+                        foreach (var c in commentsArr.EnumerateArray())
+                        {
+                            var text = c.TryGetProperty("text", out var t) ? t.GetString() ?? "" : "";
+                            var author = "";
+                            if (c.TryGetProperty("createdBy", out var by) && by.TryGetProperty("displayName", out var dn))
+                                author = dn.GetString() ?? "";
+                            var date = c.TryGetProperty("createdDate", out var d) ? d.GetString() ?? "" : "";
+                            if (!string.IsNullOrWhiteSpace(text))
+                                comments.Add(new WorkItemComment { Text = text, Author = author, CreatedDate = date });
+                        }
+                    }
+                }
+            }
+            catch { /* comments are non-critical */ }
+
+            var result = new WorkItemPreviewResponse
+            {
+                Id = workItemId,
+                Title = Helpers.GetField(item, "System.Title"),
+                WorkItemType = Helpers.GetField(item, "System.WorkItemType"),
+                State = Helpers.GetField(item, "System.State"),
+                AssignedTo = Helpers.GetField(item, "System.AssignedTo"),
+                IterationPath = Helpers.GetField(item, "System.IterationPath"),
+                Description = description,
+                CreatedDate = Helpers.GetField(item, "System.CreatedDate"),
+                ChangedDate = Helpers.GetField(item, "System.ChangedDate"),
+                Tags = Helpers.GetField(item, "System.Tags"),
+                Comments = comments
+            };
+
+            memoryCache.Set(cacheKey, result, TimeSpan.FromMinutes(2));
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { detail = ex.Message });
+        }
+        catch (AzureDevOpsPatScopeException ex)
+        {
+            return StatusCode(403, new { detail = ex.Message });
+        }
     }
 
     [HttpPost("assign-parent/{projectId}")]

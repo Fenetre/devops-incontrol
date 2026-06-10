@@ -2,56 +2,45 @@
   <div>
     <!-- Search bar -->
     <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <div class="relative">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-        <input
-          v-autofocus
-          v-model="search"
-          type="text"
-          placeholder="Filter by ID, title, type, or assignee…"
-          class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
-        />
-      </div>
+      <UInput v-autofocus name="search" v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Filter by ID, title, type, or assignee…" size="sm" class="w-full app-search" />
     </div>
 
     <!-- Table -->
     <div class="overflow-x-auto">
       <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
         <thead>
-          <tr class="text-left border-b border-gray-200 dark:border-gray-700">
-            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('id')">
+          <tr class="text-left border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+            <th class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none" @click="toggleSort('id')">
               ID
               <span v-if="sortKey === 'id'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('title')">
+            <th class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none" @click="toggleSort('title')">
               {{ isTagOverview ? 'Tag' : 'Title' }}
               <span v-if="sortKey === 'title'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('work_item_type')">
+            <th class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none" @click="toggleSort('work_item_type')">
               {{ isTagOverview ? 'Count' : 'Type' }}
               <span v-if="sortKey === 'work_item_type'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasAssignedTo" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('assigned_to')">
+            <th v-if="hasAssignedTo" class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none" @click="toggleSort('assigned_to')">
               Assigned To
               <span v-if="sortKey === 'assigned_to'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasState" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('state')">
+            <th v-if="hasState" class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none" @click="toggleSort('state')">
               State
               <span v-if="sortKey === 'state'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasIterationPath" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('iteration_path')">
+            <th v-if="hasIterationPath" class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none" @click="toggleSort('iteration_path')">
               Iteration
               <span v-if="sortKey === 'iteration_path'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="hasCreatedDate" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('created_date')">
+            <th v-if="hasCreatedDate" class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none" @click="toggleSort('created_date')">
               Created
               <span v-if="sortKey === 'created_date'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th v-if="isOrphanCheck" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
-            <th v-if="isTagOverview" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
-            <th v-if="isTagDetail" class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
+            <th v-if="isOrphanCheck" class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
+            <th v-if="isTagOverview" class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
+            <th v-if="isTagDetail" class="px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +49,7 @@
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <td class="px-4 py-3">
-                <span v-if="isTagOverview" class="text-gray-500 dark:text-gray-400">#{{ item.id }}</span>
+                <span v-if="isTagOverview" class="text-gray-500 dark:text-gray-300">#{{ item.id }}</span>
                 <a
                   v-else
                   :href="item.url"
@@ -80,7 +69,7 @@
                 >
                   {{ item.title }}
                 </router-link>
-                <span v-else-if="isTagOverview" class="text-gray-400 dark:text-gray-500 italic">{{ item.title }}</span>
+                <span v-else-if="isTagOverview" class="text-gray-500 dark:text-gray-300 italic">{{ item.title }}</span>
                 <a
                   v-else
                   :href="item.url"
@@ -92,7 +81,7 @@
                 </a>
                 </div>
               </td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
                 {{ item.work_item_type || '—' }}
               </td>
               <td v-if="hasAssignedTo" class="px-4 py-3 text-gray-700 dark:text-gray-300">
@@ -101,164 +90,69 @@
               <td v-if="hasState" class="px-4 py-3 whitespace-nowrap">
                 <span class="inline-block px-2 py-0.5 rounded-md text-xs font-medium" :class="stateClass(item.state)">{{ item.state || '—' }}</span>
               </td>
-              <td v-if="hasIterationPath" class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+              <td v-if="hasIterationPath" class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {{ formatIterationPath(item.iteration_path) }}
               </td>
-              <td v-if="hasCreatedDate" class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+              <td v-if="hasCreatedDate" class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {{ formatDate(item.created_date) }}
               </td>
               <td v-if="isOrphanCheck" class="px-4 py-3 text-right">
-                <button
-                  @click="emit('assign-parent', item)"
-                  class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
-                  :title="isParentDone(item) ? 'Change the parent work item' : 'Assign a parent work item'"
-                >
-                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  {{ isParentDone(item) ? 'Change Parent' : 'Assign Parent' }}
-                </button>
+                <div class="inline-flex items-center gap-1.5">
+                  <UButton size="xs" variant="outline" icon="i-heroicons-eye" @click="emit('preview-item', item)" title="Preview work item">Preview</UButton>
+                  <UButton size="xs" variant="outline" icon="i-heroicons-link" @click="emit('assign-parent', item)" :title="isParentDone(item) ? 'Change the parent work item' : 'Assign a parent work item'">{{ isParentDone(item) ? 'Change Parent' : 'Assign Parent' }}</UButton>
+                </div>
               </td>
               <td v-if="isTagOverview" class="px-4 py-3 text-right">
                 <div class="inline-flex items-center gap-1.5">
                   <!-- Inline confirmation for remove/rename/delete -->
                   <template v-if="confirmingRemoveId === item.id && confirmAction === 'remove'">
                     <span class="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">Remove from all items?</span>
-                    <button
-                      @click="confirmBulkRemove(item.title)"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      Yes
-                    </button>
-                    <button
-                      @click="confirmingRemoveId = null; confirmAction = null"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
+                    <UButton size="xs" color="error" icon="i-heroicons-check" @click="confirmBulkRemove(item.title)">Yes</UButton>
+                    <UButton size="xs" variant="outline" color="neutral" @click="confirmingRemoveId = null; confirmAction = null">Cancel</UButton>
                   </template>
                   <template v-else-if="confirmingRemoveId === item.id && confirmAction === 'delete'">
                     <span class="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">Delete unused tag?</span>
-                    <button
-                      @click="confirmDelete(item.title)"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      Yes
-                    </button>
-                    <button
-                      @click="confirmingRemoveId = null; confirmAction = null"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
+                    <UButton size="xs" color="error" icon="i-heroicons-check" @click="confirmDelete(item.title)">Yes</UButton>
+                    <UButton size="xs" variant="outline" color="neutral" @click="confirmingRemoveId = null; confirmAction = null">Cancel</UButton>
                   </template>
                   <template v-else-if="confirmingRemoveId === item.id && confirmAction === 'rename'">
                     <span class="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">Rename to "{{ pendingRenameTag?.newTag }}"?</span>
-                    <button
-                      @click="confirmBulkRename()"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700 transition-colors"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      Yes
-                    </button>
-                    <button
-                      @click="confirmingRemoveId = null; confirmAction = null; pendingRenameTag = null"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
+                    <UButton size="xs" color="warning" icon="i-heroicons-check" @click="confirmBulkRename()">Yes</UButton>
+                    <UButton size="xs" variant="outline" color="neutral" @click="confirmingRemoveId = null; confirmAction = null; pendingRenameTag = null">Cancel</UButton>
                   </template>
                   <!-- Normal actions -->
                   <template v-else>
                     <!-- Rename (in-use tags only) -->
                     <div v-if="!isZeroCount(item)" class="relative" :ref="el => setRenameRef(item.id, el)">
-                      <button
-                        @click.stop="toggleItemRename(item.id)"
-                        :disabled="busyItemId === item.id"
-                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors disabled:opacity-40"
-                        title="Rename this tag on all work items"
-                      >
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                        </svg>
-                        Rename
-                      </button>
-                      <!-- Rename dropdown -->
-                      <div
-                        v-if="renameOpenId === item.id"
-                        class="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50"
-                      >
-                        <div class="p-2 border-b border-gray-200 dark:border-gray-700">
-                          <div class="relative">
-                            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                            </svg>
-                            <input
-                              :ref="el => setSearchRef(item.id, el)"
-                              v-model="renameSearchText"
-                              type="text"
-                              placeholder="Search tags…"
-                              class="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                              @click.stop
-                            />
-                          </div>
-                        </div>
-                        <div class="max-h-48 overflow-y-auto">
-                          <div v-if="allTagsLoading" class="flex items-center gap-2 px-3 py-2 text-xs text-gray-500">
-                            <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                            Loading…
-                          </div>
-                          <div v-else-if="renameFilteredTagsForOverview(item.title).length === 0" class="px-3 py-2 text-xs text-gray-400 italic">
-                            No matching tags.
-                          </div>
-                          <button
-                            v-else
-                            v-for="t in renameFilteredTagsForOverview(item.title)"
-                            :key="t"
-                            @click.stop="selectBulkRenameTag(item, t)"
-                            class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
-                          >
-                            {{ t }}
-                          </button>
-                        </div>
+                      <UButton size="xs" variant="outline" color="warning" icon="i-heroicons-pencil-square" :disabled="busyItemId === item.id" @click.stop="toggleItemRename(item.id)" title="Rename this tag on all work items">Rename</UButton>
+                      <div v-if="renameOpenId === item.id" class="absolute right-0 top-full mt-1 z-50 w-56">
+                        <USelectMenu
+                          :items="renameFilteredTagsForOverview(item.title).map(t => ({ value: t, label: t }))"
+                          value-key="value"
+                          placeholder="Search tags…"
+                          :loading="allTagsLoading"
+                          size="xs"
+                          class="w-full"
+                          :open="true"
+                          @update:model-value="val => { renameOpenId = null; selectBulkRenameTag(item, val) }"
+                        />
                       </div>
                     </div>
                     <!-- Remove (in-use tags only) -->
-                    <button
+                    <UButton
                       v-if="!isZeroCount(item)"
-                      @click="confirmingRemoveId = item.id; confirmAction = 'remove'"
+                      size="xs" variant="outline" color="error" icon="i-heroicons-x-circle"
                       :disabled="busyItemId === item.id"
-                      class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-40"
+                      @click="confirmingRemoveId = item.id; confirmAction = 'remove'"
                       title="Remove this tag from all work items"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Remove
-                    </button>
+                    >Remove</UButton>
                     <!-- Delete (zero-count tags only) -->
-                    <button
+                    <UButton
                       v-if="isZeroCount(item)"
+                      size="xs" variant="outline" color="error" icon="i-heroicons-trash"
                       @click="confirmingRemoveId = item.id; confirmAction = 'delete'"
-                      class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                       title="Delete this unused tag"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                      </svg>
-                      Delete
-                    </button>
+                    >Delete</UButton>
                   </template>
                 </div>
               </td>
@@ -268,92 +162,34 @@
                   <!-- Inline remove confirmation -->
                   <template v-if="confirmingRemoveId === item.id">
                     <span class="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">Remove tag?</span>
-                    <button
-                      @click="confirmRemove(item.id)"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      Yes
-                    </button>
-                    <button
-                      @click="confirmingRemoveId = null"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
+                    <UButton size="xs" color="error" icon="i-heroicons-check" @click="confirmRemove(item.id)">Yes</UButton>
+                    <UButton size="xs" variant="outline" color="neutral" @click="confirmingRemoveId = null">Cancel</UButton>
                   </template>
                   <!-- Normal actions -->
                   <template v-else>
                     <!-- Rename -->
                     <div class="relative" :ref="el => setRenameRef(item.id, el)">
-                      <button
-                        @click.stop="toggleItemRename(item.id)"
-                        :disabled="busyItemId === item.id"
-                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors disabled:opacity-40"
-                        title="Rename tag on this work item"
-                      >
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                        </svg>
-                        Rename
-                      </button>
-                      <!-- Per-item rename dropdown -->
-                      <div
-                        v-if="renameOpenId === item.id"
-                        class="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50"
-                      >
-                        <div class="p-2 border-b border-gray-200 dark:border-gray-700">
-                          <div class="relative">
-                            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                            </svg>
-                            <input
-                              :ref="el => setSearchRef(item.id, el)"
-                              v-model="renameSearchText"
-                              type="text"
-                              placeholder="Search tags…"
-                              class="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                              @click.stop
-                            />
-                          </div>
-                        </div>
-                        <div class="max-h-48 overflow-y-auto">
-                          <div v-if="allTagsLoading" class="flex items-center gap-2 px-3 py-2 text-xs text-gray-500">
-                            <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                            Loading…
-                          </div>
-                          <div v-else-if="renameFilteredTags.length === 0" class="px-3 py-2 text-xs text-gray-400 italic">
-                            No matching tags.
-                          </div>
-                          <button
-                            v-else
-                            v-for="t in renameFilteredTags"
-                            :key="t"
-                            @click.stop="selectRenameTag(item.id, t)"
-                            class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
-                          >
-                            {{ t }}
-                          </button>
-                        </div>
+                      <UButton size="xs" variant="outline" color="warning" icon="i-heroicons-pencil-square" :disabled="busyItemId === item.id" @click.stop="toggleItemRename(item.id)" title="Rename tag on this work item">Rename</UButton>
+                      <div v-if="renameOpenId === item.id" class="absolute right-0 top-full mt-1 z-50 w-56">
+                        <USelectMenu
+                          :items="renameFilteredTags.map(t => ({ value: t, label: t }))"
+                          value-key="value"
+                          placeholder="Search tags…"
+                          :loading="allTagsLoading"
+                          size="xs"
+                          class="w-full"
+                          :open="true"
+                          @update:model-value="val => { renameOpenId = null; selectRenameTag(item.id, val) }"
+                        />
                       </div>
                     </div>
                     <!-- Remove -->
-                    <button
-                      @click="confirmingRemoveId = item.id"
+                    <UButton
+                      size="xs" variant="outline" color="error" icon="i-heroicons-x-circle"
                       :disabled="busyItemId === item.id"
-                      class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-40"
+                      @click="confirmingRemoveId = item.id"
                       title="Remove tag from this work item"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Remove
-                    </button>
+                    >Remove</UButton>
                   </template>
                 </div>
               </td>
@@ -361,36 +197,23 @@
         </tbody>
       </table>
 
-      <div v-if="filteredItems.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
+      <div v-if="filteredItems.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-300 text-sm">
         {{ debouncedSearch ? 'No matching items.' : 'No items to display.' }}
       </div>
     </div>
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-      <span class="text-xs text-gray-500 dark:text-gray-400">
+      <span class="text-xs text-gray-500 dark:text-gray-300">
         {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filteredItems.length) }} of {{ filteredItems.length }}
       </span>
       <div class="flex items-center gap-1">
-        <button
-          @click="page = page - 1"
-          :disabled="page <= 1"
-          class="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >Prev</button>
+        <UButton size="sm" variant="outline" color="neutral" icon="i-heroicons-chevron-left" :disabled="page <= 1" @click="page = page - 1">Prev</UButton>
         <template v-for="p in visiblePages" :key="p">
-          <span v-if="p === '…'" class="px-1.5 text-xs text-gray-400">…</span>
-          <button
-            v-else
-            @click="page = p"
-            class="px-2.5 py-1 text-xs font-medium rounded-md border transition-colors"
-            :class="p === page ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
-          >{{ p }}</button>
+          <span v-if="p === '…'" class="px-1.5 text-xs text-gray-400 dark:text-gray-300">…</span>
+          <UButton v-else size="sm" :variant="p === page ? 'solid' : 'outline'" :color="p === page ? 'primary' : 'neutral'" @click="page = p">{{ p }}</UButton>
         </template>
-        <button
-          @click="page = page + 1"
-          :disabled="page >= totalPages"
-          class="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >Next</button>
+        <UButton size="sm" variant="outline" color="neutral" icon="i-heroicons-chevron-right" :disabled="page >= totalPages" @click="page = page + 1">Next</UButton>
       </div>
     </div>
   </div>
@@ -410,7 +233,7 @@ const props = defineProps({
   busyItemId: { type: Number, default: null },
 })
 
-const emit = defineEmits(['delete-tag', 'remove-item-tag', 'rename-item-tag', 'remove-tag', 'rename-tag', 'assign-parent'])
+const emit = defineEmits(['delete-tag', 'remove-item-tag', 'rename-item-tag', 'remove-tag', 'rename-tag', 'assign-parent', 'preview-item'])
 
 const isOrphanCheck = computed(() => props.checkType === 'orphan_check')
 const isTagOverview = computed(() => props.checkType === 'tag_overview_check')
@@ -545,7 +368,7 @@ function formatIterationPath(path) {
 }
 
 function stateClass(state) {
-  if (!state) return 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+  if (!state) return 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300'
   const s = state.toLowerCase()
   if (s.includes('progress') || s === 'active' || s === 'committed') return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
   if (s.includes('refine') || s === 'new' || s === 'proposed') return 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'

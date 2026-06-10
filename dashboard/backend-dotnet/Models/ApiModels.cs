@@ -135,6 +135,9 @@ public record AreaInfo([property: JsonPropertyName("path")] string Path);
 public record RepoInfo(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("id")] string Id);
+public record TeamInfo(
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("id")] string Id);
 public record DeleteTagRequest(
     [property: JsonPropertyName("organization")] string Organization,
     [property: JsonPropertyName("project")] string Project,
@@ -159,6 +162,11 @@ public class DbListResponse
     [JsonPropertyName("project_name")] public string ProjectName { get; set; } = "";
     [JsonPropertyName("name_filter")] public string NameFilter { get; set; } = "";
     [JsonPropertyName("databases")] public List<string> Databases { get; set; } = [];
+}
+
+public class DbAllowlistToggleRequest
+{
+    [JsonPropertyName("database_name")] public string DatabaseName { get; set; } = "";
 }
 
 public class DbRuleResult
@@ -193,8 +201,16 @@ public class PrItem
     [JsonPropertyName("creation_date")] public string CreationDate { get; set; } = "";
     [JsonPropertyName("is_draft")] public bool IsDraft { get; set; }
     [JsonPropertyName("reviewer_count")] public int ReviewerCount { get; set; }
+    [JsonPropertyName("reviewers")] public List<PrReviewer> Reviewers { get; set; } = [];
     [JsonPropertyName("days_inactive")] public int? DaysInactive { get; set; }
     [JsonPropertyName("flags")] public List<PrFlag> Flags { get; set; } = [];
+}
+
+public class PrReviewer
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("vote")] public int Vote { get; set; }
+    [JsonPropertyName("is_required")] public bool IsRequired { get; set; }
 }
 
 public class PrProjectResponse
@@ -516,6 +532,7 @@ public class VelocityMetricsProject
     [JsonPropertyName("project_id")] public string ProjectId { get; set; } = "";
     [JsonPropertyName("project_name")] public string ProjectName { get; set; } = "";
     [JsonPropertyName("team_name")] public string TeamName { get; set; } = "";
+    [JsonPropertyName("available_teams")] public List<string> AvailableTeams { get; set; } = [];
     [JsonPropertyName("sprints")] public List<VelocitySprintInfo> Sprints { get; set; } = [];
 }
 
@@ -640,6 +657,28 @@ public class AssignParentResponse
     [JsonPropertyName("message")] public string Message { get; set; } = "";
 }
 
+public class WorkItemPreviewResponse
+{
+    [JsonPropertyName("id")] public int Id { get; set; }
+    [JsonPropertyName("title")] public string Title { get; set; } = "";
+    [JsonPropertyName("work_item_type")] public string WorkItemType { get; set; } = "";
+    [JsonPropertyName("state")] public string State { get; set; } = "";
+    [JsonPropertyName("assigned_to")] public string AssignedTo { get; set; } = "";
+    [JsonPropertyName("iteration_path")] public string IterationPath { get; set; } = "";
+    [JsonPropertyName("description")] public string Description { get; set; } = "";
+    [JsonPropertyName("created_date")] public string CreatedDate { get; set; } = "";
+    [JsonPropertyName("changed_date")] public string ChangedDate { get; set; } = "";
+    [JsonPropertyName("tags")] public string Tags { get; set; } = "";
+    [JsonPropertyName("comments")] public List<WorkItemComment> Comments { get; set; } = [];
+}
+
+public class WorkItemComment
+{
+    [JsonPropertyName("text")] public string Text { get; set; } = "";
+    [JsonPropertyName("author")] public string Author { get; set; } = "";
+    [JsonPropertyName("created_date")] public string CreatedDate { get; set; } = "";
+}
+
 // --- Audit Denylist ---
 public record AuditDenylistInput([property: JsonPropertyName("key")] string Key = "");
 
@@ -654,4 +693,61 @@ public class AuditConfigInput
 {
     [JsonPropertyName("group_config")] public List<AuditGroupConnection> GroupConfig { get; set; } = [];
     [JsonPropertyName("rules")] public List<AuditRule> Rules { get; set; } = [];
+}
+
+// --- Roadmap Create Work Item ---
+
+public class CreateWorkItemRequest
+{
+    [JsonPropertyName("organization")] public string Organization { get; set; } = "";
+    [JsonPropertyName("project")] public string Project { get; set; } = "";
+    [JsonPropertyName("work_item_type")] public string WorkItemType { get; set; } = "";
+    [JsonPropertyName("title")] public string Title { get; set; } = "";
+    [JsonPropertyName("description")] public string? Description { get; set; }
+    [JsonPropertyName("parent_id")] public int? ParentId { get; set; }
+    [JsonPropertyName("iteration_path")] public string? IterationPath { get; set; }
+    [JsonPropertyName("fields")] public Dictionary<string, string>? Fields { get; set; }
+}
+
+public class CreateWorkItemResponse
+{
+    [JsonPropertyName("id")] public int Id { get; set; }
+    [JsonPropertyName("title")] public string Title { get; set; } = "";
+    [JsonPropertyName("work_item_type")] public string WorkItemType { get; set; } = "";
+    [JsonPropertyName("state")] public string State { get; set; } = "";
+    [JsonPropertyName("assigned_to")] public string? AssignedTo { get; set; }
+    [JsonPropertyName("iteration_path")] public string? IterationPath { get; set; }
+    [JsonPropertyName("tags")] public string? Tags { get; set; }
+    [JsonPropertyName("start_date")] public string? StartDate { get; set; }
+    [JsonPropertyName("target_date")] public string? TargetDate { get; set; }
+    [JsonPropertyName("parent_id")] public int? ParentId { get; set; }
+    [JsonPropertyName("organization")] public string Organization { get; set; } = "";
+    [JsonPropertyName("project")] public string Project { get; set; } = "";
+}
+
+public class UploadAttachmentResponse
+{
+    [JsonPropertyName("url")] public string Url { get; set; } = "";
+}
+
+public class UpdateWorkItemRequest
+{
+    [JsonPropertyName("organization")] public string Organization { get; set; } = "";
+    [JsonPropertyName("project")] public string Project { get; set; } = "";
+    [JsonPropertyName("work_item_id")] public int WorkItemId { get; set; }
+    [JsonPropertyName("title")] public string? Title { get; set; }
+    [JsonPropertyName("description")] public string? Description { get; set; }
+    [JsonPropertyName("state")] public string? State { get; set; }
+    [JsonPropertyName("assigned_to")] public string? AssignedTo { get; set; }
+    [JsonPropertyName("iteration_path")] public string? IterationPath { get; set; }
+    [JsonPropertyName("tags")] public string? Tags { get; set; }
+    [JsonPropertyName("fields")] public Dictionary<string, string>? Fields { get; set; }
+}
+
+public class AddCommentRequest
+{
+    [JsonPropertyName("organization")] public string Organization { get; set; } = "";
+    [JsonPropertyName("project")] public string Project { get; set; } = "";
+    [JsonPropertyName("work_item_id")] public int WorkItemId { get; set; }
+    [JsonPropertyName("text")] public string Text { get; set; } = "";
 }

@@ -342,6 +342,14 @@ public class RateLimitMiddleware(RequestDelegate next)
         "/api/settings/db/status",
     ];
 
+    // Stricter rate limit for authentication endpoints to prevent brute-force
+    private static readonly string[] StrictPaths =
+    [
+        "/api/settings/api-key/verify",
+    ];
+    private static readonly int StrictLimit = 5;
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentQueue<double>> StrictHits = new();
+
     public async Task InvokeAsync(HttpContext ctx)
     {
         var path = ctx.Request.Path.Value ?? "";
@@ -353,6 +361,22 @@ public class RateLimitMiddleware(RequestDelegate next)
 
         var client = GetClientIp(ctx);
         var now = Environment.TickCount64 / 1000.0;
+
+        // Apply stricter limit for auth endpoints
+        if (StrictPaths.Contains(path))
+        {
+            var strictQueue = StrictHits.GetOrAdd(client, _ => new System.Collections.Concurrent.ConcurrentQueue<double>());
+            while (strictQueue.TryPeek(out var oldestStrict) && now - oldestStrict >= Window)
+                strictQueue.TryDequeue(out _);
+            if (strictQueue.Count >= StrictLimit)
+            {
+                ctx.Response.StatusCode = 429;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.WriteAsync("""{"detail":"Too many attempts. Try again later."}""");
+                return;
+            }
+            strictQueue.Enqueue(now);
+        }
 
         var queue = Hits.GetOrAdd(client, _ => new System.Collections.Concurrent.ConcurrentQueue<double>());
 

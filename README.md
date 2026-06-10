@@ -19,10 +19,14 @@ A control and management application for Microsoft Azure DevOps made by scrummas
 
 ## DevOps InControl Key Features
 
--  Sprint Populator/Templates – Save time by cloning sprint templates and common tasks into active sprints with a single click.
+-  Portfolio Roadmap – Visualise Epics and Features on a timeline across multiple projects and teams. Drag-to-reschedule, create dependency links, and push all changes to Azure DevOps in one batch.
+-  Sprint Populator/Templates – Save time by cloning sprint templates and common tasks into active sprints with a single click. Selectively include or exclude individual items before applying.
+-  Sprint Creator – Create new sprints directly from the dashboard with auto-suggested names, dates, and parent paths based on existing patterns.
+-  Template Manager – Create, delete, copy, and migrate work item templates across projects and teams with field-level control and custom field detection.
 -  Automated Project Health Checks – Instantly flag missing estimates, orphaned tasks, stale sprint items, and unassigned work items that clutter your backlog.
 -  Orphan Parent Assignment – Assign or change parent work items directly from the orphan check with smart candidate suggestions ranked by relevance.
 -  Unified PR Monitor – Track pull requests across all organizations and repositories in one view; identify unreviewed, rejected, or stagnant PRs at a glance.
+-  PR Reviewer Bottlenecks – See which reviewers have the most pending reviews, grouped by person, to quickly identify approval bottlenecks.
 -  PR Approval & Stale Detection – Surface PRs that are approved but not yet completed, PRs with no reviewers, and PRs inactive for a configurable number of days.
 -  Resolved PR Ready – Identify tasks and bugs with all required PRs completed, ready to move to Done.
 -  One-Click Notifications – Send automated email reminders to assignees directly from the dashboard for missing estimates or overdue tasks.
@@ -37,6 +41,7 @@ A control and management application for Microsoft Azure DevOps made by scrummas
 -  Tag Management & Health – Scan your entire project to see which tags are in use and how many items each tag covers.
 -  Tag Bulk Operations – Delete ghost tags, rename tags across all work items, and remove tags in bulk directly from the dashboard.
 -  Smart Version Filtering – Logic that automatically hides noise like version numbers (v1.2.0) so you can focus on functional tags.
+-  Windows Installer – One-click setup executable with Start Menu integration, auto-start, and proper uninstaller. No developer tools required.
 -  Dark Mode – Full dark/light theme toggle with system preference detection.
 -  Demo Mode – Showcase the dashboard with anonymized data without exposing real project information.
 -  Multi-Project & Multi-Org Support – Monitor multiple Azure DevOps projects across different organizations from a single dashboard.
@@ -48,12 +53,27 @@ Runs locally on your Windows PC — no cloud hosting needed.
 
 ---
 
-## What you need before installing
+## Quick Start (recommended)
+
+1. **Download** `DevOpsInControl-1.2.0-Setup.exe` from the [Releases](https://github.com/Fenetre/devops-incontrol/releases) page.
+2. **Run the installer** — no admin rights needed. It installs to your user profile.
+3. **Launch** from the Start Menu → "DevOps InControl".
+4. **Follow the setup wizard** in your browser to connect your Azure DevOps organization.
+
+That's it. No .NET SDK, no Node.js, no command line needed.
+
+> **Prerequisites:** The installer requires the [.NET 8 ASP.NET Core Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (not the SDK — just the runtime). The installer will warn you if it's missing.
+
+---
+
+## Developer Setup (from source)
+
+If you want to build from source or contribute, you'll need additional tools:
 
 | Prerequisite | How to get it |
 |---|---|
 | **Windows 10/11** | You're probably already on it. |
-| **.NET 8.0+ SDK** | Download from [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0). Pick the **SDK** installer (not Runtime). |
+| **.NET 8.0+ SDK** | Download from [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0). Pick the **SDK** installer. |
 | **Node.js 18+** | Download from [nodejs.org](https://nodejs.org). Pick the **LTS** version. |
 | **Azure DevOps PAT** | See [Create a PAT](#create-a-personal-access-token-pat) below. |
 
@@ -64,36 +84,35 @@ dotnet --version   # should print 8.x.x or higher
 node --version     # should print v18.x.x or higher, tested on v18 and v22
 ```
 
----
+### Build & install locally
 
-## Installation (one-time)
+```powershell
+.\scripts\install.ps1
+```
 
-1. **Open PowerShell** in the DevOps InControl folder.  
-   *(Right-click the folder → "Open in Terminal", or `cd` to it.)*
+This will verify prerequisites, build the frontend, publish the backend, create a Start Menu shortcut, and register in Apps & Features.
 
-2. **Run the installer:**
+### Run in dev mode (hot-reload)
 
-   ```powershell
-   .\install.ps1
-   ```
+```powershell
+.\start.ps1 -Dev
+```
 
-   This will:
-   - Verify .NET and Node.js are installed.
-   - Download frontend and backend dependencies.
-   - Build the app.
-   - **Ask if you want DevOps InControl to start automatically when you log in.** Press Enter (or type `Y`) for yes.
+### Build the installer executable
 
-That's it. Installation is done.
+```powershell
+.\scripts\Build-Installer.ps1
+```
+
+Requires [Inno Setup 6](https://jrsoftware.org/isdownload.php). Outputs `DevOpsInControl-<version>-Setup.exe` in the repo root.
 
 ---
 
 ## Starting the app
 
-```powershell
-.\start.ps1
-```
+**Installed via Setup.exe:** Open the Start Menu → "DevOps InControl". A terminal window opens and your browser navigates to the dashboard automatically.
 
-Your browser will open to **http://localhost:5172** with a setup wizard that walks you through:
+**From source:** Run `.\start.ps1` in PowerShell. Your browser will open to **http://localhost:5172**.
 
 1. **Set a password** — protects your dashboard.
 2. **Enter your Azure DevOps organization name and PAT** — the wizard verifies they work.
@@ -132,7 +151,11 @@ Paste this token into the setup wizard when prompted.
 
 ## Stopping the app
 
-Press **Ctrl+C** in the PowerShell window where the app is running. If it was started automatically (background mode), run:
+**Installed:** Press **Ctrl+C** in the DevOps InControl terminal window, or close it.
+
+**From source:** Press **Ctrl+C** in the PowerShell window where `start.ps1` is running.
+
+If it was started automatically (background mode), run:
 
 ```powershell
 Get-Process -Name DashboardApi | Stop-Process
@@ -140,13 +163,23 @@ Get-Process -Name DashboardApi | Stop-Process
 
 ---
 
+## Uninstalling
+
+**Installed via Setup.exe:** Settings → Apps → "DevOps InControl" → Uninstall.
+
+**From source:** Run `.\scripts\Uninstall-DevOpsInControl.ps1` to remove shortcuts, scheduled tasks, and registry entries. Your configuration is preserved.
+
+---
+
 ## Updating
 
-Pull the latest code, then re-run the installer:
+**Installed via Setup.exe:** Download and run the latest installer. It upgrades in place and preserves your configuration.
+
+**From source:**
 
 ```powershell
 git pull
-.\install.ps1
+.\scripts\install.ps1
 ```
 
 ---
@@ -158,7 +191,7 @@ git pull
 | `dotnet: command not found` | Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and restart PowerShell. |
 | `npm: command not found` | Install [Node.js](https://nodejs.org) and restart PowerShell. |
 | Build fails with "file is locked" | Another instance is running. Run `Get-Process -Name DashboardApi \| Stop-Process` first, then try again. |
-| Browser shows raw HTML text | Run `.\install.ps1` again to rebuild, then `.\start.ps1`. |
+| Browser shows raw HTML text | Run `.\scripts\install.ps1` again to rebuild, then `.\start.ps1`. |
 | "Execution of scripts is disabled" | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` and try again. |
 | Port 5172  already in use | Run f.e. `.\start.ps1 -BackendPort 9090` to use a different port. |
 

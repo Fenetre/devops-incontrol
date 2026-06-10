@@ -14,6 +14,7 @@ const routeToHelpUrl = {
   'db-monitor':         'https://www.devopsincontrol.com/docs#database-cleanup',
   'db-project':         'https://www.devopsincontrol.com/docs#db-project',
   'sprint-populator':   'https://www.devopsincontrol.com/docs#sprint-populator',
+  'template-manager':   'https://www.devopsincontrol.com/docs#template-manager',
   'velocity':           'https://www.devopsincontrol.com/docs#velocity-capacity',
   'dev-assessment':     'https://www.devopsincontrol.com/docs#development-assessment',
   'permission-check':   'https://www.devopsincontrol.com/docs#permission-overview',

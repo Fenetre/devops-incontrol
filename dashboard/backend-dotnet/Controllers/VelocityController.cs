@@ -362,11 +362,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
         var iterName = iterPath.Split('\\').Last();
 
         // WIQL for completed items with story points
-        var wiql = $"SELECT [System.Id] FROM WorkItems " +
-                   $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project.Project)}' " +
-                   $"AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' " +
-                   $"AND [System.State] IN ('Closed','Resolved','Done') " +
-                   $"AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
+        var wiql = $@"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project.Project)}' AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' AND [System.State] IN ('Closed','Resolved','Done') AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
 
         var wiqlPayload = JsonSerializer.Serialize(new { query = wiql });
         var wiqlContent = new StringContent(wiqlPayload, Encoding.UTF8, "application/json");
@@ -507,47 +503,54 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                 var orgUrl = $"https://dev.azure.com/{proj.Organization}";
                 var http = BuildClient(pat);
 
-                // Get first team
-                var teamsUrl = $"{orgUrl}/_apis/projects/{Uri.EscapeDataString(proj.Project)}/teams?api-version=7.1-preview.1&$top=1";
+                // Get all teams
+                var teamsUrl = $"{orgUrl}/_apis/projects/{Uri.EscapeDataString(proj.Project)}/teams?api-version=7.1-preview.1&$top=300";
                 var teamsResp = await http.GetAsync(teamsUrl);
                 if (!teamsResp.IsSuccessStatusCode) return null;
 
                 var teamsDoc = await JsonDocument.ParseAsync(await teamsResp.Content.ReadAsStreamAsync());
                 if (!teamsDoc.RootElement.TryGetProperty("value", out var teamsArr) || teamsArr.GetArrayLength() == 0) return null;
 
-                var teamName = teamsArr[0].GetProperty("name").GetString() ?? "";
-                if (string.IsNullOrEmpty(teamName)) return null;
+                var allTeamNames = new List<string>();
+                foreach (var t in teamsArr.EnumerateArray())
+                {
+                    var n = t.GetProperty("name").GetString() ?? "";
+                    if (!string.IsNullOrEmpty(n)) allTeamNames.Add(n);
+                }
+                if (allTeamNames.Count == 0) return null;
 
-                // Get ALL iterations from project-level classification nodes (includes unsubscribed sprints)
-                var iterUrl = $"{orgUrl}/{Uri.EscapeDataString(proj.Project)}/_apis/wit/classificationnodes/iterations?$depth=20&api-version=7.1";
+                var teamName = allTeamNames[0];
+
+                // Get team-specific iterations (only sprints subscribed by this team)
+                var iterUrl = $"{orgUrl}/{Uri.EscapeDataString(proj.Project)}/{Uri.EscapeDataString(teamName)}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
                 var iterResp = await http.GetAsync(iterUrl);
                 if (!iterResp.IsSuccessStatusCode) return null;
 
                 var iterDoc = await JsonDocument.ParseAsync(await iterResp.Content.ReadAsStreamAsync());
                 var now = DateTime.UtcNow;
 
-                // Recursively collect leaf iterations with dates
                 var allIterations = new List<(string Id, string Name, string Path, string Timeframe, DateTime? FinishDate)>();
-                void CollectIterations(JsonElement node, string parentPath)
+                if (iterDoc.RootElement.TryGetProperty("value", out var iterArr))
                 {
-                    var nodeName = node.TryGetProperty("name", out var nn) ? nn.GetString() ?? "" : "";
-                    var nodePath = string.IsNullOrEmpty(parentPath) ? nodeName : $"{parentPath}\\{nodeName}";
-
-                    // Check if this node has dates (= actual sprint, not just a folder)
-                    DateTime? startDate = null, finishDate = null;
-                    if (node.TryGetProperty("attributes", out var attrs))
+                    foreach (var iter in iterArr.EnumerateArray())
                     {
-                        if (attrs.TryGetProperty("startDate", out var sd) && sd.ValueKind == JsonValueKind.String
-                            && DateTime.TryParse(sd.GetString(), out var sdVal))
-                            startDate = sdVal;
-                        if (attrs.TryGetProperty("finishDate", out var fd) && fd.ValueKind == JsonValueKind.String
-                            && DateTime.TryParse(fd.GetString(), out var fdVal))
-                            finishDate = fdVal;
-                    }
+                        var id = iter.TryGetProperty("id", out var iid) ? iid.GetString() ?? "" : "";
+                        var nodeName = iter.TryGetProperty("name", out var nn) ? nn.GetString() ?? "" : "";
+                        var path = iter.TryGetProperty("path", out var pp) ? pp.GetString() ?? "" : "";
 
-                    if (finishDate.HasValue)
-                    {
-                        // Determine timeframe from dates
+                        DateTime? startDate = null, finishDate = null;
+                        if (iter.TryGetProperty("attributes", out var attrs))
+                        {
+                            if (attrs.TryGetProperty("startDate", out var sd) && sd.ValueKind == JsonValueKind.String
+                                && DateTime.TryParse(sd.GetString(), out var sdVal))
+                                startDate = sdVal;
+                            if (attrs.TryGetProperty("finishDate", out var fd) && fd.ValueKind == JsonValueKind.String
+                                && DateTime.TryParse(fd.GetString(), out var fdVal))
+                                finishDate = fdVal;
+                        }
+
+                        if (!finishDate.HasValue) continue;
+
                         string tf;
                         if (finishDate.Value < now && (!startDate.HasValue || startDate.Value < now))
                             tf = "past";
@@ -556,24 +559,9 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                         else
                             tf = "future";
 
-                        var id = node.TryGetProperty("identifier", out var iid) ? iid.GetString() ?? "" : "";
-                        var iterPath = $"{proj.Project}\\{nodePath}";
-                        allIterations.Add((id, nodeName, iterPath, tf, finishDate));
+                        allIterations.Add((id, nodeName, path, tf, finishDate));
                     }
-
-                    // Recurse into children
-                    if (node.TryGetProperty("children", out var children))
-                        foreach (var child in children.EnumerateArray())
-                            CollectIterations(child, nodePath);
                 }
-
-                // The root node is the "Iteration" root — recurse its children
-                if (iterDoc.RootElement.TryGetProperty("children", out var topChildren))
-                    foreach (var child in topChildren.EnumerateArray())
-                        CollectIterations(child, "");
-                // If no children, check if the root itself has iterations
-                else if (iterDoc.RootElement.TryGetProperty("attributes", out _))
-                    CollectIterations(iterDoc.RootElement, "");
 
                 var pastCurrentSprints = allIterations
                     .Where(i => i.Timeframe != "future")
@@ -597,8 +585,8 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                     var burnedTask = FetchSprintPointsInternal(http, orgUrl, proj.Project, teamName, id, path);
                     await Task.WhenAll(scopeTask, burnedTask);
 
-                    var initialScope = Math.Round(scopeTask.Result, 1);
-                    var burned = Math.Round(burnedTask.Result, 1);
+                    var initialScope = Math.Round(await scopeTask, 1);
+                    var burned = Math.Round(await burnedTask, 1);
                     return new VelocitySprintInfo
                     {
                         Name = name,
@@ -616,6 +604,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
                     ProjectId = proj.Id,
                     ProjectName = proj.Project,
                     TeamName = teamName,
+                    AvailableTeams = allTeamNames,
                     Sprints = sprintInfos,
                 };
             }
@@ -638,6 +627,125 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
         {
             Projects = result,
             FetchedAt = DateTime.UtcNow.ToString("o"),
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // GET /api/velocity/{projectId}/metrics?team=X&sprints=10
+    // ---------------------------------------------------------------
+    [HttpGet("{projectId}/metrics")]
+    public async Task<IActionResult> GetProjectMetrics(string projectId, [FromQuery] string team, [FromQuery] int sprints = 10, CancellationToken cancellationToken = default)
+    {
+        var (pat, project) = Resolve(projectId);
+        if (pat is null) return BadRequest(new { detail = "PAT not configured." });
+        if (project is null) return NotFound(new { detail = "Project not found." });
+        if (string.IsNullOrWhiteSpace(team)) return BadRequest(new { detail = "team query parameter is required." });
+
+        var orgUrl = $"https://dev.azure.com/{project.Organization}";
+        var http = BuildClient(pat);
+
+        // Get team-specific iterations (sprints subscribed by this team)
+        var iterUrl = $"{orgUrl}/{Uri.EscapeDataString(project.Project)}/{Uri.EscapeDataString(team)}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
+        var iterResp = await http.GetAsync(iterUrl);
+        if (!iterResp.IsSuccessStatusCode)
+            return StatusCode(502, new { detail = "Failed to fetch team iterations." });
+
+        var iterDoc = await JsonDocument.ParseAsync(await iterResp.Content.ReadAsStreamAsync());
+        var now = DateTime.UtcNow;
+
+        var allIterations = new List<(string Id, string Name, string Path, string Timeframe, DateTime? FinishDate)>();
+        if (iterDoc.RootElement.TryGetProperty("value", out var iterArr))
+        {
+            foreach (var iter in iterArr.EnumerateArray())
+            {
+                var id = iter.TryGetProperty("id", out var iid) ? iid.GetString() ?? "" : "";
+                var name = iter.TryGetProperty("name", out var nn) ? nn.GetString() ?? "" : "";
+                var path = iter.TryGetProperty("path", out var pp) ? pp.GetString() ?? "" : "";
+
+                DateTime? startDate = null, finishDate = null;
+                if (iter.TryGetProperty("attributes", out var attrs))
+                {
+                    if (attrs.TryGetProperty("startDate", out var sd) && sd.ValueKind == JsonValueKind.String
+                        && DateTime.TryParse(sd.GetString(), out var sdVal))
+                        startDate = sdVal;
+                    if (attrs.TryGetProperty("finishDate", out var fd) && fd.ValueKind == JsonValueKind.String
+                        && DateTime.TryParse(fd.GetString(), out var fdVal))
+                        finishDate = fdVal;
+                }
+
+                if (!finishDate.HasValue) continue;
+
+                string tf;
+                if (finishDate.Value < now && (!startDate.HasValue || startDate.Value < now))
+                    tf = "past";
+                else if (startDate.HasValue && startDate.Value <= now && finishDate.Value >= now)
+                    tf = "current";
+                else
+                    tf = "future";
+
+                allIterations.Add((id, name, path, tf, finishDate));
+            }
+        }
+
+        var pastCurrentSprints = allIterations
+            .Where(i => i.Timeframe != "future")
+            .OrderByDescending(i => i.FinishDate)
+            .Take(sprints + 1)
+            .Reverse()
+            .ToList();
+
+        var futureSprints = allIterations
+            .Where(i => i.Timeframe == "future")
+            .OrderBy(i => i.FinishDate)
+            .Take(2)
+            .ToList();
+
+        var recentSprints = pastCurrentSprints.Concat(futureSprints).ToList();
+
+        var sprintTasks = recentSprints.Select(async sprint =>
+        {
+            var (id, name, path, timeframe, _) = sprint;
+            var scopeTask = FetchInitialScopeInternal(http, orgUrl, project.Project, team, id, path);
+            var burnedTask = FetchSprintPointsInternal(http, orgUrl, project.Project, team, id, path);
+            await Task.WhenAll(scopeTask, burnedTask);
+
+            var initialScope = Math.Round(await scopeTask, 1);
+            var burned = Math.Round(await burnedTask, 1);
+            return new VelocitySprintInfo
+            {
+                Name = name,
+                InitialScope = initialScope,
+                BurnedPoints = burned,
+                RemainingPoints = Math.Round(Math.Max(0, initialScope - burned), 1),
+                StoryPoints = burned,
+                Timeframe = timeframe,
+            };
+        });
+
+        var sprintInfos = (await Task.WhenAll(sprintTasks)).ToList();
+
+        // Get all teams to return available_teams
+        var teamsUrl = $"{orgUrl}/_apis/projects/{Uri.EscapeDataString(project.Project)}/teams?api-version=7.1-preview.1&$top=300";
+        var teamsResp = await http.GetAsync(teamsUrl);
+        var allTeamNames = new List<string>();
+        if (teamsResp.IsSuccessStatusCode)
+        {
+            var teamsDoc = await JsonDocument.ParseAsync(await teamsResp.Content.ReadAsStreamAsync());
+            if (teamsDoc.RootElement.TryGetProperty("value", out var teamsArr))
+                foreach (var t in teamsArr.EnumerateArray())
+                {
+                    var n = t.GetProperty("name").GetString() ?? "";
+                    if (!string.IsNullOrEmpty(n)) allTeamNames.Add(n);
+                }
+        }
+
+        return Ok(new VelocityMetricsProject
+        {
+            ProjectId = project.Id,
+            ProjectName = project.Project,
+            TeamName = team,
+            AvailableTeams = allTeamNames,
+            Sprints = sprintInfos,
         });
     }
 
@@ -883,11 +991,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
             iterPath = await GetIterationPath(http, orgUrl, project, team, iterationId);
         if (iterPath is null) return 0;
 
-        var wiql = $"SELECT [System.Id] FROM WorkItems " +
-                   $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project)}' " +
-                   $"AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' " +
-                   $"AND [System.State] NOT IN ('Removed') " +
-                   $"AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
+        var wiql = $@"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project)}' AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' AND [System.State] NOT IN ('Removed') AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
 
         return await FetchStoryPointsFromWiql(http, orgUrl, project, wiql);
     }
@@ -900,11 +1004,7 @@ public class VelocityController(ConfigStore configStore) : ControllerBase
             iterPath = await GetIterationPath(http, orgUrl, project, team, iterationId);
         if (iterPath is null) return 0;
 
-        var wiql = $"SELECT [System.Id] FROM WorkItems " +
-                   $"WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project)}' " +
-                   $"AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' " +
-                   $"AND [System.State] IN ('Closed','Resolved','Done') " +
-                   $"AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
+        var wiql = $@"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{Helpers.EscapeWiql(project)}' AND [System.IterationPath] UNDER '{Helpers.EscapeWiql(iterPath)}' AND [System.State] IN ('Closed','Resolved','Done') AND [Microsoft.VSTS.Scheduling.StoryPoints] > 0";
 
         return await FetchStoryPointsFromWiql(http, orgUrl, project, wiql);
     }

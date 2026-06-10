@@ -74,13 +74,31 @@ function invalidateCache(url) {
 export function useApi() {
   return {
     get: (url) => getWithSwr(url),
+    invalidate: (url) => invalidateCache(url),
     post: (url, data) => {
       invalidateCache(url)
       return request(url, { method: 'POST', body: JSON.stringify(data) })
     },
+    postForm: (url, formData) => {
+      invalidateCache(url)
+      const apiKey = getApiKey()
+      const headers = {}
+      if (apiKey) headers['X-API-Key'] = apiKey
+      return fetch(BASE + url, { method: 'POST', headers, body: formData, cache: 'no-store' })
+        .then(async res => {
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}))
+            throw new Error(body.detail || `POST ${url} failed (${res.status})`)
+          }
+          return res.json()
+        })
+    },
     put: (url, data) => {
       invalidateCache(url)
       return request(url, { method: 'PUT', body: JSON.stringify(data) })
+    },
+    patch: (url, data) => {
+      return request(url, { method: 'PATCH', body: JSON.stringify(data) })
     },
     del: (url, data) => {
       invalidateCache(url)

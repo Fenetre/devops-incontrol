@@ -65,10 +65,10 @@ public class DevAssessmentController(ConfigStore configStore, ILogger<DevAssessm
                 var activeTask = DevAssessmentService.FetchActivePrData(http, project.Organization, project.Project);
                 await Task.WhenAll(prTask, wiTask, activeTask);
 
-                var (stalePrs, openPrs) = activeTask.Result;
+                var (stalePrs, openPrs) = await activeTask;
                 return (
-                    Prs: prTask.Result,
-                    WorkItems: wiTask.Result,
+                    Prs: await prTask,
+                    WorkItems: await wiTask,
                     StalePrs: stalePrs,
                     OpenPrs: openPrs
                 );

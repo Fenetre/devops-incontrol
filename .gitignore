@@ -21,9 +21,17 @@ dashboard/backend-dotnet-tests/obj/
 # Node / Frontend
 dashboard/frontend/node_modules/
 dashboard/frontend/dist/
+dashboard/frontend/auto-imports.d.ts
+dashboard/frontend/components.d.ts
+.vite/
 
 # Temporary local build output
 .tmpbuild/
+
+# Published app output (created by install.ps1 / Build-Installer.ps1)
+app/
+
+
 
 # Logs
 *.log

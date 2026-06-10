@@ -20,11 +20,19 @@ builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = Comp
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.AddSingleton<ConfigStore>(sp =>
 {
-    // Config.json lives at dashboard/data/config.json relative to backend-dotnet
-    var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "data", "config.json"));
-    // Also try relative to working directory
-    var altPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "data", "config.json"));
-    return new ConfigStore(File.Exists(basePath) ? basePath : altPath);
+    // Installed layout: data/config.json next to exe
+    var installedPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "data", "config.json"));
+    // Dev layout: dashboard/data/config.json relative to repo root (CWD)
+    var devPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "dashboard", "data", "config.json"));
+    // Legacy: relative to backend-dotnet folder
+    var legacyPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "data", "config.json"));
+
+    var configPath = File.Exists(installedPath) ? installedPath
+                   : File.Exists(devPath) ? devPath
+                   : legacyPath;
+    // Ensure data directory exists for first-run
+    Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+    return new ConfigStore(configPath);
 });
 
 // CORS — defaults cover the standard backend (5172) and Vite dev (5173) ports.
@@ -71,9 +79,13 @@ app.UseResponseCompression();
 app.UseCors();
 app.MapControllers();
 
-// Serve the built Vue SPA if dist/ exists
-var distPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "dashboard", "frontend", "dist"));
-// Fallback: when CWD is the backend-dotnet folder itself (e.g. dotnet run without --project)
+// Serve the built Vue SPA — probe multiple layouts:
+// 1. Installed: wwwroot/ next to the exe
+var distPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "wwwroot"));
+// 2. Dev (CWD = repo root): dashboard/frontend/dist
+if (!Directory.Exists(distPath))
+    distPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "dashboard", "frontend", "dist"));
+// 3. Dev (CWD = backend-dotnet): ../frontend/dist
 if (!Directory.Exists(distPath))
     distPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "frontend", "dist"));
 if (Directory.Exists(distPath))
@@ -85,7 +97,9 @@ if (Directory.Exists(distPath))
     });
 
     // Serve Documentation/ HTML files when present
-    var docsPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Documentation"));
+    var docsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Documentation"));
+    if (!Directory.Exists(docsPath))
+        docsPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Documentation"));
     if (!Directory.Exists(docsPath))
         docsPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Documentation"));
     if (Directory.Exists(docsPath))

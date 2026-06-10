@@ -121,6 +121,39 @@ public partial class DbProjectsController(ConfigStore configStore) : ControllerB
         });
     }
 
+    [HttpPost("{projectId}/allowlist/toggle")]
+    public IActionResult ToggleAllowlist(string projectId, [FromBody] DbAllowlistToggleRequest request)
+    {
+        if (!ProjectIdRegex().IsMatch(projectId))
+            return BadRequest(new { detail = "Invalid project ID." });
+
+        if (string.IsNullOrWhiteSpace(request.DatabaseName))
+            return BadRequest(new { detail = "Database name is required." });
+
+        var proj = configStore.ListDbProjects().FirstOrDefault(p => p.Id == projectId);
+        if (proj is null) return NotFound(new { detail = "DB project not found" });
+
+        var allowlist = proj.DbAllowlist ?? [];
+        var existing = allowlist.FirstOrDefault(
+            e => string.Equals(e, request.DatabaseName, StringComparison.OrdinalIgnoreCase));
+
+        bool added;
+        if (existing is not null)
+        {
+            allowlist.Remove(existing);
+            added = false;
+        }
+        else
+        {
+            allowlist.Add(request.DatabaseName);
+            added = true;
+        }
+
+        proj.DbAllowlist = allowlist;
+        configStore.UpdateDbProject(projectId, proj);
+        return Ok(new { added, database_name = request.DatabaseName, allowlist = proj.DbAllowlist });
+    }
+
     [HttpPost("{projectId}/databases/check-rules")]
     public async Task<IActionResult> CheckDatabaseRules(string projectId, CancellationToken cancellationToken = default)
     {

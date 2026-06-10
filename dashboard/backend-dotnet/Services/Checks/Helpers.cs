@@ -50,6 +50,7 @@ public class DevOpsProjectConfig
     public bool IncludeChildAreas { get; set; } = true;
     public List<string> IgnoreTitleContains { get; set; } = [];
     public List<string> IgnoreParentTitleContains { get; set; } = [];
+    public bool LoadTypesFromProcess { get; set; } = false;
 }
 
 public interface ICheckCase

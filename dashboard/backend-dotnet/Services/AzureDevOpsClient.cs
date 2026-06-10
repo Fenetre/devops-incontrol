@@ -14,11 +14,25 @@ public class AzureDevOpsClient
     private static readonly ConcurrentDictionary<string, (long Ticks, List<Dictionary<string, object?>> Data)> IterationsCache = new();
     private static readonly ConcurrentDictionary<string, (long Ticks, JsonElement Data)> WorkItemsCache = new();
     private static readonly ConcurrentDictionary<string, (long Ticks, List<JsonElement> Data)> PrCache = new();
-    private static readonly ConcurrentDictionary<string, HttpClient> HttpPool = new();
 
     private static readonly long IterationsTtlTicks = TimeSpan.FromMinutes(5).Ticks;
     private static readonly long WorkItemsTtlTicks = TimeSpan.FromMinutes(10).Ticks;
     private static readonly long PrCacheTtlTicks = TimeSpan.FromMinutes(5).Ticks;
+
+    /// <summary>Background timer that evicts expired cache entries every 15 minutes to prevent unbounded growth.</summary>
+    private static readonly Timer EvictionTimer = new(_ =>
+    {
+        var now = DateTime.UtcNow.Ticks;
+        foreach (var key in IterationsCache.Keys)
+            if (IterationsCache.TryGetValue(key, out var iv) && now - iv.Ticks > IterationsTtlTicks)
+                IterationsCache.TryRemove(key, out (long, List<Dictionary<string, object?>>) _);
+        foreach (var key in WorkItemsCache.Keys)
+            if (WorkItemsCache.TryGetValue(key, out var wv) && now - wv.Ticks > WorkItemsTtlTicks)
+                WorkItemsCache.TryRemove(key, out (long, JsonElement) _);
+        foreach (var key in PrCache.Keys)
+            if (PrCache.TryGetValue(key, out var pv) && now - pv.Ticks > PrCacheTtlTicks)
+                PrCache.TryRemove(key, out (long, List<JsonElement>) _);
+    }, null, TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15));
 
     private readonly HttpClient _http;
     private readonly string _organization;
@@ -26,21 +40,14 @@ public class AzureDevOpsClient
     private readonly string _apiVersion;
 
     public string BaseUrl => $"https://dev.azure.com/{_organization}/{_project}/_apis";
+    public HttpClient HttpClient => _http;
 
     public AzureDevOpsClient(string organization, string project, string pat, string apiVersion = "7.1", int timeoutSeconds = 45)
     {
         _organization = organization;
         _project = project;
         _apiVersion = apiVersion;
-
-        var poolKey = $"{organization}|{pat}";
-        _http = HttpPool.GetOrAdd(poolKey, _ =>
-        {
-            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
-            var token = Convert.ToBase64String(Encoding.UTF8.GetBytes($":{pat}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", token);
-            return client;
-        });
+        _http = HttpClientPool.Get(pat, timeoutSeconds);
     }
 
     public static void ClearRunCaches()
@@ -50,12 +57,18 @@ public class AzureDevOpsClient
         PrCache.Clear();
     }
 
+    public static void EvictWorkItems(IEnumerable<int> ids)
+    {
+        var idSet = new HashSet<int>(ids);
+        var keysToRemove = WorkItemsCache.Keys.Where(k => idSet.Any(id => k.EndsWith($"|{id}"))).ToList();
+        foreach (var key in keysToRemove)
+            WorkItemsCache.TryRemove(key, out _);
+    }
+
     /// <summary>Dispose and clear pooled HttpClients — call only when PAT changes.</summary>
     public static void ResetHttpPool()
     {
-        foreach (var kv in HttpPool)
-            kv.Value.Dispose();
-        HttpPool.Clear();
+        HttpClientPool.Reset();
     }
 
     // ------------------------------------------------------------------
@@ -72,7 +85,7 @@ public class AzureDevOpsClient
         ThrowIfPatScopeError(resp, url);
         resp.EnsureSuccessStatusCode();
 
-        var doc = await ParseJsonAsync(resp);
+        using var doc = await ParseJsonAsync(resp);
         var ids = new List<int>();
         if (doc.RootElement.TryGetProperty("workItems", out var items))
         {
@@ -129,7 +142,7 @@ public class AzureDevOpsClient
                 ThrowIfPatScopeError(resp, url);
                 if (!resp.IsSuccessStatusCode) return;
 
-                var doc = await ParseJsonAsync(resp);
+                using var doc = await ParseJsonAsync(resp);
                 if (doc.RootElement.TryGetProperty("value", out var items))
                 {
                     foreach (var item in items.EnumerateArray())
@@ -174,7 +187,7 @@ public class AzureDevOpsClient
                 ThrowIfPatScopeError(resp, url);
                 if (!resp.IsSuccessStatusCode) return;
 
-                var doc = await ParseJsonAsync(resp);
+                using var doc = await ParseJsonAsync(resp);
                 if (doc.RootElement.TryGetProperty("value", out var items))
                 {
                     foreach (var item in items.EnumerateArray())
@@ -195,7 +208,7 @@ public class AzureDevOpsClient
         ThrowIfPatScopeError(resp, url);
         if (!resp.IsSuccessStatusCode) return [];
 
-        var doc = await ParseJsonAsync(resp);
+        using var doc = await ParseJsonAsync(resp);
         var comments = new List<string>();
         if (doc.RootElement.TryGetProperty("comments", out var arr))
         {
@@ -241,7 +254,7 @@ public class AzureDevOpsClient
             var resp = await _http.GetAsync(pagedUrl);
             ThrowIfPatScopeError(resp, pagedUrl);
             resp.EnsureSuccessStatusCode();
-            var doc = await ParseJsonAsync(resp);
+            using var doc = await ParseJsonAsync(resp);
 
             var batch = new List<JsonElement>();
             if (doc.RootElement.TryGetProperty("value", out var items))
@@ -305,7 +318,7 @@ public class AzureDevOpsClient
         ThrowIfPatScopeError(resp, url);
         if (!resp.IsSuccessStatusCode) return [];
 
-        var doc = await ParseJsonAsync(resp);
+        using var doc = await ParseJsonAsync(resp);
         var threads = new List<JsonElement>();
         if (doc.RootElement.TryGetProperty("value", out var items))
             foreach (var item in items.EnumerateArray())
@@ -345,7 +358,7 @@ public class AzureDevOpsClient
         var resp = await _http.GetAsync(url);
         ThrowIfPatScopeError(resp, url);
         resp.EnsureSuccessStatusCode();
-        var doc = await ParseJsonAsync(resp);
+        using var doc = await ParseJsonAsync(resp);
         var tags = new List<string>();
         if (doc.RootElement.TryGetProperty("value", out var items))
             foreach (var item in items.EnumerateArray())
@@ -361,7 +374,7 @@ public class AzureDevOpsClient
         var resp = await _http.GetAsync(url);
         ThrowIfPatScopeError(resp, url);
         resp.EnsureSuccessStatusCode();
-        var doc = await ParseJsonAsync(resp);
+        using var doc = await ParseJsonAsync(resp);
 
         string? tagId = null;
         if (doc.RootElement.TryGetProperty("value", out var items))
@@ -401,6 +414,19 @@ public class AzureDevOpsClient
         resp.EnsureSuccessStatusCode();
     }
 
+    /// <summary>Patch arbitrary fields on a work item using JSON Patch operations.</summary>
+    public async Task PatchWorkItemFieldsAsync(int workItemId, List<object> patchOps)
+    {
+        var url = $"{BaseUrl}/wit/workitems/{workItemId}?api-version={_apiVersion}";
+        var content = new StringContent(
+            JsonSerializer.Serialize(patchOps), Encoding.UTF8, "application/json-patch+json");
+        var resp = await _http.PatchAsync(url, content);
+        if ((int)resp.StatusCode == 401)
+            throw new UnauthorizedAccessException(
+                "PAT lacks write permissions. Update your PAT to include the 'Work Items (Read & Write)' scope.");
+        resp.EnsureSuccessStatusCode();
+    }
+
     // ------------------------------------------------------------------
     // Parent assignment
     // ------------------------------------------------------------------
@@ -411,7 +437,7 @@ public class AzureDevOpsClient
         var resp = await _http.GetAsync(url);
         ThrowIfPatScopeError(resp, url);
         resp.EnsureSuccessStatusCode();
-        var doc = await ParseJsonAsync(resp);
+        using var doc = await ParseJsonAsync(resp);
         var root = doc.RootElement;
 
         var levels = new List<List<string>>();
@@ -526,6 +552,115 @@ public class AzureDevOpsClient
         resp.EnsureSuccessStatusCode();
     }
 
+    /// <summary>
+    /// Get dependency links (predecessor/successor) for a work item.
+    /// Returns a list of (targetId, linkType) where linkType is "predecessor" or "successor".
+    /// </summary>
+    public async Task<List<(int TargetId, string LinkType)>> GetDependencyLinksAsync(int workItemId)
+    {
+        var item = await GetWorkItemWithRelationsAsync(workItemId);
+        var result = new List<(int, string)>();
+        if (item == null) return result;
+
+        if (item.Value.TryGetProperty("relations", out var relations) && relations.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var rel in relations.EnumerateArray())
+            {
+                var relType = rel.GetProperty("rel").GetString();
+                if (relType != "System.LinkTypes.Dependency-Forward" && relType != "System.LinkTypes.Dependency-Reverse")
+                    continue;
+
+                var relUrl = rel.GetProperty("url").GetString() ?? "";
+                // Extract work item ID from URL: .../wit/workItems/{id}
+                var lastSlash = relUrl.LastIndexOf('/');
+                if (lastSlash >= 0 && int.TryParse(relUrl[(lastSlash + 1)..], out var targetId))
+                {
+                    var linkType = relType == "System.LinkTypes.Dependency-Reverse" ? "predecessor" : "successor";
+                    result.Add((targetId, linkType));
+                }
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Add a dependency link between two work items.
+    /// linkType: "predecessor" means targetId must finish before sourceId can start.
+    /// linkType: "successor" means sourceId must finish before targetId can start.
+    /// </summary>
+    public async Task AddDependencyLinkAsync(int sourceId, int targetId, string linkType)
+    {
+        var url = $"{BaseUrl}/wit/workitems/{sourceId}?api-version={_apiVersion}";
+        var targetUrl = $"https://dev.azure.com/{_organization}/_apis/wit/workItems/{targetId}";
+        // predecessor = Dependency-Reverse on source (target is predecessor OF source)
+        // successor = Dependency-Forward on source (target is successor OF source)
+        var relName = linkType == "predecessor"
+            ? "System.LinkTypes.Dependency-Reverse"
+            : "System.LinkTypes.Dependency-Forward";
+
+        var ops = new List<object>
+        {
+            new
+            {
+                op = "add",
+                path = "/relations/-",
+                value = new { rel = relName, url = targetUrl, attributes = new { comment = "" } }
+            }
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(ops), Encoding.UTF8, "application/json-patch+json");
+        var resp = await _http.PatchAsync(url, content);
+        if ((int)resp.StatusCode is 401 or 403)
+            throw new UnauthorizedAccessException(
+                "PAT lacks write permissions. Update your PAT to include the 'Work Items (Read & Write)' scope.");
+        resp.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Remove a dependency link between two work items.
+    /// </summary>
+    public async Task RemoveDependencyLinkAsync(int sourceId, int targetId, string linkType)
+    {
+        var item = await GetWorkItemWithRelationsAsync(sourceId);
+        if (item == null) throw new InvalidOperationException("Work item not found");
+
+        var relName = linkType == "predecessor"
+            ? "System.LinkTypes.Dependency-Reverse"
+            : "System.LinkTypes.Dependency-Forward";
+        var targetUrl = $"https://dev.azure.com/{_organization}/_apis/wit/workItems/{targetId}";
+
+        int? relationIndex = null;
+        if (item.Value.TryGetProperty("relations", out var relations) && relations.ValueKind == JsonValueKind.Array)
+        {
+            int idx = 0;
+            foreach (var rel in relations.EnumerateArray())
+            {
+                var rt = rel.GetProperty("rel").GetString();
+                var ru = rel.GetProperty("url").GetString() ?? "";
+                if (rt == relName && ru.EndsWith($"/{targetId}"))
+                {
+                    relationIndex = idx;
+                    break;
+                }
+                idx++;
+            }
+        }
+
+        if (relationIndex == null)
+            throw new InvalidOperationException($"Dependency link to #{targetId} not found on work item #{sourceId}");
+
+        var url = $"{BaseUrl}/wit/workitems/{sourceId}?api-version={_apiVersion}";
+        var ops = new List<object> { new { op = "remove", path = $"/relations/{relationIndex.Value}" } };
+        var content = new StringContent(
+            JsonSerializer.Serialize(ops), Encoding.UTF8, "application/json-patch+json");
+        var resp = await _http.PatchAsync(url, content);
+        if ((int)resp.StatusCode is 401 or 403)
+            throw new UnauthorizedAccessException(
+                "PAT lacks write permissions. Update your PAT to include the 'Work Items (Read & Write)' scope.");
+        resp.EnsureSuccessStatusCode();
+    }
+
     // ------------------------------------------------------------------
     // Iterations
     // ------------------------------------------------------------------
@@ -540,7 +675,7 @@ public class AzureDevOpsClient
         var resp = await _http.GetAsync(url);
         ThrowIfPatScopeError(resp, url);
         resp.EnsureSuccessStatusCode();
-        var doc = await ParseJsonAsync(resp);
+        using var doc = await ParseJsonAsync(resp);
 
         var result = new List<Dictionary<string, object?>>();
         FlattenIterations(doc.RootElement, result);
@@ -559,7 +694,7 @@ public class AzureDevOpsClient
 
         var rawPath = node.TryGetProperty("path", out var p) ? p.GetString() ?? "" : "";
 
-        if (start is not null && finish is not null)
+        if (!string.IsNullOrEmpty(rawPath))
         {
             // Convert path: strip leading backslash and "Iteration" segment
             var parts = rawPath.Trim('\\').Split('\\');
@@ -601,6 +736,9 @@ public class AzureDevOpsClient
     internal static string GetRequiredPatScope(string url)
     {
         if (string.IsNullOrEmpty(url)) return "Full access or appropriate scopes";
+
+        if (url.Contains("/_apis/wit/templates"))
+            return "Work Items (Read & Write) — scope 'vso.work_write'";
 
         if (url.Contains("/_apis/wit/wiql") || url.Contains("/_apis/wit/workitemsbatch") ||
             url.Contains("/_apis/wit/workitems"))
@@ -654,6 +792,59 @@ public class AzureDevOpsClient
                 $"{status}: Your PAT lacks the required permissions. " +
                 $"Ensure your PAT includes: {scope}.");
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Create Work Item
+    // ------------------------------------------------------------------
+
+    /// <summary>Create a new work item in Azure DevOps using JSON Patch operations.</summary>
+    public async Task<JsonElement> CreateWorkItemAsync(string workItemType, List<object> patchOps)
+    {
+        var url = $"{BaseUrl}/wit/workitems/${Uri.EscapeDataString(workItemType)}?api-version={_apiVersion}";
+        var content = new StringContent(
+            JsonSerializer.Serialize(patchOps), Encoding.UTF8, "application/json-patch+json");
+        var resp = await _http.PostAsync(url, content);
+        if ((int)resp.StatusCode is 401 or 403)
+            throw new UnauthorizedAccessException(
+                "PAT lacks write permissions. Update your PAT to include the 'Work Items (Read & Write)' scope.");
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            // Try to extract Azure DevOps error message
+            try
+            {
+                var errDoc = JsonSerializer.Deserialize<JsonElement>(body);
+                var msg = errDoc.TryGetProperty("message", out var m) ? m.GetString() :
+                          errDoc.TryGetProperty("value", out var v) && v.TryGetProperty("Message", out var vm) ? vm.GetString() : null;
+                if (!string.IsNullOrEmpty(msg))
+                    throw new InvalidOperationException(msg);
+            }
+            catch (JsonException) { }
+            throw new HttpRequestException($"Response status code does not indicate success: {(int)resp.StatusCode} ({resp.ReasonPhrase}). {body}");
+        }
+        var json = await resp.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<JsonElement>(json);
+    }
+
+    // ------------------------------------------------------------------
+    // Upload Attachment
+    // ------------------------------------------------------------------
+
+    /// <summary>Upload a file attachment to Azure DevOps and return the attachment URL.</summary>
+    public async Task<string> UploadAttachmentAsync(string fileName, byte[] fileContent, string contentType)
+    {
+        var url = $"{BaseUrl}/wit/attachments?fileName={Uri.EscapeDataString(fileName)}&uploadType=Simple&api-version={_apiVersion}";
+        var content = new ByteArrayContent(fileContent);
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        var resp = await _http.PostAsync(url, content);
+        if ((int)resp.StatusCode is 401 or 403)
+            throw new UnauthorizedAccessException(
+                "PAT lacks write permissions. Update your PAT to include the 'Work Items (Read & Write)' scope.");
+        resp.EnsureSuccessStatusCode();
+        var json = await resp.Content.ReadAsStringAsync();
+        var doc = JsonSerializer.Deserialize<JsonElement>(json);
+        return doc.GetProperty("url").GetString() ?? "";
     }
 }
 

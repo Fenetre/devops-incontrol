@@ -401,13 +401,11 @@ All API requests include `X-API-Key` header. The backend middleware validates th
 
 ## Deployment
 
-### Windows Startup Task
+### Windows Auto-Start
 
-```powershell
-.\Register-StartupTask.ps1    # Registers as Windows scheduled task
-```
+The installer registers a Registry Run key (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run\DevOpsInControl`) that launches the app at logon. No admin rights or scheduled tasks required.
 
-Uses `start-hidden.vbs` to run headlessly on login.
+For dev installs, `scripts\install.ps1` offers the same option during setup.
 
 ### Environment Variables
 

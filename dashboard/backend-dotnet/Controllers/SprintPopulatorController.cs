@@ -96,7 +96,14 @@ public partial class SprintPopulatorController(ConfigStore configStore) : Contro
             {
                 var name = it.GetProperty("name").GetString() ?? "";
                 var path = it.TryGetProperty("path", out var p) ? p.GetString() ?? "" : "";
-                iterations.Add(new { name, path });
+                string? startDate = null, finishDate = null, timeframe = null;
+                if (it.TryGetProperty("attributes", out var attrs))
+                {
+                    startDate = attrs.TryGetProperty("startDate", out var sd) && sd.ValueKind != JsonValueKind.Null ? sd.GetString() : null;
+                    finishDate = attrs.TryGetProperty("finishDate", out var fd) && fd.ValueKind != JsonValueKind.Null ? fd.GetString() : null;
+                    timeframe = attrs.TryGetProperty("timeFrame", out var tf) ? tf.GetString() : null;
+                }
+                iterations.Add(new { name, path, start_date = startDate, finish_date = finishDate, timeframe });
             }
 
         return Ok(iterations);
@@ -168,6 +175,8 @@ public partial class SprintPopulatorController(ConfigStore configStore) : Contro
         var http = BuildClient(pat);
 
         var templates = await FetchTemplates(http, sourceOrgUrl, sourceProject.Project);
+        if (body.TemplateIds is { Count: > 0 })
+            templates = templates.Where(t => body.TemplateIds.Contains(t.Story.GetProperty("id").GetInt32())).ToList();
         if (templates.Count == 0)
             return Ok(new { created = Array.Empty<object>() });
 
@@ -191,7 +200,10 @@ public partial class SprintPopulatorController(ConfigStore configStore) : Contro
                 var newStoryTitle = GetField(newStory, "System.Title");
 
                 var createdTasks = new List<object>();
-                foreach (var task in tasks)
+                var filteredTasks = body.ExcludedTaskIds is { Count: > 0 }
+                    ? tasks.Where(t => !body.ExcludedTaskIds.Contains(t.GetProperty("id").GetInt32())).ToList()
+                    : tasks;
+                foreach (var task in filteredTasks)
                 {
                     var taskOps = BuildTaskOps(task, body.IterationPath, newParentUrl, targetAreaPathOverride);
                     var newTask = await PatchCreate(http, targetOrgUrl, project.Project, "Task", taskOps);
@@ -221,6 +233,119 @@ public partial class SprintPopulatorController(ConfigStore configStore) : Contro
         }
 
         return Ok(new { created });
+    }
+
+    // ---------------------------------------------------------------
+    // POST /api/sprint-populator/{projectId}/create-sprint
+    // ---------------------------------------------------------------
+    [HttpPost("{projectId}/create-sprint")]
+    public async Task<IActionResult> CreateSprint(string projectId, [FromBody] CreateSprintRequest body, CancellationToken cancellationToken = default)
+    {
+        var (pat, project) = Resolve(projectId);
+        if (pat is null) return BadRequest(new { detail = "PAT not configured." });
+        if (project is null) return NotFound(new { detail = "Project not found." });
+
+        if (string.IsNullOrWhiteSpace(body.Name))
+            return BadRequest(new { detail = "Sprint name is required." });
+
+        var orgUrl = $"https://dev.azure.com/{project.Organization}";
+        var http = BuildClient(pat);
+
+        // 1. Create the iteration node at the project level
+        var parentPath = (string.IsNullOrWhiteSpace(body.ParentPath) || string.Equals(body.ParentPath, "root", StringComparison.OrdinalIgnoreCase))
+            ? ""
+            : $"/{body.ParentPath.TrimStart('/')}";
+        var createUrl = $"{orgUrl}/{Uri.EscapeDataString(project.Project)}/_apis/wit/classificationnodes/Iterations{parentPath}?api-version=7.1";
+
+        var nodeBody = new Dictionary<string, object> { ["name"] = body.Name.Trim() };
+        if (!string.IsNullOrWhiteSpace(body.StartDate) || !string.IsNullOrWhiteSpace(body.FinishDate))
+        {
+            var attrs = new Dictionary<string, object>();
+            if (!string.IsNullOrWhiteSpace(body.StartDate))
+                attrs["startDate"] = DateTime.Parse(body.StartDate).ToString("yyyy-MM-ddTHH:mm:ssZ");
+            if (!string.IsNullOrWhiteSpace(body.FinishDate))
+                attrs["finishDate"] = DateTime.Parse(body.FinishDate).ToString("yyyy-MM-ddTHH:mm:ssZ");
+            nodeBody["attributes"] = attrs;
+        }
+
+        var json = JsonSerializer.Serialize(nodeBody);
+        var createResp = await http.PostAsync(createUrl, new StringContent(json, Encoding.UTF8, "application/json"));
+        AzureDevOpsClient.ThrowIfPatScopeError(createResp, createUrl);
+        if (!createResp.IsSuccessStatusCode)
+        {
+            var errText = await createResp.Content.ReadAsStringAsync();
+            return StatusCode((int)createResp.StatusCode, new { detail = $"Failed to create iteration: {errText}" });
+        }
+
+        var createDoc = await JsonDocument.ParseAsync(await createResp.Content.ReadAsStreamAsync());
+        var iterationId = createDoc.RootElement.GetProperty("identifier").GetString() ?? "";
+        var iterationPath = createDoc.RootElement.TryGetProperty("path", out var pathProp) ? pathProp.GetString() ?? "" : "";
+
+        // 2. Add the iteration to the team (only if team specified)
+        var assignedToTeam = false;
+        if (!string.IsNullOrWhiteSpace(body.Team))
+        {
+            var teamUrl = $"{orgUrl}/{Uri.EscapeDataString(project.Project)}/{Uri.EscapeDataString(body.Team)}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
+            var teamBody = JsonSerializer.Serialize(new { id = iterationId });
+            var teamResp = await http.PostAsync(teamUrl, new StringContent(teamBody, Encoding.UTF8, "application/json"));
+            assignedToTeam = teamResp.IsSuccessStatusCode;
+        }
+
+        return Ok(new
+        {
+            success = true,
+            iteration_id = iterationId,
+            iteration_path = iterationPath,
+            name = body.Name.Trim(),
+            assigned_to_team = assignedToTeam,
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // GET /api/sprint-populator/{projectId}/iteration-paths
+    // ---------------------------------------------------------------
+    [HttpGet("{projectId}/iteration-paths")]
+    public async Task<IActionResult> ListIterationPaths(string projectId, CancellationToken cancellationToken = default)
+    {
+        var (pat, project) = Resolve(projectId);
+        if (pat is null) return BadRequest(new { detail = "PAT not configured." });
+        if (project is null) return NotFound(new { detail = "Project not found." });
+
+        var orgUrl = $"https://dev.azure.com/{project.Organization}";
+        var http = BuildClient(pat);
+
+        var url = $"{orgUrl}/{Uri.EscapeDataString(project.Project)}/_apis/wit/classificationnodes/Iterations?$depth=10&api-version=7.1";
+        var resp = await http.GetAsync(url, cancellationToken);
+        AzureDevOpsClient.ThrowIfPatScopeError(resp, url);
+        if (!resp.IsSuccessStatusCode)
+            return StatusCode(502, new { detail = "Failed to list iteration paths." });
+
+        var doc = await JsonDocument.ParseAsync(await resp.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+        var paths = new List<string>();
+        CollectFolderPaths(doc.RootElement, "", paths);
+
+        return Ok(paths);
+    }
+
+    private static void CollectFolderPaths(JsonElement node, string parentPath, List<string> paths)
+    {
+        if (!node.TryGetProperty("children", out var children)) return;
+        foreach (var child in children.EnumerateArray())
+        {
+            var name = child.GetProperty("name").GetString() ?? "";
+            var currentPath = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
+            if (child.TryGetProperty("hasChildren", out var hc) && hc.GetBoolean())
+            {
+                paths.Add(currentPath);
+                CollectFolderPaths(child, currentPath, paths);
+            }
+            else if (child.TryGetProperty("children", out _))
+            {
+                // Fallback: if children array exists, it's a folder
+                paths.Add(currentPath);
+                CollectFolderPaths(child, currentPath, paths);
+            }
+        }
     }
 
     // ===================================================================
@@ -626,4 +751,28 @@ public class SprintPopulatorRequest
 
     [System.Text.Json.Serialization.JsonPropertyName("source_project_id")]
     public string? SourceProjectId { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("template_ids")]
+    public List<int>? TemplateIds { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("excluded_task_ids")]
+    public List<int>? ExcludedTaskIds { get; set; }
+}
+
+public class CreateSprintRequest
+{
+    [System.Text.Json.Serialization.JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [System.Text.Json.Serialization.JsonPropertyName("team")]
+    public string? Team { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("parent_path")]
+    public string? ParentPath { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("start_date")]
+    public string? StartDate { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("finish_date")]
+    public string? FinishDate { get; set; }
 }

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import ui from '@nuxt/ui/vite'
 import path from 'path'
 import fs from 'fs'
 
@@ -28,9 +29,66 @@ function serveDocsPlugin() {
 }
 
 export default defineConfig({
-  plugins: [vue(), serveDocsPlugin()],
+  plugins: [
+    vue(),
+    ui({
+      ui: {
+        colors: {
+          primary: 'sky',
+          neutral: 'slate'
+        },
+        icons: {
+          check: 'i-heroicons-check',
+          chevronDown: 'i-heroicons-chevron-down',
+          chevronRight: 'i-heroicons-chevron-right',
+          chevronLeft: 'i-heroicons-chevron-left',
+          chevronUp: 'i-heroicons-chevron-up',
+          chevronDoubleLeft: 'i-heroicons-chevron-double-left',
+          chevronDoubleRight: 'i-heroicons-chevron-double-right',
+          close: 'i-heroicons-x-mark',
+          loading: 'i-heroicons-arrow-path',
+          minus: 'i-heroicons-minus',
+          plus: 'i-heroicons-plus',
+          search: 'i-heroicons-magnifying-glass',
+          external: 'i-heroicons-arrow-top-right-on-square',
+          arrowLeft: 'i-heroicons-arrow-left',
+          arrowRight: 'i-heroicons-arrow-right',
+          ellipsis: 'i-heroicons-ellipsis-horizontal',
+          file: 'i-heroicons-document',
+          folder: 'i-heroicons-folder',
+          folderOpen: 'i-heroicons-folder-open',
+          upload: 'i-heroicons-arrow-up-tray',
+        }
+      },
+      colorMode: false
+    }),
+    serveDocsPlugin()
+  ],
   resolve: {
     preserveSymlinks: true,
+  },
+  optimizeDeps: {
+    include: [
+      'vue',
+      'vue-router',
+      'pinia',
+      '@nuxt/ui > reka-ui',
+      'chart.js',
+      'vue-chartjs',
+      'marked',
+    ],
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue', 'vue-router', 'pinia'],
+          'chart': ['chart.js', 'vue-chartjs'],
+          'icons': ['@iconify-json/heroicons/icons.json'],
+        }
+      }
+    }
   },
   test: {
     environment: 'jsdom',
@@ -57,7 +115,7 @@ export default defineConfig({
       },
     },
     watch: {
-      usePolling: true,
+      usePolling: !!process.env.VITE_USE_POLLING,
       interval: 1000,
     },
   },

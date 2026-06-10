@@ -218,32 +218,45 @@ if ($Background) {
 }
 
 # ---------------------------------------------------------------------------
-# Production mode: build frontend, then run backend only
+# Production mode: use published app if available, otherwise dotnet run
 # ---------------------------------------------------------------------------
 if (-not $Dev) {
-    $frontendDir = Join-Path $root "dashboard\frontend"
-    $distDir = Join-Path $frontendDir "dist"
+    $appExe = Join-Path $root "app\DashboardApi.exe"
 
-    # Build frontend if dist/ doesn't exist
-    if (-not (Test-Path $distDir)) {
-        Write-Log "Building frontend..."
-        Push-Location $frontendDir
-        try {
-            npm run build
-            if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
-        } finally {
-            Pop-Location
+    # Fallback: if no published app, build frontend and use dotnet run
+    if (-not (Test-Path $appExe)) {
+        Write-Log "Published app not found — falling back to dotnet run."
+        $frontendDir = Join-Path $root "dashboard\frontend"
+        $distDir = Join-Path $frontendDir "dist"
+
+        if (-not (Test-Path $distDir)) {
+            Write-Log "Building frontend..."
+            Push-Location $frontendDir
+            try {
+                npm run build
+                if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
+            } finally {
+                Pop-Location
+            }
+            Write-Log "Frontend build complete."
         }
-        Write-Log "Frontend build complete."
     }
 
     Stop-ListenersOnPort -Port $BackendPort
 
-    $dotnetProject = Join-Path $root "dashboard\backend-dotnet"
     $backendStartInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $backendStartInfo.FileName = "dotnet"
-    $backendStartInfo.Arguments = "run --project `"$dotnetProject`" --urls http://127.0.0.1:$BackendPort"
-    $backendStartInfo.WorkingDirectory = $root
+    if (Test-Path $appExe) {
+        # Use published exe — instant startup, no build step
+        $backendStartInfo.FileName = $appExe
+        $backendStartInfo.Arguments = "--urls http://127.0.0.1:$BackendPort"
+        $backendStartInfo.WorkingDirectory = $root
+    } else {
+        # Fallback: dotnet run from source
+        $dotnetProject = Join-Path $root "dashboard\backend-dotnet"
+        $backendStartInfo.FileName = "dotnet"
+        $backendStartInfo.Arguments = "run --project `"$dotnetProject`" --urls http://127.0.0.1:$BackendPort"
+        $backendStartInfo.WorkingDirectory = $root
+    }
     $backendStartInfo.UseShellExecute = $false
     if ($Background) { $backendStartInfo.CreateNoWindow = $true }
     $backendStartInfo.EnvironmentVariables.Clear()
@@ -316,6 +329,12 @@ if ($Background) { $backendStartInfo.CreateNoWindow = $true }
 $backendStartInfo.EnvironmentVariables.Clear()
 foreach ($key in $cleanEnv.Keys) { $backendStartInfo.EnvironmentVariables[$key] = $cleanEnv[$key] }
 $backendProc = [System.Diagnostics.Process]::Start($backendStartInfo)
+
+# Wait for backend to accept connections before starting the frontend
+Write-Log "Waiting for backend to be ready..."
+if (-not (Wait-ForPort -Port $BackendPort -TimeoutSeconds 60)) {
+    Write-Log "WARNING: Backend did not become ready in 60s — starting frontend anyway."
+}
 
 # Resolve npm.cmd — Start-Process needs a real executable, not a shell alias.
 $npmCmd = (Get-Command npm -ErrorAction SilentlyContinue).Source

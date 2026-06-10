@@ -83,6 +83,7 @@ export const transformPrProject = memoTransform(function(proj) {
     pr.title = anonPrTitle(pr.title)
     pr.created_by = anonName(pr.created_by)
     pr.repository = anonRepo(pr.repository)
+    pr.reviewers = (pr.reviewers || []).map(r => typeof r === 'string' ? anonName(r) : { ...r, name: anonName(r.name) })
   }
   return p
 })

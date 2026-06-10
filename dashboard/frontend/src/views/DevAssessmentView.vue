@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Header -->
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">DEV Assessment</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -10,156 +10,229 @@
       </div>
       <div class="flex items-center gap-3">
         <!-- CSV export -->
-        <button v-if="currentDevs.length" @click="exportTeamOverview"
-          class="inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          title="Export team overview to CSV"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+        <UButton v-if="currentDevs.length" @click="exportTeamOverview"
+          variant="outline" color="neutral"
+          icon="i-heroicons-arrow-down-tray"
+          title="Export team overview to CSV">
           CSV
-        </button>
-        <!-- Time mode toggle -->
-        <div class="flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden text-xs">
-          <button @click="timeMode = 'months'"
-            class="px-3 py-2 font-medium transition-colors"
-            :class="timeMode === 'months' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'">
-            Months
-          </button>
-          <button @click="timeMode = 'sprint'"
-            class="px-3 py-2 font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
-            :class="timeMode === 'sprint' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'">
-            Sprint
-          </button>
-        </div>
-        <button @click="runAssessment" :disabled="loading || runDisabled"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
-          :class="loading || runDisabled ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-          <svg v-if="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-          </svg>
-          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
-          </svg>
-          {{ loading ? 'Running…' : 'Run Assessment' }}
-        </button>
+        </UButton>
       </div>
     </div>
 
-    <!-- Filter row -->
-    <div class="flex items-center gap-3 mb-6 flex-wrap justify-end">
-      <!-- Months selector -->
-      <SelectMenu v-if="timeMode === 'months'" v-model="months" :options="monthOptions" size="sm" class="w-40" />
-
-      <!-- Project selector (always visible) -->
-      <SelectMenu autofocus v-model="sprintProjectId" :options="projectSelectOptions" @change="onSprintProjectChange" size="sm" class="w-44" />
-
-      <!-- Team & Sprint selectors (sprint mode only) -->
-      <template v-if="timeMode === 'sprint'">
-        <SelectMenu v-if="sprintTeams.length" v-model="sprintTeam" :options="teamSelectOptions" @change="onSprintTeamChange" size="sm" class="w-44" />
-        <SelectMenu v-if="sprintIterations.length" v-model="sprintIterationId" :options="sprintSelectOptions" @change="onSprintIterationChange" size="sm" class="w-52" />
-        <span v-if="sprintDateLabel" class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ sprintDateLabel }}</span>
-      </template>
-    </div>
-
     <!-- PAT warning -->
-    <div v-if="!store.patConfigured" class="mb-6 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-3 flex items-center gap-3">
-      <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-      </svg>
-      <p class="text-sm text-amber-800 dark:text-amber-200">PAT not configured. Set it in Settings first.</p>
-    </div>
+    <UAlert v-if="!store.patConfigured" color="warning" icon="i-heroicons-exclamation-triangle" description="PAT not configured. Set it in Settings first." class="mb-6" />
 
     <!-- Error -->
-    <div v-if="error" class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3 text-sm text-red-700 dark:text-red-300">{{ error }}</div>
+    <UAlert v-if="error" color="error" icon="i-heroicons-exclamation-circle" :description="error" class="mb-6" />
 
-    <!-- Empty state -->
-    <div v-if="!loading && !data" class="text-center text-gray-400 dark:text-gray-500 py-16">
-      <svg class="mx-auto w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-      </svg>
-      <p class="text-sm">Click <strong>Run Assessment</strong> to analyse developer performance.</p>
-    </div>
+    <div class="flex gap-4">
+      <!-- Side menu: scope configuration -->
+      <div class="shrink-0 space-y-3">
+        <!-- Scope config header (collapsible) -->
+        <button @click="scopeOpen = !scopeOpen"
+          class="w-full flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+          <span>Configuration</span>
+          <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 transition-transform" :class="{ 'rotate-180': scopeOpen }" />
+        </button>
 
-    <template v-if="data && (data.prs.length || data.work_items.length)">
+        <template v-if="scopeOpen">
+        <!-- Time mode -->
+        <nav class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30">Time Mode</div>
+          <button
+            @click="timeMode = 'months'"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="timeMode === 'months'
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-calendar-days" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">Months</span>
+          </button>
+          <button
+            @click="timeMode = 'sprint'"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="timeMode === 'sprint'
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-bolt" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">Sprint</span>
+          </button>
+        </nav>
+
+        <!-- Months (months mode) -->
+        <nav v-if="timeMode === 'months'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30">Duration</div>
+          <button
+            v-for="opt in monthOptions" :key="opt.value"
+            @click="months = opt.value"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="months === opt.value
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-clock" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">{{ opt.label }}</span>
+          </button>
+        </nav>
+
+        <!-- Project scope -->
+        <nav v-if="availableProjects.length" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30">Project</div>
+          <button
+            @click="sprintProjectId = ''"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="!sprintProjectId
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">All projects</span>
+          </button>
+          <div class="max-h-[200px] overflow-y-auto">
+            <button
+              v-for="proj in availableProjects" :key="proj.id"
+              @click="sprintProjectId = proj.id"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+              :class="sprintProjectId === proj.id
+                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+            >
+              <UIcon name="i-heroicons-folder" class="w-4 h-4 shrink-0" />
+              <span class="whitespace-nowrap">{{ dProject(proj.project) }}</span>
+            </button>
+          </div>
+        </nav>
+
+        <!-- Team (sprint mode) -->
+        <nav v-if="timeMode === 'sprint' && sprintTeams.length" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30">Team</div>
+          <div class="max-h-[200px] overflow-y-auto">
+            <button
+              v-for="team in sprintTeams" :key="team.name"
+              @click="sprintTeam = team.name"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+              :class="sprintTeam === team.name
+                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+            >
+              <UIcon name="i-heroicons-user-group" class="w-4 h-4 shrink-0" />
+              <span class="whitespace-nowrap">{{ dTeam(team.name) }}</span>
+            </button>
+          </div>
+        </nav>
+
+        <!-- Sprint (sprint mode) -->
+        <nav v-if="timeMode === 'sprint' && sprintIterations.length" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30">Sprint</div>
+          <div class="max-h-[200px] overflow-y-auto">
+            <button
+              v-for="it in sprintIterations" :key="it.id"
+              @click="sprintIterationId = it.id"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+              :class="sprintIterationId === it.id
+                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+            >
+              <UIcon name="i-heroicons-bolt" class="w-4 h-4 shrink-0" />
+              <span class="whitespace-nowrap">{{ dSprint(it.name) }}</span>
+            </button>
+          </div>
+        </nav>
+
+        </template>
+
+        <!-- Run button -->
+        <div class="pt-1">
+          <UButton @click="runAssessment" :disabled="loading || runDisabled" :loading="loading"
+            icon="i-heroicons-play" class="w-full justify-center">
+            {{ loading ? 'Running…' : 'Run Assessment' }}
+          </UButton>
+          <p v-if="sprintDateLabel" class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">{{ sprintDateLabel }}</p>
+        </div>
+
+        <!-- Members visibility (post-run) -->
+        <nav v-if="allProjectDevNames.length" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <button @click="membersOpen = !membersOpen" class="w-full px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+            <span class="flex items-center gap-1.5">
+              Members
+              <span v-if="excludedCount > 0" class="text-amber-500 normal-case">({{ excludedCount }} hidden)</span>
+            </span>
+            <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 transition-transform" :class="{ 'rotate-180': membersOpen }" />
+          </button>
+          <template v-if="membersOpen">
+            <div class="px-4 py-1.5 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+              <button @click="toggleAllMembers" class="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 text-[10px] font-medium uppercase">
+                {{ allMembersEnabled ? 'Hide all' : 'Show all' }}
+              </button>
+            </div>
+            <div class="max-h-[300px] overflow-y-auto">
+              <button
+                v-for="dev in allProjectDevNames" :key="dev"
+                @click="toggleDev(dev)"
+                class="w-full flex items-center gap-2 px-4 py-2 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+                :class="isDevEnabled(dev)
+                  ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'
+                  : 'text-gray-400 dark:text-gray-500 line-through hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+              >
+                <UIcon :name="isDevEnabled(dev) ? 'i-heroicons-eye' : 'i-heroicons-eye-slash'" class="w-4 h-4 shrink-0" />
+                <span class="whitespace-nowrap">{{ dName(dev) }}</span>
+              </button>
+            </div>
+          </template>
+        </nav>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 min-w-0">
+
+      <!-- Empty state -->
+      <div v-if="!loading && !data" class="text-center text-gray-500 dark:text-gray-300 py-16">
+        <UIcon name="i-heroicons-chart-bar" class="mx-auto w-12 h-12 mb-3 opacity-50" />
+        <p class="text-sm">Click <strong>Run Assessment</strong> to analyse developer performance.</p>
+      </div>
+
+      <template v-if="data && (data.prs.length || data.work_items.length)">
 
       <!-- ================================================================= -->
       <!-- Project / Team Buttons -->
       <!-- ================================================================= -->
       <div class="mb-4 flex flex-wrap gap-2">
-        <button v-for="proj in projectNames" :key="proj" @click="selectProject(proj)"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors border"
-          :class="selectedProject === proj
-            ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
-            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'">
+        <UButton v-for="proj in projectNames" :key="proj" @click="selectProject(proj)"
+          :variant="selectedProject === proj ? 'solid' : 'outline'"
+          :color="selectedProject === proj ? 'primary' : 'neutral'"
+          size="sm">
           {{ dProject(proj) }}
           <span class="ml-1 text-xs opacity-75">({{ projectPrCount(proj) }})</span>
-        </button>
+        </UButton>
       </div>
 
       <!-- ================================================================= -->
       <!-- Selected project content -->
       <!-- ================================================================= -->
       <template v-if="selectedProject">
-        <!-- Member filter (foldable) -->
-        <div class="mb-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <button @click="memberFilterOpen = !memberFilterOpen"
-            class="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl">
-            <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Team members
-              <span v-if="excludedCount > 0" class="ml-1 text-amber-500">({{ excludedCount }} hidden)</span>
-            </span>
-            <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': memberFilterOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
-          <div v-if="memberFilterOpen" class="px-4 pb-3 border-t border-gray-100 dark:border-gray-700 pt-3">
-            <div class="flex justify-end mb-2">
-              <button @click="toggleAllMembers" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
-                {{ allMembersEnabled ? 'Deselect all' : 'Select all' }}
-              </button>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <label v-for="dev in allProjectDevNames" :key="dev"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs border cursor-pointer select-none transition-colors"
-                :class="isDevEnabled(dev)
-                  ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-600 text-primary-700 dark:text-primary-300'
-                  : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 line-through'">
-                <input type="checkbox" :checked="isDevEnabled(dev)" @change="toggleDev(dev)"
-                  class="w-3 h-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-                {{ dName(dev) }}
-              </label>
-            </div>
-          </div>
-        </div>
-
         <!-- Dev member buttons -->
         <div class="mb-5">
-          <div v-if="projectDevNames.length > 6" class="relative w-64 mb-3">
-            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input
-              v-model="devSearch"
-              type="text"
-              placeholder="Search developers…"
-              class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
-            />
-          </div>
-          <div class="flex flex-wrap gap-2">
-          <button @click="selectedDev = null"
-            class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors border"
-            :class="!selectedDev
-              ? 'bg-gray-700 dark:bg-gray-200 text-white dark:text-gray-800 border-gray-700 dark:border-gray-200'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'">
+          <div class="flex flex-wrap items-center gap-2">
+          <UInput v-if="projectDevNames.length > 6"
+            name="dev-search"
+            v-model="devSearch"
+            placeholder="Search developers…"
+            size="sm"
+            icon="i-heroicons-magnifying-glass"
+            class="w-48 app-search"
+          />
+          <UButton @click="selectedDev = null" size="xs"
+            :variant="!selectedDev ? 'solid' : 'outline'"
+            :color="!selectedDev ? 'neutral' : 'neutral'">
             All Team
-          </button>
-          <button v-for="dev in filteredDevNames" :key="dev" @click="selectedDev = dev"
-            class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors border"
-            :class="selectedDev === dev
-              ? 'bg-primary-600 text-white border-primary-600'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'">
+          </UButton>
+          <UButton v-for="dev in filteredDevNames" :key="dev" @click="selectedDev = dev" size="xs"
+            :variant="selectedDev === dev ? 'solid' : 'outline'"
+            :color="selectedDev === dev ? 'primary' : 'neutral'">
             {{ dName(dev) }}
-          </button>
+          </UButton>
           </div>
         </div>
 
@@ -174,14 +247,14 @@
               <div class="chart-header">
                 <span class="chart-title" title="Total number of completed PRs created by each developer in the selected time window.">PRs per Developer</span>
                 <div class="sort-group">
-                  <button class="sort-btn" :class="{ active: chartSorts.prs === 'alpha' }" @click="chartSorts.prs = 'alpha'" title="Sort A–Z">A–Z</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.prs === 'desc' }" @click="chartSorts.prs = 'desc'" title="Sort descending">↓</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.prs === 'asc' }" @click="chartSorts.prs = 'asc'" title="Sort ascending">↑</button>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.prs === 'alpha' }" @click="chartSorts.prs = 'alpha'" title="Sort A–Z" variant="ghost" size="xs">A–Z</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.prs === 'desc' }" @click="chartSorts.prs = 'desc'" title="Sort descending" variant="ghost" size="xs">↓</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.prs === 'asc' }" @click="chartSorts.prs = 'asc'" title="Sort ascending" variant="ghost" size="xs">↑</UButton>
                 </div>
               </div>
               <div class="space-y-3">
                 <div v-for="dev in sortedChart('prs', 'prCount')" :key="'prs-' + dev.name" class="flex items-center gap-2">
-                  <span class="text-xs text-gray-600 dark:text-gray-400 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-300 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
                   <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
                     <div class="h-full bg-primary-500 rounded-full flex items-center justify-end pr-2 text-[10px] text-white font-bold transition-all"
                       :style="{ width: barWidth(dev.prCount, maxPrCount) }">
@@ -197,14 +270,14 @@
               <div class="chart-header">
                 <span class="chart-title" title="Number of PRs reviewed (approved or wait-for-author vote) by each developer.">PRs Reviewed</span>
                 <div class="sort-group">
-                  <button class="sort-btn" :class="{ active: chartSorts.reviewed === 'alpha' }" @click="chartSorts.reviewed = 'alpha'" title="Sort A–Z">A–Z</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.reviewed === 'desc' }" @click="chartSorts.reviewed = 'desc'" title="Sort descending">↓</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.reviewed === 'asc' }" @click="chartSorts.reviewed = 'asc'" title="Sort ascending">↑</button>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.reviewed === 'alpha' }" @click="chartSorts.reviewed = 'alpha'" title="Sort A–Z" variant="ghost" size="xs">A–Z</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.reviewed === 'desc' }" @click="chartSorts.reviewed = 'desc'" title="Sort descending" variant="ghost" size="xs">↓</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.reviewed === 'asc' }" @click="chartSorts.reviewed = 'asc'" title="Sort ascending" variant="ghost" size="xs">↑</UButton>
                 </div>
               </div>
               <div class="space-y-3">
                 <div v-for="dev in sortedChart('reviewed', 'prsReviewedCount')" :key="'reviewed-' + dev.name" class="flex items-center gap-2">
-                  <span class="text-xs text-gray-600 dark:text-gray-400 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-300 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
                   <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
                     <div class="h-full bg-indigo-500 rounded-full flex items-center justify-end pr-2 text-[10px] text-white font-bold transition-all"
                       :style="{ width: barWidth(dev.prsReviewedCount, maxReviewedCount) }">
@@ -220,14 +293,14 @@
               <div class="chart-header">
                 <span class="chart-title" title="Average business hours (Mon–Fri, 9–17) from PR creation to completion per developer.">Avg Hours to Complete</span>
                 <div class="sort-group">
-                  <button class="sort-btn" :class="{ active: chartSorts.hours === 'alpha' }" @click="chartSorts.hours = 'alpha'" title="Sort A–Z">A–Z</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.hours === 'desc' }" @click="chartSorts.hours = 'desc'" title="Sort descending">↓</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.hours === 'asc' }" @click="chartSorts.hours = 'asc'" title="Sort ascending">↑</button>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.hours === 'alpha' }" @click="chartSorts.hours = 'alpha'" title="Sort A–Z" variant="ghost" size="xs">A–Z</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.hours === 'desc' }" @click="chartSorts.hours = 'desc'" title="Sort descending" variant="ghost" size="xs">↓</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.hours === 'asc' }" @click="chartSorts.hours = 'asc'" title="Sort ascending" variant="ghost" size="xs">↑</UButton>
                 </div>
               </div>
               <div class="space-y-3">
                 <div v-for="dev in sortedChart('hours', 'avgHours')" :key="'hours-' + dev.name" class="flex items-center gap-2">
-                  <span class="text-xs text-gray-600 dark:text-gray-400 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-300 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
                   <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
                     <div class="h-full rounded-full flex items-center justify-end pr-2 text-[10px] text-white font-bold transition-all"
                       :class="barColor(parseFloat(dev.avgHours), 24, 72)"
@@ -244,14 +317,14 @@
               <div class="chart-header">
                 <span class="chart-title" title="Average review iterations per PR. Counts ‘Wait for author’ votes plus final approval from PR threads.">Avg Iterations</span>
                 <div class="sort-group">
-                  <button class="sort-btn" :class="{ active: chartSorts.iters === 'alpha' }" @click="chartSorts.iters = 'alpha'" title="Sort A–Z">A–Z</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.iters === 'desc' }" @click="chartSorts.iters = 'desc'" title="Sort descending">↓</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.iters === 'asc' }" @click="chartSorts.iters = 'asc'" title="Sort ascending">↑</button>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.iters === 'alpha' }" @click="chartSorts.iters = 'alpha'" title="Sort A–Z" variant="ghost" size="xs">A–Z</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.iters === 'desc' }" @click="chartSorts.iters = 'desc'" title="Sort descending" variant="ghost" size="xs">↓</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.iters === 'asc' }" @click="chartSorts.iters = 'asc'" title="Sort ascending" variant="ghost" size="xs">↑</UButton>
                 </div>
               </div>
               <div class="space-y-3">
                 <div v-for="dev in sortedChart('iters', 'avgIters')" :key="'iter-' + dev.name" class="flex items-center gap-2">
-                  <span class="text-xs text-gray-600 dark:text-gray-400 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-300 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
                   <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
                     <div class="h-full rounded-full flex items-center justify-end pr-2 text-[10px] text-white font-bold transition-all"
                       :class="iterBarColor(parseFloat(dev.avgIters))"
@@ -268,14 +341,14 @@
               <div class="chart-header">
                 <span class="chart-title" title="Average business hours (Mon–Fri, 9–17) from PR creation to the first non-author comment or review.">Avg First Review (h)</span>
                 <div class="sort-group">
-                  <button class="sort-btn" :class="{ active: chartSorts.review === 'alpha' }" @click="chartSorts.review = 'alpha'" title="Sort A–Z">A–Z</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.review === 'desc' }" @click="chartSorts.review = 'desc'" title="Sort descending">↓</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.review === 'asc' }" @click="chartSorts.review = 'asc'" title="Sort ascending">↑</button>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.review === 'alpha' }" @click="chartSorts.review = 'alpha'" title="Sort A–Z" variant="ghost" size="xs">A–Z</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.review === 'desc' }" @click="chartSorts.review = 'desc'" title="Sort descending" variant="ghost" size="xs">↓</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.review === 'asc' }" @click="chartSorts.review = 'asc'" title="Sort ascending" variant="ghost" size="xs">↑</UButton>
                 </div>
               </div>
               <div class="space-y-3">
                 <div v-for="dev in sortedChart('review', 'avgFirstReview')" :key="'review-' + dev.name" class="flex items-center gap-2">
-                  <span class="text-xs text-gray-600 dark:text-gray-400 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-300 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
                   <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
                     <div class="h-full rounded-full flex items-center justify-end pr-2 text-[10px] text-white font-bold transition-all"
                       :class="barColor(parseFloat(dev.avgFirstReview), 8, 24)"
@@ -292,14 +365,14 @@
               <div class="chart-header">
                 <span class="chart-title" title="Ratio of actual completed work hours to original estimate across work items. 1.0x = on target, >1x = over estimate.">Estimate vs Actual Ratio</span>
                 <div class="sort-group">
-                  <button class="sort-btn" :class="{ active: chartSorts.est === 'alpha' }" @click="chartSorts.est = 'alpha'" title="Sort A–Z">A–Z</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.est === 'desc' }" @click="chartSorts.est = 'desc'" title="Sort descending">↓</button>
-                  <button class="sort-btn" :class="{ active: chartSorts.est === 'asc' }" @click="chartSorts.est = 'asc'" title="Sort ascending">↑</button>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.est === 'alpha' }" @click="chartSorts.est = 'alpha'" title="Sort A–Z" variant="ghost" size="xs">A–Z</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.est === 'desc' }" @click="chartSorts.est = 'desc'" title="Sort descending" variant="ghost" size="xs">↓</UButton>
+                  <UButton class="sort-btn" :class="{ active: chartSorts.est === 'asc' }" @click="chartSorts.est = 'asc'" title="Sort ascending" variant="ghost" size="xs">↑</UButton>
                 </div>
               </div>
               <div class="space-y-3">
                 <div v-for="dev in sortedChart('est', 'estActualRatio')" :key="'est-' + dev.name" class="flex items-center gap-2">
-                  <span class="text-xs text-gray-600 dark:text-gray-400 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
+                  <span class="text-xs text-gray-600 dark:text-gray-300 w-40 truncate shrink-0" :title="dev.displayName">{{ dev.displayName }}</span>
                   <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
                     <div class="h-full rounded-full flex items-center justify-end pr-2 text-[10px] text-white font-bold transition-all"
                       :class="ratioBarColor(dev.estActualRatio)"
@@ -320,7 +393,7 @@
             <div class="overflow-x-auto">
               <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
-                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-700/30">
+                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2.5">Developer</th>
                     <th class="px-4 py-2.5 text-right">PRs</th>
                     <th class="px-4 py-2.5 text-right">Reviewed</th>
@@ -391,7 +464,7 @@
             <div class="overflow-x-auto">
               <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
-                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
+                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('prs', 'pr_id')">PR{{ sortIcon('prs', 'pr_id') }}</th>
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('prs', 'title')">Title{{ sortIcon('prs', 'title') }}</th>
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('prs', 'repository')">Repo{{ sortIcon('prs', 'repository') }}</th>
@@ -404,14 +477,14 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                   <tr v-for="pr in sorted(activeDev.prs, 'prs')" :key="pr.pr_id" class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400">#{{ pr.pr_id }}</td>
+                    <td class="px-4 py-2 text-gray-500 dark:text-gray-300">#{{ pr.pr_id }}</td>
                     <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200 max-w-xs truncate" :title="dTitle(pr.title)">{{ dTitle(pr.title) }}</td>
-                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400 text-xs">{{ dRepo(pr.repository) }}</td>
+                    <td class="px-4 py-2 text-gray-500 dark:text-gray-300 text-xs">{{ dRepo(pr.repository) }}</td>
                     <td class="px-4 py-2 text-right font-mono" :class="hoursColor(pr.hours_to_complete)">{{ pr.hours_to_complete ?? '\u2014' }}</td>
                     <td class="px-4 py-2 text-right font-mono" :class="iterColor(pr.iterations)">{{ pr.iterations }}</td>
                     <td class="px-4 py-2 text-right font-mono" :class="metricColor(pr.files_changed, 10, 20)">{{ pr.files_changed }}</td>
                     <td class="px-4 py-2 text-right font-mono" :class="hoursColor24(pr.hours_to_first_review)">{{ pr.hours_to_first_review ?? '\u2014' }}</td>
-                    <td class="px-4 py-2 text-right font-mono" :class="pr.unresolved_thread_count > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400'">{{ pr.unresolved_thread_count }}</td>
+                    <td class="px-4 py-2 text-right font-mono" :class="pr.unresolved_thread_count > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-300'">{{ pr.unresolved_thread_count }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -426,7 +499,7 @@
             <div v-if="activeDev.estItems.length" class="overflow-x-auto">
               <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
-                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
+                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('est', 'id')">ID{{ sortIcon('est', 'id') }}</th>
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('est', 'title')">Title{{ sortIcon('est', 'title') }}</th>
                     <th class="px-4 py-2 text-right th-sort" @click="toggleTableSort('est', 'original_estimate')">Estimated{{ sortIcon('est', 'original_estimate') }}</th>
@@ -447,7 +520,7 @@
                 </tbody>
               </table>
             </div>
-            <div v-else class="px-5 py-4 text-sm text-gray-400 italic">No tickets with both estimate and completed hours.</div>
+            <div v-else class="px-5 py-4 text-sm text-gray-400 dark:text-gray-300 italic">No tickets with both estimate and completed hours.</div>
           </div>
 
           <!-- WIP Items panel -->
@@ -458,7 +531,7 @@
             <div v-if="activeDev.wipItems.length" class="overflow-x-auto">
               <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
-                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
+                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wip', 'id')">ID{{ sortIcon('wip', 'id') }}</th>
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wip', 'title')">Title{{ sortIcon('wip', 'title') }}</th>
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wip', 'work_item_type')">Type{{ sortIcon('wip', 'work_item_type') }}</th>
@@ -472,21 +545,21 @@
                   <tr v-for="wi in sorted(activeDev.wipItems, 'wip')" :key="wi.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
                     <td class="px-4 py-2"><a :href="wiUrl(wi)" target="_blank" class="text-primary-600 dark:text-primary-400 hover:underline">#{{ wi.id }}</a></td>
                     <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200 max-w-xs truncate">{{ dTitle(wi.title) }}</td>
-                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400">{{ wi.work_item_type }}</td>
+                    <td class="px-4 py-2 text-gray-500 dark:text-gray-300">{{ wi.work_item_type }}</td>
                     <td class="px-4 py-2">
-                      <span class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                      <span class="px-1.5 py-0.5 rounded text-xs font-medium"
                         :class="wi.state === 'Active' || wi.state === 'In Progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'
                           : wi.state === 'Resolved' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'">{{ wi.state }}</span>
                     </td>
                     <td class="px-4 py-2 text-right font-mono" :class="wi.active_age_hours > 336 ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'">{{ Math.round(wi.active_age_hours) }}</td>
-                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-400">{{ wi.original_estimate ? wi.original_estimate + 'h' : '\u2014' }}</td>
-                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-400">{{ wi.remaining_work ? wi.remaining_work + 'h' : '\u2014' }}</td>
+                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-300">{{ wi.original_estimate ? wi.original_estimate + 'h' : '\u2014' }}</td>
+                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-300">{{ wi.remaining_work ? wi.remaining_work + 'h' : '\u2014' }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div v-else class="px-5 py-4 text-sm text-gray-400 italic">No WIP items.</div>
+            <div v-else class="px-5 py-4 text-sm text-gray-400 dark:text-gray-300 italic">No WIP items.</div>
           </div>
 
           <!-- Work Items panel -->
@@ -497,7 +570,7 @@
             <div v-if="activeDev.workItems.length" class="overflow-x-auto">
               <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                 <thead>
-                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/30">
+                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/30">
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wi', 'id')">ID{{ sortIcon('wi', 'id') }}</th>
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wi', 'title')">Title{{ sortIcon('wi', 'title') }}</th>
                     <th class="px-4 py-2 th-sort" @click="toggleTableSort('wi', 'state')">State{{ sortIcon('wi', 'state') }}</th>
@@ -513,7 +586,7 @@
                     <td class="px-4 py-2"><a :href="wiUrl(wi)" target="_blank" class="text-primary-600 dark:text-primary-400 hover:underline">#{{ wi.id }}</a></td>
                     <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200 max-w-xs truncate">{{ dTitle(wi.title) }}</td>
                     <td class="px-4 py-2">
-                      <span class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                      <span class="px-1.5 py-0.5 rounded text-xs font-medium"
                         :class="wi.state === 'Closed' || wi.state === 'Done' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
                           : wi.state === 'Active' || wi.state === 'In Progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'
                           : wi.state === 'Resolved' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
@@ -522,13 +595,13 @@
                     <td class="px-4 py-2 text-right font-mono" :class="wi.cycle_time_hours > 336 ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'">{{ wi.cycle_time_hours ?? '—' }}</td>
                     <td class="px-4 py-2 text-right font-mono" :class="wi.state_changes > 5 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-gray-300'">{{ wi.state_changes }}</td>
                     <td class="px-4 py-2 text-right font-mono" :class="wi.reopen_count > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'">{{ wi.reopen_count }}</td>
-                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-400">{{ wi.original_estimate ? wi.original_estimate + 'h' : '—' }}</td>
-                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-400">{{ wi.completed_work ? wi.completed_work + 'h' : '—' }}</td>
+                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-300">{{ wi.original_estimate ? wi.original_estimate + 'h' : '—' }}</td>
+                    <td class="px-4 py-2 text-right font-mono text-gray-500 dark:text-gray-300">{{ wi.completed_work ? wi.completed_work + 'h' : '—' }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div v-else class="px-5 py-4 text-sm text-gray-400 italic">No work items found for this developer.</div>
+            <div v-else class="px-5 py-4 text-sm text-gray-400 dark:text-gray-300 italic">No work items found for this developer.</div>
           </div>
         </template>
       </template>
@@ -536,9 +609,11 @@
     </template>
 
     <!-- No results after run -->
-    <div v-if="data && !data.prs.length && !data.work_items.length && !loading" class="text-center text-gray-400 dark:text-gray-500 py-16">
+    <div v-if="data && !data.prs.length && !data.work_items.length && !loading" class="text-center text-gray-500 dark:text-gray-300 py-16">
       <p class="text-sm">No data found in the last {{ months }} month{{ months > 1 ? 's' : '' }}.</p>
     </div>
+      </div><!-- /content -->
+    </div><!-- /flex -->
   </div>
 </template>
 
@@ -550,7 +625,7 @@ import { transformDevAssessment } from '../composables/demoTransform.js'
 import { useCsvExport } from '../composables/useCsvExport.js'
 import { useDemoMode, anonName, anonProject, anonPrTitle, anonRepo, anonOrg, anonTeam, anonSprint } from '../composables/useDemoMode.js'
 import DataFreshness from '../components/DataFreshness.vue'
-import SelectMenu from '../components/SelectMenu.vue'
+
 
 const { isDemoMode } = useDemoMode()
 function dName(v) { return isDemoMode.value ? anonName(v) : v }
@@ -583,18 +658,6 @@ const monthOptions = [
   { value: 6, label: 'Last 6 months' },
   { value: 12, label: 'Last 12 months' },
 ]
-const projectSelectOptions = computed(() => [
-  { value: '', label: 'All projects' },
-  ...availableProjects.value.map(p => ({ value: p.id, label: dProject(p.project) }))
-])
-const teamSelectOptions = computed(() => [
-  { value: '', label: 'Team…' },
-  ...sprintTeams.value.map(t => ({ value: t.name, label: dTeam(t.name) }))
-])
-const sprintSelectOptions = computed(() => [
-  { value: '', label: 'Sprint…' },
-  ...sprintIterations.value.map(it => ({ value: it.id, label: dSprint(it.name) }))
-])
 
 // --- Member selection (persistent) ---
 const excludedDevs = reactive({}) // { projectName: Set<devName> }
@@ -656,7 +719,8 @@ const data = computed(() => rawData.value)
 const months = ref(store.devAssessmentMonths || 3)
 const selectedProject = ref(store.devAssessmentSelectedProject)
 const selectedDev = ref(store.devAssessmentSelectedDev)
-const memberFilterOpen = ref(false)
+const scopeOpen = ref(!rawData.value)
+const membersOpen = ref(false)
 const devPanel = ref(null)
 const chartSorts = reactive({ prs: 'desc', reviewed: 'desc', hours: 'asc', iters: 'asc', review: 'asc', est: 'asc' })
 const tableSort = reactive({ prs: { key: null, dir: 'asc' }, est: { key: null, dir: 'asc' }, wip: { key: null, dir: 'asc' }, wi: { key: null, dir: 'asc' } })
@@ -718,6 +782,10 @@ function onSprintIterationChange() {
   }
 }
 
+watch(sprintProjectId, () => onSprintProjectChange())
+watch(sprintTeam, () => onSprintTeamChange())
+watch(sprintIterationId, () => onSprintIterationChange())
+
 function toggleTableSort(table, key) {
   const s = tableSort[table]
   if (s.key === key) { s.dir = s.dir === 'asc' ? 'desc' : 'asc' }
@@ -768,6 +836,7 @@ async function runAssessment() {
     store.devAssessmentMonths = months.value
     lastFetchedAt.value = new Date().toISOString()
     if (projectNames.value.length) selectedProject.value = projectNames.value[0]
+    scopeOpen.value = false
   } catch (e) {
     error.value = e.message || 'Assessment failed'
   } finally {
@@ -984,32 +1053,32 @@ function ratioBarColor(val) {
 // ================================================================
 
 function metricColor(val, warnThreshold, badThreshold) {
-  if (val === '—' || val == null) return 'text-gray-400 dark:text-gray-500'
+  if (val === '—' || val == null) return 'text-gray-500 dark:text-gray-300'
   const n = parseFloat(val)
-  if (isNaN(n)) return 'text-gray-400'
+  if (isNaN(n)) return 'text-gray-400 dark:text-gray-300'
   if (n <= warnThreshold) return 'text-green-600 dark:text-green-400'
   if (n <= badThreshold) return 'text-amber-600 dark:text-amber-400'
   return 'text-red-600 dark:text-red-400'
 }
 
 function ratioColor(val) {
-  if (val === '—' || val == null) return 'text-gray-400 dark:text-gray-500'
+  if (val === '—' || val == null) return 'text-gray-500 dark:text-gray-300'
   const n = parseFloat(val)
-  if (isNaN(n)) return 'text-gray-400'
+  if (isNaN(n)) return 'text-gray-400 dark:text-gray-300'
   if (n >= 0.8 && n <= 1.2) return 'text-green-600 dark:text-green-400'
   if (n >= 0.5 && n <= 1.5) return 'text-amber-600 dark:text-amber-400'
   return 'text-red-600 dark:text-red-400'
 }
 
 function hoursColor(h) {
-  if (h == null) return 'text-gray-400'
+  if (h == null) return 'text-gray-400 dark:text-gray-300'
   if (h < 24) return 'text-green-600 dark:text-green-400'
   if (h < 72) return 'text-amber-600 dark:text-amber-400'
   return 'text-red-600 dark:text-red-400'
 }
 
 function hoursColor24(h) {
-  if (h == null) return 'text-gray-400'
+  if (h == null) return 'text-gray-400 dark:text-gray-300'
   if (h < 8) return 'text-green-600 dark:text-green-400'
   if (h < 24) return 'text-amber-600 dark:text-amber-400'
   return 'text-red-600 dark:text-red-400'

@@ -8,31 +8,17 @@
       </div>
       <!-- Simple / Advanced toggle -->
       <div class="flex items-center gap-2">
-        <span class="text-xs font-medium" :class="simpleMode ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'">Simple</span>
-        <button @click="simpleMode = !simpleMode" class="relative w-10 h-5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
-          :class="simpleMode ? 'bg-gray-300 dark:bg-gray-600' : 'bg-primary-500'">
-          <span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
-            :class="simpleMode ? 'translate-x-0' : 'translate-x-5'"></span>
-        </button>
-        <span class="text-xs font-medium" :class="simpleMode ? 'text-gray-400 dark:text-gray-500' : 'text-primary-600 dark:text-primary-400'">Advanced</span>
+        <span class="text-xs font-medium" :class="simpleMode ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-400'">Simple</span>
+        <USwitch :model-value="!simpleMode" @update:model-value="simpleMode = !$event" />
+        <span class="text-xs font-medium" :class="simpleMode ? 'text-gray-400 dark:text-gray-400' : 'text-primary-600 dark:text-primary-400'">Advanced</span>
       </div>
     </div>
 
     <!-- PAT warning -->
-    <div v-if="!store.patConfigured" class="mb-6 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-3 flex items-center gap-3">
-      <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-      </svg>
-      <p class="text-sm text-amber-800 dark:text-amber-200">PAT not configured. Set it in Settings first.</p>
-    </div>
+    <UAlert v-if="!store.patConfigured" color="warning" icon="i-heroicons-exclamation-triangle" description="PAT not configured. Set it in Settings first." class="mb-6" />
 
     <!-- Error -->
-    <div v-if="tabError" class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3 flex items-center gap-3">
-      <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-      </svg>
-      <p class="text-sm text-red-800 dark:text-red-200">{{ tabError }}</p>
-    </div>
+    <UAlert v-if="tabError" color="error" icon="i-heroicons-exclamation-circle" :description="tabError" class="mb-6" />
 
     <!-- ================================================================ -->
     <!-- SIMPLE MODE -->
@@ -42,33 +28,30 @@
         <!-- Repo selector -->
         <div class="flex items-center gap-1.5">
           <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Repo:</label>
-          <SelectMenu v-model="selectedRepoId" :options="repoSelectOptions" placeholder="Select repo…" size="sm" class="w-56" />
+          <USelectMenu v-model="selectedRepoId" :items="repoSelectOptions" value-key="value" placeholder="Select repo…" size="sm" class="w-56" />
         </div>
 
         <!-- Area selector -->
         <div class="flex items-center gap-1.5">
           <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Area:</label>
-          <SelectMenu v-model="selectedAreaId" :options="areaSelectOptions" placeholder="Select area…" size="sm" class="w-72" />
+          <USelectMenu v-model="selectedAreaId" :items="areaSelectOptions" value-key="value" placeholder="Select area…" size="sm" class="w-72" />
         </div>
 
-        <input v-autofocus v-model="simpleSearch" type="text" placeholder="Search members…"
-          class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-64" />
+        <UInput v-autofocus name="simple-search" v-model="simpleSearch" placeholder="Search members…" size="sm" icon="i-heroicons-magnifying-glass" class="w-64 app-search" />
 
-        <button @click="loadSimpleData(true)" :disabled="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
-          :class="(store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-          <svg v-if="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
+        <UButton @click="loadSimpleData(true)" :disabled="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions"
+          :loading="store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions"
+          icon="i-heroicons-arrow-path">
           {{ (store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) ? 'Loading…' : 'Refresh permissions' }}
-        </button>
+        </UButton>
 
-        <span v-if="teamData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-500 ml-auto">
+        <span v-if="teamData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-400 ml-auto">
           Fetched: {{ new Date(teamData.fetched_at).toLocaleString() }}
         </span>
       </div>
 
-      <div v-if="(store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) && !teamData" class="flex flex-col items-center py-20">
-        <svg class="animate-spin w-8 h-8 text-primary-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+      <div v-if="(store.loadingPermissions || store.loadingRepoPermissions || store.loadingAreaPermissions) && !teamData" class="flex flex-col items-center py-8">
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
         <p class="text-sm text-gray-500 dark:text-gray-400">Fetching permissions…</p>
       </div>
 
@@ -76,24 +59,24 @@
         <table class="text-xs table-fixed w-full">
           <thead>
             <!-- Group header row -->
-            <tr class="bg-gray-50 dark:bg-gray-800/40">
-              <th class="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/40 w-[200px]" rowspan="2"></th>
+            <tr class="bg-gray-50 dark:bg-gray-700/50">
+              <th class="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700/50 w-[200px]" rowspan="2"></th>
               <template v-for="group in SIMPLE_CAPABILITIES" :key="group.group">
                 <th :colspan="group.items.length"
-                  class="px-1 pt-2 pb-0.5 text-center text-[10px] font-bold uppercase tracking-wider border-l border-gray-200 dark:border-gray-700"
+                  class="px-1 pt-2 pb-0.5 text-center text-xs font-bold uppercase tracking-wider border-l border-gray-200 dark:border-gray-700"
                   :class="groupColorClass(group.group)">
                   {{ group.group }}
                 </th>
               </template>
             </tr>
             <!-- Capability label row -->
-            <tr class="bg-gray-100 dark:bg-gray-800/60">
+            <tr class="bg-gray-100 dark:bg-gray-700/50">
               <template v-for="group in SIMPLE_CAPABILITIES" :key="'h-' + group.group">
                 <th v-for="(cap, ci) in group.items" :key="cap.label"
                   class="w-[52px] px-1 py-2 font-medium text-gray-600 dark:text-gray-300 text-center whitespace-nowrap"
                   :class="ci === 0 ? 'border-l border-gray-200 dark:border-gray-700' : ''"
                   :title="cap.source === 'repo' ? 'Repo: ' + cap.repoPerm : cap.source === 'area' ? 'Area: ' + cap.areaPerm : (cap.checks || []).map(c => c.ns + ' → ' + c.perm).join(', ')">
-                  <span class="inline-block max-w-[48px] truncate text-[10px]">{{ cap.label }}</span>
+                  <span class="inline-block max-w-[48px] truncate text-xs">{{ cap.label }}</span>
                 </th>
               </template>
             </tr>
@@ -103,7 +86,7 @@
               class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/40">
               <td class="sticky left-0 z-10 bg-white dark:bg-gray-900 px-3 py-2 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap w-[200px]">
                 <div class="truncate">{{ member.display_name }}</div>
-                <div class="text-[10px] text-gray-400 dark:text-gray-500 font-normal truncate">{{ member.team_names.join(', ') }}</div>
+                <div class="text-xs text-gray-400 dark:text-gray-400 font-normal truncate">{{ member.team_names.join(', ') }}</div>
               </td>
               <template v-for="group in SIMPLE_CAPABILITIES" :key="'c-' + group.group">
                 <td v-for="(cap, ci) in group.items" :key="cap.label"
@@ -121,8 +104,8 @@
         </table>
       </div>
 
-      <div v-else-if="teamData && !simpleFilteredMembers.length" class="text-center py-12 text-sm text-gray-400">No members match the search.</div>
-      <div v-else-if="!store.loadingPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-500">No data available. Click Refresh.</div>
+      <div v-else-if="teamData && !simpleFilteredMembers.length" class="text-center py-12 text-sm text-gray-400 dark:text-gray-300">No members match the search.</div>
+      <div v-else-if="!store.loadingPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No data available. Click Refresh.</div>
     </div>
 
     <!-- ================================================================ -->
@@ -131,61 +114,48 @@
     <template v-else>
 
     <!-- Tab bar -->
-    <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
-      <nav class="flex gap-6 -mb-px">
-        <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
-          class="pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
-          :class="activeTab === tab.id
-            ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'">
-          {{ tab.label }}
-        </button>
-      </nav>
-    </div>
+    <UTabs :items="tabs" v-model="activeTab" :content="false" variant="link" class="mb-6" />
 
     <!-- ================================================================ -->
     <!-- TAB: Teams & Permissions -->
     <!-- ================================================================ -->
     <div v-if="activeTab === 'teams'">
       <div class="flex items-center gap-3 mb-4">
-        <button @click="loadTeams(true)" :disabled="store.loadingPermissions"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
-          :class="store.loadingPermissions ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-          <svg v-if="store.loadingPermissions" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
+        <UButton @click="loadTeams(true)" :disabled="store.loadingPermissions"
+          :loading="store.loadingPermissions"
+          icon="i-heroicons-arrow-path">
           {{ store.loadingPermissions ? 'Loading…' : 'Refresh' }}
-        </button>
-        <input v-model="teamSearch" type="text" placeholder="Search members…"
-          class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-64" />
-        <span v-if="teamData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-500 ml-auto">
+        </UButton>
+        <UInput name="team-search" v-model="teamSearch" placeholder="Search members…" size="sm" icon="i-heroicons-magnifying-glass" class="w-64 app-search" />
+        <span v-if="teamData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-400 ml-auto">
           Fetched: {{ new Date(teamData.fetched_at).toLocaleString() }}
         </span>
       </div>
 
-      <div v-if="store.loadingPermissions && !teamData" class="flex flex-col items-center py-20">
-        <svg class="animate-spin w-8 h-8 text-primary-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+      <div v-if="store.loadingPermissions && !teamData" class="flex flex-col items-center py-8">
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
         <p class="text-sm text-gray-500 dark:text-gray-400">Fetching teams & permissions…</p>
       </div>
 
       <!-- Tree: Team → Category → Permission → Members -->
       <div v-else-if="teamData && teamData.teams?.length" class="space-y-3">
         <div v-for="team in teamData.teams" :key="team.id" class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          <button @click="toggle('team', team.id)" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors text-left">
+          <button @click="toggle('team', team.id)" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors text-left">
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-              <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-90': opened.team?.has(team.id) }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+              <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': opened.team?.has(team.id) }" />
               {{ team.name }}
             </span>
-            <span class="text-xs text-gray-400">{{ teamMemberCount(team.name) }} members</span>
+            <span class="text-xs text-gray-400 dark:text-gray-300">{{ teamMemberCount(team.name) }} members</span>
           </button>
 
           <div v-if="opened.team?.has(team.id)" class="pl-4">
             <div v-for="cat in teamData.categories" :key="cat.namespace_id" class="border-t border-gray-100 dark:border-gray-700/50">
               <button @click="toggle('cat', team.id + '|' + cat.namespace_id)" class="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors text-left">
                 <span class="text-xs font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                  <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-90': opened.cat?.has(team.id + '|' + cat.namespace_id) }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                  <UIcon name="i-heroicons-chevron-right" class="w-3 h-3 transition-transform" :class="{ 'rotate-90': opened.cat?.has(team.id + '|' + cat.namespace_id) }" />
                   {{ cat.display_name || cat.name }}
                 </span>
-                <span class="text-[10px] text-gray-400">{{ cat.permissions.length }} permissions</span>
+                <span class="text-xs text-gray-400 dark:text-gray-300">{{ cat.permissions.length }} permissions</span>
               </button>
 
               <div v-if="opened.cat?.has(team.id + '|' + cat.namespace_id)" class="pl-6 pb-2">
@@ -194,7 +164,7 @@
                   <div class="flex flex-wrap gap-1">
                     <template v-for="member in teamMembersOf(team.name)" :key="member.id">
                       <span v-if="matchesMemberSearch(member) && getEffective(member.id, cat.namespace_id, perm.name) !== 'not_set'"
-                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                         :class="getEffective(member.id, cat.namespace_id, perm.name) === 'allow'
                           ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
                           : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'">
@@ -202,7 +172,7 @@
                         {{ member.display_name }}
                       </span>
                     </template>
-                    <span v-if="noVisibleMembers(team.name, cat.namespace_id, perm.name)" class="text-[10px] text-gray-400 italic">No explicit permissions</span>
+                    <span v-if="noVisibleMembers(team.name, cat.namespace_id, perm.name)" class="text-xs text-gray-400 dark:text-gray-300 italic">No explicit permissions</span>
                   </div>
                 </div>
               </div>
@@ -211,7 +181,7 @@
         </div>
       </div>
 
-      <div v-else-if="!store.loadingPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-500">No team data available.</div>
+      <div v-else-if="!store.loadingPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No team data available.</div>
     </div>
 
     <!-- ================================================================ -->
@@ -219,34 +189,31 @@
     <!-- ================================================================ -->
     <div v-if="activeTab === 'repos'">
       <div class="flex items-center gap-3 mb-4">
-        <button @click="loadRepos(true)" :disabled="store.loadingRepoPermissions"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
-          :class="store.loadingRepoPermissions ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-          <svg v-if="store.loadingRepoPermissions" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
+        <UButton @click="loadRepos(true)" :disabled="store.loadingRepoPermissions"
+          :loading="store.loadingRepoPermissions"
+          icon="i-heroicons-arrow-path">
           {{ store.loadingRepoPermissions ? 'Loading…' : 'Refresh' }}
-        </button>
-        <input v-model="repoSearch" type="text" placeholder="Search repos…"
-          class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-64" />
-        <span v-if="repoData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-500 ml-auto">
+        </UButton>
+        <UInput name="repo-search" v-model="repoSearch" placeholder="Search repos…" size="sm" icon="i-heroicons-magnifying-glass" class="w-64 app-search" />
+        <span v-if="repoData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-400 ml-auto">
           Fetched: {{ new Date(repoData.fetched_at).toLocaleString() }}
         </span>
       </div>
 
-      <div v-if="store.loadingRepoPermissions && !repoData" class="flex flex-col items-center py-20">
-        <svg class="animate-spin w-8 h-8 text-primary-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+      <div v-if="store.loadingRepoPermissions && !repoData" class="flex flex-col items-center py-8">
+        <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
         <p class="text-sm text-gray-500 dark:text-gray-400">Fetching repository permissions…</p>
       </div>
 
       <div v-else-if="repoData && filteredRepos.length" class="space-y-3">
         <div v-for="repo in filteredRepos" :key="repo.repo_id" class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          <button @click="toggle('repo', repo.repo_id)" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors text-left">
+          <button @click="toggle('repo', repo.repo_id)" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors text-left">
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-              <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-90': opened.repo?.has(repo.repo_id) }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-              <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>
+              <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 transition-transform" :class="{ 'rotate-90': opened.repo?.has(repo.repo_id) }" />
+              <UIcon name="i-heroicons-code-bracket" class="w-4 h-4 text-gray-400 dark:text-gray-300" />
               {{ repo.repo_name }}
             </span>
-            <span class="text-xs text-gray-400">{{ repo.permissions?.length || 0 }} permissions</span>
+            <span class="text-xs text-gray-400 dark:text-gray-300">{{ repo.permissions?.length || 0 }} permissions</span>
           </button>
 
           <div v-show="opened.repo?.has(repo.repo_id)" class="pl-6 pb-3">
@@ -254,21 +221,21 @@
               <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ perm.display_name || perm.name }}</div>
               <div class="flex flex-wrap gap-1">
                 <span v-for="name in perm.members_allowed" :key="'a-' + name"
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
                   ✓ {{ name }}
                 </span>
                 <span v-for="name in perm.members_denied" :key="'d-' + name"
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
                   ✕ {{ name }}
                 </span>
-                <span v-if="!perm.members_allowed?.length && !perm.members_denied?.length" class="text-[10px] text-gray-400 italic">No explicit permissions</span>
+                <span v-if="!perm.members_allowed?.length && !perm.members_denied?.length" class="text-xs text-gray-400 dark:text-gray-300 italic">No explicit permissions</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-else-if="!store.loadingRepoPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-500">No repositories found.</div>
+      <div v-else-if="!store.loadingRepoPermissions" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No repositories found.</div>
     </div>
 
     </template>
@@ -280,7 +247,6 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useMonitorStore } from '../stores/monitor.js'
 import { useDemoMode, anonAreaPath, anonRepo } from '../composables/useDemoMode.js'
 import { transformPermissionMatrix, transformRepoPermissions, transformAreaPermissions } from '../composables/demoTransform.js'
-import SelectMenu from '../components/SelectMenu.vue'
 
 const props = defineProps({ projectId: { type: String, required: true } })
 
@@ -482,7 +448,7 @@ function simpleCellIcon(eff) {
 function simpleCellClass(eff) {
   if (eff === 'allow') return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
   if (eff === 'deny') return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
-  return 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+  return 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-400'
 }
 
 function groupColorClass(group) {
@@ -513,8 +479,8 @@ const simpleFilteredMembers = computed(() => {
 
 // --- Advanced mode state ---
 const tabs = [
-  { id: 'teams', label: 'Teams & Permissions' },
-  { id: 'repos', label: 'Repositories' },
+  { value: 'teams', label: 'Teams & Permissions', icon: 'i-heroicons-user-group' },
+  { value: 'repos', label: 'Repositories', icon: 'i-heroicons-code-bracket' },
 ]
 const activeTab = ref('teams')
 const tabError = ref('')

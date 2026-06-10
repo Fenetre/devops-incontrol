@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* Custom primary color palette — matches the original app branding (#00aeef) */
+@theme {
+  --color-primary-50: #eef9fe;
+  --color-primary-100: #d8f1fd;
+  --color-primary-200: #b0e4fb;
+  --color-primary-300: #78d2f8;
+  --color-primary-400: #38bdf2;
+  --color-primary-500: #00aeef;
+  --color-primary-600: #008dcc;
+  --color-primary-700: #0071a6;
+  --color-primary-800: #005e8c;
+  --color-primary-900: #004d73;
+  --color-primary-950: #003d5c;
+  --color-sidebar: #262660;
+  --color-sidebar-light: #0077a8;
+}
+
+/* Base styles */
+html, body {
+  overscroll-behavior: none;
+  -ms-scroll-chaining: none;
+  background-color: #f3f4f6;
+}
+.dark, .dark body {
+  background-color: #0e0e24;
+}
+img, a, svg, button, label {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+input, textarea, [contenteditable="true"], pre, code, td, p {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Custom scrollbar */
+
+/* Focus-visible ring for keyboard navigation (exclude form elements that have their own styles) */
+*:focus-visible:not(input):not(textarea):not(select):not(button):not([role="combobox"]):not([role="listbox"]):not([role="option"]) {
+  outline: 2px solid var(--color-primary-500, #0ea5e9);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Make checkboxes and switches visible on dark backgrounds */
+.dark button[role="checkbox"][data-state="unchecked"] {
+  --tw-ring-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 114, 128, 0.5) transparent;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.5);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7);
+}
+
+/* Navy dark-mode overrides — shift neutral grays to #262660 family */
+.dark .dark\:bg-gray-900      { background-color: #0e0e24 !important; }
+.dark .dark\:bg-gray-800      { background-color: #1c1c4d !important; }
+.dark .dark\:bg-gray-800\/50  { background-color: rgb(28 28 77 / 0.5) !important; }
+.dark .dark\:bg-gray-700      { background-color: #2e2e6e !important; }
+.dark .dark\:bg-gray-700\/50  { background-color: rgb(46 46 110 / 0.5) !important; }
+.dark .dark\:bg-gray-700\/40  { background-color: rgb(46 46 110 / 0.4) !important; }
+.dark .dark\:bg-gray-700\/30  { background-color: rgb(46 46 110 / 0.3) !important; }
+.dark .dark\:border-gray-700  { border-color: #3c3c8a !important; }
+.dark .dark\:border-gray-600  { border-color: #5050a0 !important; }
+.dark .dark\:hover\:bg-gray-700:hover  { background-color: #2e2e6e !important; }
+.dark .dark\:hover\:bg-gray-600:hover  { background-color: #3c3c8a !important; }
+.dark .dark\:hover\:bg-gray-700\/50:hover { background-color: rgb(46 46 110 / 0.5) !important; }
+.dark .dark\:hover\:bg-gray-700\/40:hover { background-color: rgb(46 46 110 / 0.4) !important; }
+
+/* Nuxt UI design token overrides — navy neutral palette for components (USelectMenu, UInput, etc.) */
+.dark {
+  --ui-color-neutral-50: #f0f0ff;
+  --ui-color-neutral-100: #e0e0f4;
+  --ui-color-neutral-200: #c8c8e8;
+  --ui-color-neutral-300: #a8a8d0;
+  --ui-color-neutral-400: #8888b8;
+  --ui-color-neutral-500: #6868a0;
+  --ui-color-neutral-600: #5050a0;
+  --ui-color-neutral-700: #3c3c8a;
+  --ui-color-neutral-800: #2e2e6e;
+  --ui-color-neutral-900: #1c1c4d;
+  --ui-color-neutral-950: #0e0e24;
+  --ui-text-dimmed: #9090c0;
+}
+
+/* Dark mode placeholder text — white across all inputs, selects, and textareas */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgba(255, 255, 255, 0.85) !important;
+  opacity: 1 !important;
+}
+.dark .text-dimmed {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Ensure USelectMenu / Combobox popover renders above all page content (including modals at z-9999) */
+[data-reka-popper-content-wrapper] {
+  z-index: 10000 !important;
+}
+
+/* Dark mode: override inline dark text colors in contenteditable/prose areas */
+.dark [contenteditable] *,
+.dark .prose * {
+  color: inherit !important;
+}

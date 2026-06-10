@@ -24,16 +24,18 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html" class="active">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html">Managing Projects</a>
 </nav>
@@ -50,8 +52,8 @@
   <h2>How to Use It</h2>
   <ol>
     <li>Open <span class="ui">Velocity</span> from the sidebar.</li>
-    <li>Select your <span class="ui">Project</span>, <span class="ui">Team</span>, and <span class="ui">Sprint</span> from the dropdowns at the top.</li>
-    <li>The <span class="ui">Capacity</span> tab shows a table of team members with their hours per day.</li>
+    <li>The screen has three tabs: <span class="ui">Capacity</span>, <span class="ui">Calculate Velocity</span>, and <span class="ui">Velocity Metrics</span>.</li>
+    <li>For the Capacity and Calculate Velocity tabs, select your <span class="ui">Project</span>, <span class="ui">Team</span>, and <span class="ui">Sprint</span> from the dropdowns at the top.</li>
   </ol>
 
   <h2>Capacity Tab</h2>
@@ -71,15 +73,33 @@
     <tr><td><span class="ui">Reload from DevOps</span></td><td>Refreshes the capacity data from Azure DevOps, discarding any unsaved local changes.</td></tr>
     <tr><td><span class="ui">Save to DevOps</span></td><td>Sends your capacity changes back to Azure DevOps. You will be asked to confirm before saving.</td></tr>
     <tr><td><span class="ui">Add member</span></td><td>Add a team member to the capacity table.</td></tr>
+    <tr><td><span class="ui">Remove member</span> (✕)</td><td>Remove a team member from the capacity table for this sprint.</td></tr>
   </table>
 
-  <h2>Metrics Tab</h2>
-  <p>The Metrics tab shows how many story points were completed in recent sprints. This helps you understand your team's velocity — how much work you typically complete per sprint — so you can plan the next sprint more accurately.</p>
+  <h2>Calculate Velocity Tab</h2>
+  <p>The Calculate Velocity tab computes a velocity ratio from a specific sprint's data. Select a project, team, last completed sprint, and target sprint to see:</p>
+  <ul>
+    <li><strong>Velocity ratio</strong> — Story points completed ÷ total capacity hours from the selected sprint.</li>
+    <li><strong>Projected points</strong> — The estimated story points the team can handle in the target sprint, based on the ratio and planned capacity.</li>
+  </ul>
+  <p>You can optionally override the story points used for the calculation and toggle whether to include unassigned capacity.</p>
 
-  <div class="callout tip">
-    <strong>Tip</strong>
-    <strong>Velocity ratio</strong> = story points completed in the last sprint ÷ total capacity hours. DevOps InControl uses this to estimate how many points the team can handle in the upcoming sprint.
-  </div>
+  <h2>Velocity Metrics Tab</h2>
+  <p>The Velocity Metrics tab shows charts of story points across recent sprints for all your monitored projects. Each project card displays:</p>
+  <ul>
+    <li><strong>Initial Scope</strong> — Story points at the start of the sprint.</li>
+    <li><strong>Burned SP</strong> — Story points completed.</li>
+    <li><strong>Prognosis</strong> — Projected points for future sprints based on past averages.</li>
+  </ul>
+
+  <h3>Team Selector</h3>
+  <p>If a project has multiple teams, a <span class="ui">Team</span> dropdown appears on each project card. Click it to expand the list and select a different team. The chart will reload with that team's specific sprints and data. Your team selection is remembered for next time.</p>
+
+  <h3>Sprint Filter</h3>
+  <p>Each project card also has a <span class="ui">Sprints</span> dropdown that lets you show or hide individual sprints from the chart. Use the checkboxes to toggle sprints on or off.</p>
+
+  <h3>Project Filter</h3>
+  <p>Click the <span class="ui">Filter</span> button at the top to show or hide entire projects from the metrics view.</p>
 
   <div class="callout important">
     <strong>Important</strong>

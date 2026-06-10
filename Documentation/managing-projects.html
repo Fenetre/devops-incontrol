@@ -24,16 +24,18 @@
   <a href="db-monitor.html">DB Monitor</a>
   <a href="db-project.html">DB Project</a>
   <h3>Sprint Planning</h3>
-  <a href="sprint-populator.html">Sprint Populator</a>
+  <a href="sprint-populator.html">Sprint Manager</a>
+  <a href="template-manager.html">Template Manager</a>
   <a href="velocity.html">Velocity &amp; Capacity</a>
+  <h3>Portfolio</h3>
+  <a href="roadmap.html">Roadmap</a>
+
   <h3>Team Insights</h3>
   <a href="dev-assessment.html">Developer Assessment</a>
   <h3>Security</h3>
-  <a href="permission-check.html">Permission Overview</a>
-  <a href="check-permissions.html">Permission Audit</a>
+  <a href="permissions.html">Permissions</a>
   <h3>Build &amp; Release</h3>
-  <a href="pipelines.html">Pipelines</a>
-  <a href="releases.html">Releases</a>
+  <a href="pipelines.html">Pipelines &amp; Releases</a>
   <h3>Configuration</h3>
   <a href="managing-projects.html" class="active">Managing Projects</a>
 </nav>
@@ -51,7 +53,7 @@
   <ol>
     <li>Click <span class="ui">Add Project</span> at the top of the page.</li>
     <li>Select your <span class="ui">Organisation</span> and <span class="ui">Project</span> from the dropdowns.</li>
-    <li>Optionally set an <span class="ui">Area Path</span> to monitor only a specific part of the project (e.g. only your team's area).</li>
+    <li>Optionally set an <span class="ui">Area Path</span> to monitor only a specific part of the project (e.g. only your team's area). Check <span class="ui">Include child areas</span> to also include sub-areas underneath it.</li>
     <li>Enable the checks you want to run (see the table below).</li>
     <li>Click <span class="ui">Save</span>.</li>
   </ol>
@@ -82,6 +84,7 @@
     <tr><td>Stale days</td><td>Stale PR Check</td><td>How many days of inactivity before a PR is flagged (default: 14).</td></tr>
     <tr><td>Ignore reviewers</td><td>Unreviewed PR Check</td><td>Names to skip when counting reviewers (e.g. "Build Service"). The PR is only flagged if no <em>real</em> reviewers remain.</td></tr>
     <tr><td>Check for missing</td><td>Missing Estimate Check</td><td>Choose which fields to check: both Original Estimate &amp; Remaining Work (default), Original Estimate only, or Remaining Work only.</td></tr>
+    <tr><td>Parent type mappings</td><td>Orphan Check</td><td>Configure which parent work item types are expected for each child type (e.g. Tasks should have a User Story parent). Auto-detect from your process template is available.</td></tr>
   </table>
 
   <h2>Ignore Patterns</h2>

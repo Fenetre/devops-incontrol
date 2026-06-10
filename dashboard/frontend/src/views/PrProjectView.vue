@@ -1,221 +1,262 @@
 <template>
   <div>
     <!-- Breadcrumb -->
-    <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
-      <router-link to="/pr-monitor" class="hover:text-primary-600 transition-colors">PR Monitor</router-link>
-      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-      </svg>
+    <nav class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <router-link to="/" class="hover:text-primary-600 transition-colors">Dashboard</router-link>
+      <UIcon name="i-heroicons-chevron-right" class="w-3 h-3" />
       <span class="text-gray-700 dark:text-gray-200 font-medium">{{ projectData?.project_name || projectId }}</span>
+      <UIcon name="i-heroicons-chevron-right" class="w-3 h-3" />
+      <span class="text-gray-700 dark:text-gray-200 font-medium">PR Monitor</span>
     </nav>
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">{{ projectData?.project_name || 'Project' }}</h2>
+        <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">PR Monitor</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {{ projectData?.organization || '' }}
-          <span v-if="projectData" class="ml-2">· {{ projectData.prs.length }} active PR{{ projectData.prs.length !== 1 ? 's' : '' }}</span>
-          <span v-if="projectData" class="ml-2">· {{ filteredItems.length }} search result{{ filteredItems.length !== 1 ? 's' : '' }}</span>
+          {{ projectData?.project_name || '' }}
+          <span v-if="projectData && activeTab === 'prs'" class="ml-2">· {{ projectData.prs.length }} active PR{{ projectData.prs.length !== 1 ? 's' : '' }}</span>
+          <span v-if="projectData && activeTab === 'prs'" class="ml-2">· {{ filteredItems.length }} search result{{ filteredItems.length !== 1 ? 's' : '' }}</span>
+          <span v-if="projectData && activeTab === 'reviewers'" class="ml-2">· {{ reviewerGroups.length }} reviewer{{ reviewerGroups.length !== 1 ? 's' : '' }}</span>
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <button
+        <UButton
           @click="refresh"
           :disabled="loading"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-        >
-          <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
-          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-          </svg>
-          Refresh
-        </button>
-        <button
+          :loading="loading"
+          icon="i-heroicons-arrow-path"
+          label="Refresh"
+        />
+        <UButton
           v-if="filteredItems.length"
           @click="exportPrs"
-          class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          variant="outline"
+          color="neutral"
+          icon="i-heroicons-arrow-down-tray"
+          label="CSV"
           title="Export to CSV"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-          CSV
-        </button>
-        <router-link
-          to="/pr-monitor"
-          class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-          Back
-        </router-link>
+        />
       </div>
     </div>
 
     <!-- Error -->
-    <div v-if="projectData?.error" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4 text-sm text-red-700 dark:text-red-400">
-      {{ projectData.error }}
-    </div>
+    <UAlert v-if="projectData?.error" color="error" icon="i-heroicons-exclamation-circle" :description="projectData.error" class="mb-4" />
 
-    <!-- Filter bar -->
-    <div v-if="projectData && projectData.prs.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-4">
-      <div class="px-4 py-3 flex flex-wrap items-center gap-3">
-        <div class="relative flex-1 min-w-[200px]">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          </svg>
-          <input
+    <!-- Tabs -->
+    <UTabs :items="tabItems" v-model="activeTab" :content="false" variant="link" class="mb-6" />
+
+    <!-- Filter bar (Pull Requests tab) -->
+    <div v-if="activeTab === 'prs'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-4">
+      <div class="px-4 py-3 flex items-center gap-3">
+        <div class="flex-1">
+          <UInput
             v-autofocus
-            v-model="search"
-            type="text"
+            name="search" v-model="search"
             placeholder="Filter by title, repo, author…"
-            class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow"
+            icon="i-heroicons-magnifying-glass"
+            size="sm"
+            class="w-full app-search"
           />
         </div>
-        <div class="flex items-center gap-2">
-          <button
+        <div class="flex items-center gap-2 shrink-0">
+          <UButton
             v-for="f in filterOptions"
             :key="f.key"
             @click="toggleFilter(f.key)"
-            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors"
-            :class="activeFilters.includes(f.key)
-              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 border-primary-300 dark:border-primary-600'
-              : 'text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            :variant="activeFilters.includes(f.key) ? 'soft' : 'outline'"
+            :color="activeFilters.includes(f.key) ? 'primary' : 'neutral'"
           >
             <span class="w-1.5 h-1.5 rounded-full" :class="f.color"></span>
             {{ f.label }}
-          </button>
+          </UButton>
         </div>
       </div>
     </div>
 
-    <!-- Loading skeleton -->
-    <div v-if="loading && !projectData" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
-      <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
-      </div>
-      <div v-for="n in 5" :key="n" class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4">
-        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
-        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
-        <div class="h-4 bg-gray-100 dark:bg-gray-600 rounded w-24"></div>
-        <div class="h-4 bg-gray-100 dark:bg-gray-600 rounded w-28"></div>
-        <div class="h-5 bg-gray-100 dark:bg-gray-600 rounded-full w-20"></div>
+    <!-- Reviewer search bar -->
+    <div v-if="activeTab === 'reviewers'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-4">
+      <div class="px-4 py-3">
+        <UInput
+          name="reviewer-search" v-model="reviewerSearch"
+          placeholder="Filter by reviewer name…"
+          icon="i-heroicons-magnifying-glass"
+          size="sm"
+          class="w-full app-search"
+        />
       </div>
     </div>
 
-    <!-- No data (after loading finishes with nothing) -->
-    <EmptyState v-else-if="!projectData && !loading" icon="git-merge" message="No PR data found for this project." />
-
-    <!-- PR Table -->
-    <div v-if="projectData && projectData.prs.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
-          <thead>
-            <tr class="text-left border-b border-gray-200 dark:border-gray-700">
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('pr_id')">
-                ID
-                <span v-if="sortKey === 'pr_id'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
-              </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('title')">
-                Title
-                <span v-if="sortKey === 'title'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
-              </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('repository')">
-                Repository
-                <span v-if="sortKey === 'repository'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
-              </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('created_by')">
-                Author
-                <span v-if="sortKey === 'created_by'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
-              </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none" @click="toggleSort('days_inactive')">
-                Stale
-                <span v-if="sortKey === 'days_inactive'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
-              </th>
-              <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">
-                Flags
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="pr in paginatedItems"
-              :key="pr.pr_id"
-              class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-            >
-              <td class="px-4 py-3">
-                <a :href="pr.url" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 font-medium hover:underline">
-                  #{{ pr.pr_id }}
-                </a>
-              </td>
-              <td class="px-4 py-3 text-gray-800 dark:text-gray-200 !whitespace-normal">
-                <a :href="pr.url" target="_blank" rel="noopener noreferrer" class="hover:text-primary-600 hover:underline">
-                  <span v-if="pr.is_draft" class="inline-block mr-1.5 px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Draft</span>
-                  {{ pr.title }}
-                </a>
-              </td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs">{{ pr.repository }}</td>
-              <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ pr.created_by }}</td>
-              <td class="px-4 py-3 text-center">
-                <span v-if="pr.days_inactive != null" class="inline-block px-2 py-0.5 rounded-md text-xs font-medium" :class="staleBadgeClass(pr.days_inactive)">
-                  {{ pr.days_inactive }}d
-                </span>
-                <span v-else class="text-xs text-gray-400">—</span>
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex gap-1">
-                  <span
-                    v-for="flag in pr.flags"
-                    :key="flag.key"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="flagStyle(flag)"
-                  >
-                    <span class="w-1.5 h-1.5 rounded-full" :class="flagDot(flag)"></span>
-                    {{ flag.label }}
-                  </span>
-                  <span v-if="pr.flags.length === 0" class="text-xs text-gray-400">—</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div v-if="filteredItems.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-          {{ search || activeFilters.length ? 'No matching PRs.' : 'No active PRs.' }}
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-        <span class="text-xs text-gray-500">
-          Showing {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filteredItems.length) }} of {{ filteredItems.length }}
-        </span>
-        <div class="flex items-center gap-1">
-          <button @click="page = Math.max(1, page - 1)" :disabled="page === 1" class="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 transition-colors">&laquo;</button>
+    <!-- Side menu + content -->
+    <div class="flex gap-4">
+      <!-- Project selector -->
+      <div v-if="prProjects.length" class="shrink-0">
+        <nav class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30">Projects</div>
           <button
-            v-for="p in visiblePages"
-            :key="p"
-            @click="page = p"
-            class="px-2.5 py-1 text-xs rounded border transition-colors"
-            :class="p === page ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'"
-          >{{ p }}</button>
-          <button @click="page = Math.min(totalPages, page + 1)" :disabled="page === totalPages" class="px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 transition-colors">&raquo;</button>
+            v-for="proj in prProjects" :key="proj.id"
+            @click="router.push({ name: 'pr-project', params: { projectId: proj.id } })"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="proj.id === projectId
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-folder" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">{{ proj.project }}</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 min-w-0">
+        <!-- Loading skeleton -->
+        <div v-if="loading && !projectData" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
+          <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+          </div>
+          <div v-for="n in 5" :key="n" class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
+            <div class="h-4 bg-gray-100 dark:bg-gray-600 rounded w-24"></div>
+            <div class="h-4 bg-gray-100 dark:bg-gray-600 rounded w-28"></div>
+            <div class="h-5 bg-gray-100 dark:bg-gray-600 rounded-full w-20"></div>
+          </div>
         </div>
+
+        <!-- No data (after loading finishes with nothing) -->
+        <EmptyState v-else-if="!projectData && !loading" icon="git-merge" message="No PR data found for this project." />
+
+        <!-- ===== Pull Requests tab ===== -->
+        <template v-if="activeTab === 'prs'">
+          <!-- PR Table -->
+          <div v-if="projectData && projectData.prs.length > 0" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <UTable :data="paginatedItems" :columns="prColumns" />
+
+              <div v-if="filteredItems.length === 0" class="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
+                {{ search || activeFilters.length ? 'No matching PRs.' : 'No active PRs.' }}
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                Showing {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filteredItems.length) }} of {{ filteredItems.length }}
+              </span>
+              <div class="flex items-center gap-1">
+                <UButton size="sm" variant="outline" color="neutral" icon="i-heroicons-chevron-left" :disabled="page <= 1" @click="page = page - 1">Prev</UButton>
+                <template v-for="p in visiblePages" :key="p">
+                  <UButton size="sm" :variant="p === page ? 'solid' : 'outline'" :color="p === page ? 'primary' : 'neutral'" @click="page = p">{{ p }}</UButton>
+                </template>
+                <UButton size="sm" variant="outline" color="neutral" icon="i-heroicons-chevron-right" :disabled="page >= totalPages" @click="page = page + 1">Next</UButton>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <EmptyState v-if="projectData && projectData.prs.length === 0 && !projectData.error" icon="check-circle" message="No active pull requests." />
+        </template>
+
+        <!-- ===== Reviewer Monitor tab ===== -->
+        <template v-if="activeTab === 'reviewers'">
+          <EmptyState v-if="filteredReviewerGroups.length === 0" icon="users" message="No reviewers found." />
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="group in filteredReviewerGroups"
+              :key="group.reviewer"
+              class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
+            >
+              <!-- Reviewer header -->
+              <button
+                @click="toggleReviewerExpand(group.reviewer)"
+                class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+              >
+                <UIcon
+                  :name="expandedReviewers.has(group.reviewer) ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'"
+                  class="w-4 h-4 text-gray-400 shrink-0"
+                />
+                <UIcon name="i-heroicons-user-circle" class="w-5 h-5 text-gray-400 shrink-0" />
+                <span class="font-medium text-gray-900 dark:text-gray-100">{{ group.reviewer }}</span>
+                <span class="ml-auto text-sm text-gray-500 dark:text-gray-400">
+                  {{ group.prs.length }} PR{{ group.prs.length !== 1 ? 's' : '' }}
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <span v-if="group.pendingCount > 0" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    {{ group.pendingCount }} pending
+                  </span>
+                  <span v-if="group.approvedCount > 0" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    {{ group.approvedCount }} approved
+                  </span>
+                  <span v-if="group.rejectedCount > 0" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                    {{ group.rejectedCount }} rejected
+                  </span>
+                </div>
+              </button>
+
+              <!-- PR list (expanded) -->
+              <div v-if="expandedReviewers.has(group.reviewer)">
+                <div class="border-t border-gray-200 dark:border-gray-700">
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                      <thead>
+                        <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700/30">
+                          <th class="px-4 py-2.5">ID</th>
+                          <th class="px-4 py-2.5">Title</th>
+                          <th class="px-4 py-2.5">Repository</th>
+                          <th class="px-4 py-2.5">Author</th>
+                          <th class="px-4 py-2.5">Vote</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr
+                          v-for="item in group.prs"
+                          :key="item.pr.pr_id"
+                          class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+                        >
+                          <td class="px-4 py-2.5">
+                            <a :href="item.pr.url" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 font-medium hover:underline">#{{ item.pr.pr_id }}</a>
+                          </td>
+                          <td class="px-4 py-2.5">
+                            <a :href="item.pr.url" target="_blank" rel="noopener noreferrer" class="hover:text-primary-600 hover:underline">
+                              <span v-if="item.pr.is_draft" class="inline-block mr-1.5 px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Draft</span>
+                              {{ item.pr.title }}
+                            </a>
+                          </td>
+                          <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ item.pr.repository }}</td>
+                          <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">{{ item.pr.created_by }}</td>
+                          <td class="px-4 py-2.5">
+                            <span :class="voteBadgeClass(item.vote)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium">
+                              {{ voteLabel(item.vote) }}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
-
-    <!-- Empty state -->
-    <EmptyState v-if="projectData && projectData.prs.length === 0 && !projectData.error" icon="check-circle" message="No active pull requests." />
   </div>
 </template>
 
+<script>
+// Module-level state — survives component re-mounts from :key="$route.fullPath"
+let _persistedTab = 'prs'
+</script>
+
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, watch, h } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useMonitorStore } from '../stores/monitor.js'
+import { usePrStore } from '../stores/pr.js'
 import { transformPrProject } from '../composables/demoTransform.js'
 import { useCsvExport } from '../composables/useCsvExport.js'
 import EmptyState from '../components/EmptyState.vue'
@@ -225,16 +266,102 @@ const props = defineProps({
 })
 
 const route = useRoute()
+const router = useRouter()
 const store = useMonitorStore()
+const prStore = usePrStore()
 const { exportCsv } = useCsvExport()
-const loading = computed(() => store.loadingPrProject)
-const projectData = computed(() => transformPrProject(store.prProjectData[props.projectId] || null))
+const loading = computed(() => prStore.loadingPrProject)
+const projectData = computed(() => transformPrProject(prStore.prProjectData[props.projectId] || null))
+
+const activeTab = ref(_persistedTab)
+watch(activeTab, (tab) => { _persistedTab = tab })
+const tabItems = [
+  { label: 'Pull Requests', value: 'prs', icon: 'i-heroicons-code-bracket-square' },
+  { label: 'Reviewers', value: 'reviewers', icon: 'i-heroicons-user-group' },
+]
+
+const prProjects = computed(() => store.displayProjects)
 const search = ref('')
 const activeFilters = ref(route.query.filter ? [route.query.filter] : [])
 const sortKey = ref('pr_id')
 const sortDir = ref('desc')
 const page = ref(1)
 const pageSize = 50
+
+const prColumns = [
+  {
+    accessorKey: 'pr_id',
+    header: ({ column }) => h('span', {
+      class: 'cursor-pointer select-none',
+      onClick: () => toggleSort('pr_id')
+    }, ['ID', sortKey.value === 'pr_id' ? h('span', { class: 'ml-1 text-xs' }, sortDir.value === 'asc' ? '▲' : '▼') : null]),
+    cell: ({ row }) => h('a', {
+      href: row.original.url,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      class: 'text-primary-600 hover:text-primary-800 font-medium hover:underline'
+    }, `#${row.original.pr_id}`)
+  },
+  {
+    accessorKey: 'title',
+    header: ({ column }) => h('span', {
+      class: 'cursor-pointer select-none',
+      onClick: () => toggleSort('title')
+    }, ['Title', sortKey.value === 'title' ? h('span', { class: 'ml-1 text-xs' }, sortDir.value === 'asc' ? '▲' : '▼') : null]),
+    cell: ({ row }) => h('a', {
+      href: row.original.url,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      class: 'hover:text-primary-600 hover:underline'
+    }, [
+      row.original.is_draft ? h('span', { class: 'inline-block mr-1.5 px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' }, 'Draft') : null,
+      row.original.title
+    ])
+  },
+  {
+    accessorKey: 'repository',
+    header: ({ column }) => h('span', {
+      class: 'cursor-pointer select-none',
+      onClick: () => toggleSort('repository')
+    }, ['Repository', sortKey.value === 'repository' ? h('span', { class: 'ml-1 text-xs' }, sortDir.value === 'asc' ? '▲' : '▼') : null]),
+  },
+  {
+    accessorKey: 'created_by',
+    header: ({ column }) => h('span', {
+      class: 'cursor-pointer select-none',
+      onClick: () => toggleSort('created_by')
+    }, ['Author', sortKey.value === 'created_by' ? h('span', { class: 'ml-1 text-xs' }, sortDir.value === 'asc' ? '▲' : '▼') : null]),
+  },
+  {
+    accessorKey: 'days_inactive',
+    header: ({ column }) => h('span', {
+      class: 'cursor-pointer select-none',
+      onClick: () => toggleSort('days_inactive')
+    }, ['Stale', sortKey.value === 'days_inactive' ? h('span', { class: 'ml-1 text-xs' }, sortDir.value === 'asc' ? '▲' : '▼') : null]),
+    cell: ({ row }) => {
+      const d = row.original.days_inactive
+      if (d != null) return h('span', { class: ['inline-block px-2 py-0.5 rounded-md text-xs font-medium', staleBadgeClass(d)] }, `${d}d`)
+      return h('span', { class: 'text-xs text-gray-400 dark:text-gray-300' }, '—')
+    }
+  },
+  {
+    id: 'flags',
+    header: 'Flags',
+    cell: ({ row }) => {
+      const flags = row.original.flags || []
+      if (flags.length === 0) return h('span', { class: 'text-xs text-gray-400 dark:text-gray-300' }, '—')
+      return h('div', { class: 'flex gap-1' },
+        flags.map(flag => h('span', {
+          key: flag.key,
+          class: ['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium', flagStyle(flag)]
+        }, [
+          h('span', { class: ['w-1.5 h-1.5 rounded-full', flagDot(flag)] }),
+          flag.label
+        ]))
+      )
+    }
+  },
+]
 
 const filterOptions = [
   { key: 'unreviewed', label: 'No reviewer', color: 'bg-red-500' },
@@ -277,7 +404,7 @@ const filteredItems = computed(() => {
 
   if (activeFilters.value.length > 0) {
     items = items.filter(pr => {
-      return activeFilters.value.some(f => {
+      return activeFilters.value.every(f => {
         if (f === 'draft') return pr.is_draft
         if (f === 'clean') return pr.flags.length === 0
         return pr.flags.some(fl => fl.key === f)
@@ -329,6 +456,7 @@ const visiblePages = computed(() => {
 
 watch(search, () => { page.value = 1 })
 
+
 function flagStyle(flag) {
   if (flag.severity === 'error') return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
   if (flag.severity === 'warning') return 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
@@ -348,9 +476,57 @@ function staleBadgeClass(days) {
   return 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
 }
 
-async function refresh() {
-  await store.fetchPrProjectData(props.projectId, true)
+// --- Reviewer Monitor ---
+const reviewerSearch = ref('')
+const expandedReviewers = ref(new Set())
+
+const reviewerGroups = computed(() => {
+  if (!projectData.value) return []
+  const map = new Map()
+  for (const pr of projectData.value.prs) {
+    for (const reviewer of (pr.reviewers || [])) {
+      const name = reviewer.name || reviewer
+      if (!map.has(name)) map.set(name, [])
+      map.get(name).push({ pr, vote: reviewer.vote ?? 0 })
+    }
+  }
+  return Array.from(map.entries())
+    .map(([reviewer, prs]) => ({
+      reviewer,
+      prs,
+      pendingCount: prs.filter(p => p.vote === 0).length,
+      approvedCount: prs.filter(p => p.vote > 0).length,
+      rejectedCount: prs.filter(p => p.vote < 0).length,
+    }))
+    .sort((a, b) => b.prs.length - a.prs.length)
+})
+
+const filteredReviewerGroups = computed(() => {
+  if (!reviewerSearch.value) return reviewerGroups.value
+  const q = reviewerSearch.value.toLowerCase()
+  return reviewerGroups.value.filter(g => g.reviewer.toLowerCase().includes(q))
+})
+
+function toggleReviewerExpand(reviewer) {
+  if (expandedReviewers.value.has(reviewer)) expandedReviewers.value.delete(reviewer)
+  else expandedReviewers.value.add(reviewer)
 }
 
-onMounted(() => store.fetchPrProjectData(props.projectId))
+function voteLabel(vote) {
+  if (vote > 0) return 'Approved'
+  if (vote < 0) return 'Rejected'
+  return 'Pending'
+}
+
+function voteBadgeClass(vote) {
+  if (vote > 0) return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+  if (vote < 0) return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+  return 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+}
+
+async function refresh() {
+  await prStore.fetchPrProjectData(props.projectId, true)
+}
+
+onMounted(() => prStore.fetchPrProjectData(props.projectId))
 </script>

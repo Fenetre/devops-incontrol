@@ -5,7 +5,7 @@
       <div class="mb-8">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Step {{ step }} of {{ totalSteps }}</span>
-          <span class="text-xs text-gray-400 dark:text-gray-500">{{ stepTitles[step - 1] }}</span>
+          <span class="text-xs text-gray-400 dark:text-gray-400">{{ stepTitles[step - 1] }}</span>
         </div>
         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
           <div
@@ -22,11 +22,9 @@
         <div v-if="step === 1" class="p-8">
           <div class="text-center mb-8">
             <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-              </svg>
+              <UIcon name="i-heroicons-sparkles" class="w-8 h-8 text-primary-600 dark:text-primary-400" />
             </div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome to DevOps InControl</h1>
+            <h1 class="text-2xl font-bold text-primary-500 dark:text-gray-100">Welcome to DevOps InControl</h1>
             <p class="text-gray-600 dark:text-gray-400 mt-2">Let's get you set up in a few quick steps.</p>
           </div>
 
@@ -54,28 +52,28 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-              <input
+              <UInput
                 v-autofocus
-                v-model="apiKey"
+                name="api-key" v-model="apiKey"
                 type="password"
                 placeholder="Choose a strong password"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                class="w-full"
                 @keydown.enter="saveApiKey"
               />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
-              <input
-                v-model="apiKeyConfirm"
+              <UInput
+                name="api-key-confirm" v-model="apiKeyConfirm"
                 type="password"
                 placeholder="Repeat your password"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                class="w-full"
                 @keydown.enter="saveApiKey"
               />
             </div>
             <p v-if="apiKeyError" class="text-sm text-red-600 dark:text-red-400">{{ apiKeyError }}</p>
             <p v-if="apiKeyDone" class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
               Password saved.
             </p>
           </div>
@@ -108,22 +106,21 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Azure DevOps Organization name</label>
-              <input
-                v-model="projForm.organization"
+              <UInput
+                name="organization" v-model="projForm.organization"
                 v-autofocus
-                type="text"
                 placeholder="e.g. MyOrganization"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                class="w-full"
               />
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">The name from https://dev.azure.com/<strong>YourOrganization</strong></p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Personal Access Token</label>
-              <input
-                v-model="pat"
+              <UInput
+                name="pat" v-model="pat"
                 type="password"
                 placeholder="Paste your PAT here"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none font-mono"
+                class="w-full"
                 @keydown.enter="savePat"
               />
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Azure DevOps PATs are typically 52+ characters long.</p>
@@ -131,16 +128,13 @@
 
             <!-- Validation progress -->
             <div v-if="patValidating" class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
-              <svg class="w-4 h-4 text-blue-500 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-              </svg>
+              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 text-blue-500 animate-spin shrink-0" />
               <span class="text-sm text-blue-700 dark:text-blue-300">{{ patValidationStep }}</span>
             </div>
 
             <p v-if="patError" class="text-sm text-red-600 dark:text-red-400">{{ patError }}</p>
             <p v-if="patDone" class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
               PAT saved &amp; validated — {{ store.orgProjects.length }} project{{ store.orgProjects.length === 1 ? '' : 's' }} found in {{ projForm.organization }}.
             </p>
           </div>
@@ -164,9 +158,10 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
               <div v-if="store.orgProjectsError" class="text-xs text-red-600 dark:text-red-400 mb-1">{{ store.orgProjectsError }}</div>
-              <SelectMenu
+              <USelectMenu
                 v-model="projForm.project"
-                :options="projectOptions"
+                :items="projectOptions"
+                value-key="value"
                 :placeholder="projectPlaceholder"
                 :disabled="!projForm.organization || store.orgProjects.length === 0"
                 :loading="store.loadingOrgProjects"
@@ -176,17 +171,15 @@
             <!-- Area Path -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area Path <span class="text-gray-500 font-normal">(optional)</span></label>
-              <SelectMenu
+              <USelectMenu
                 v-model="projForm.area_path"
-                :options="areaPathOptions"
+                :items="areaPathOptions"
+                value-key="value"
                 placeholder="All areas (no filter)"
                 :disabled="!projForm.project"
                 :loading="store.loadingAreaPaths"
               />
-              <label v-if="projForm.area_path" class="inline-flex items-center gap-2 mt-2 cursor-pointer">
-                <input type="checkbox" v-model="projForm.include_child_areas" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-                <span class="text-sm text-gray-700 dark:text-gray-300">Include child areas</span>
-              </label>
+              <UCheckbox v-if="projForm.area_path" v-model="projForm.include_child_areas" label="Include child areas" class="mt-2" />
             </div>
 
             <!-- Checks -->
@@ -199,11 +192,9 @@
                   :key="ct.type_key"
                   class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                 >
-                  <input
-                    type="checkbox"
-                    :value="ct.type_key"
-                    v-model="selectedChecks"
-                    class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                  <UCheckbox
+                    :model-value="selectedChecks.includes(ct.type_key)"
+                    @update:model-value="v => toggleCheck(ct.type_key, v)"
                   />
                   <div>
                     <span class="text-sm text-gray-900 dark:text-gray-100">{{ ct.label }}</span>
@@ -215,7 +206,7 @@
 
             <p v-if="projectError" class="text-sm text-red-600 dark:text-red-400">{{ projectError }}</p>
             <p v-if="projectDone" class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <UIcon name="i-heroicons-check-circle" class="w-4 h-4" />
               Project added!
             </p>
           </div>
@@ -224,67 +215,65 @@
         <!-- Step 5: Done -->
         <div v-if="step === 5" class="p-8 text-center">
           <div class="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <UIcon name="i-heroicons-check-circle" class="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">You're all set!</h2>
+          <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100 mb-2">You're all set!</h2>
           <p class="text-gray-600 dark:text-gray-400 mb-6">DevOps InControl will now start monitoring your project. You can add more projects and tweak settings from the Configuration page at any time.</p>
         </div>
 
         <!-- Footer buttons -->
         <div class="px-8 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <button
+          <UButton
             v-if="step > 1 && step < 5"
+            variant="ghost"
+            color="neutral"
             @click="step--"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
             Back
-          </button>
+          </UButton>
           <div v-else></div>
 
-          <button
+          <UButton
             v-if="step === 1"
             @click="step++"
-            class="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm"
           >
             Get Started
-          </button>
+          </UButton>
 
-          <button
+          <UButton
             v-else-if="step === 2"
+            :loading="saving"
+            :disabled="saving"
             @click="saveApiKey"
-            :disabled="saving"
-            class="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
           >
-            {{ apiKeyDone ? 'Next' : saving ? 'Saving…' : 'Save & Continue' }}
-          </button>
+            {{ apiKeyDone ? 'Next' : 'Save & Continue' }}
+          </UButton>
 
-          <button
+          <UButton
             v-else-if="step === 3"
+            :loading="saving"
+            :disabled="saving"
             @click="savePat"
-            :disabled="saving"
-            class="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
           >
-            {{ patDone ? 'Next' : saving ? 'Saving…' : 'Save & Continue' }}
-          </button>
+            {{ patDone ? 'Next' : 'Save & Continue' }}
+          </UButton>
 
-          <button
+          <UButton
             v-else-if="step === 4"
-            @click="saveProject"
+            :loading="saving"
             :disabled="saving"
-            class="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
+            @click="saveProject"
           >
-            {{ projectDone ? 'Next' : saving ? 'Saving…' : 'Save & Finish' }}
-          </button>
+            {{ projectDone ? 'Next' : 'Save & Finish' }}
+          </UButton>
 
-          <button
+          <UButton
             v-else-if="step === 5"
+            color="success"
             @click="finish"
-            class="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
           >
             Go to Dashboard
-          </button>
+          </UButton>
         </div>
       </div>
     </div>
@@ -295,7 +284,6 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMonitorStore } from '../stores/monitor.js'
-import SelectMenu from '../components/SelectMenu.vue'
 
 const store = useMonitorStore()
 const router = useRouter()
@@ -321,6 +309,11 @@ const patValidationStep = ref('')
 // Step 4 — First Project
 const projForm = reactive({ organization: '', project: '', area_path: '', include_child_areas: true })
 const selectedChecks = ref([])
+function toggleCheck(key, checked) {
+  const idx = selectedChecks.value.indexOf(key)
+  if (checked && idx === -1) selectedChecks.value.push(key)
+  else if (!checked && idx !== -1) selectedChecks.value.splice(idx, 1)
+}
 const projectError = ref('')
 const projectDone = ref(false)
 
@@ -332,10 +325,9 @@ const projectPlaceholder = computed(() => {
   if (projForm.organization) return 'Select project…'
   return 'Enter organization first'
 })
-const areaPathOptions = computed(() => [
-  { value: '', label: 'All areas (no filter)' },
-  ...store.areaPaths.map(a => ({ value: a.path, label: a.path }))
-])
+const areaPathOptions = computed(() =>
+  store.areaPaths.map(a => ({ value: a.path, label: a.path }))
+)
 
 // When entering step 4, projects are already loaded (validated in step 3)
 // Just load check types

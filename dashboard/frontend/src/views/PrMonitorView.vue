@@ -6,20 +6,13 @@
         <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">PR Monitor</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Active pull requests across all configured projects <DataFreshness :timestamp="store.lastFetched.prMonitor" /></p>
       </div>
-      <button
+      <UButton
         @click="refresh"
         :disabled="loading"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
-      >
-        <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
-        <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-        </svg>
-        {{ loading ? 'Loading...' : 'Refresh' }}
-      </button>
+        :loading="loading"
+        icon="i-heroicons-arrow-path"
+        :label="loading ? 'Loading...' : 'Refresh'"
+      />
     </div>
 
     <!-- Loading skeleton -->

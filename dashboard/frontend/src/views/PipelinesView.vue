@@ -3,155 +3,183 @@
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
       <router-link to="/" class="hover:text-primary-600 transition-colors">Dashboard</router-link>
-      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+      <UIcon name="i-heroicons-chevron-right" class="w-3 h-3" />
       <span class="text-gray-700 dark:text-gray-200 font-medium">{{ projectLabel }}</span>
-      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-      <span class="text-gray-700 dark:text-gray-200 font-medium">Pipelines</span>
+      <UIcon name="i-heroicons-chevron-right" class="w-3 h-3" />
+      <span class="text-gray-700 dark:text-gray-200 font-medium">{{ mode === 'pipelines' ? 'Pipelines' : 'Releases' }}</span>
     </nav>
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">Pipelines</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ projectLabel }} — Build pipeline runs.</p>
+        <h2 class="text-2xl font-bold text-primary-500 dark:text-gray-100">Pipelines & Releases</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ projectLabel }} — {{ mode === 'pipelines' ? 'Build pipeline runs' : 'Release deployments' }}.</p>
       </div>
     </div>
 
+    <!-- Pipelines / Releases tabs -->
+    <UTabs :items="tabItems" v-model="mode" :content="false" variant="link" class="mb-6" />
+
     <!-- Error -->
-    <div v-if="tabError" class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3 flex items-center gap-3">
-      <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-      </svg>
-      <p class="text-sm text-red-800 dark:text-red-200">{{ tabError }}</p>
-    </div>
+    <UAlert v-if="tabError" color="error" icon="i-heroicons-exclamation-circle" :description="tabError" class="mb-6" />
 
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
-      <button @click="load(true)" :disabled="store.loadingPipelineRuns"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm transition-colors"
-        :class="store.loadingPipelineRuns ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'">
-        <svg v-if="store.loadingPipelineRuns" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" /></svg>
-        {{ store.loadingPipelineRuns ? 'Loading…' : 'Refresh' }}
-      </button>
-      <input v-autofocus v-model="search" type="text" placeholder="Search…"
-        class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-48" />
-      <button v-if="filtered.length" @click="exportPipelines"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        title="Export to CSV"
-      >
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-        CSV
-      </button>
+      <UInput v-autofocus name="search" v-model="search" type="text" placeholder="Search…" icon="i-heroicons-magnifying-glass" size="sm" class="w-48 app-search" />
       <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
         <span>From:</span>
-        <input type="date" v-model="minDate" @change="load()"
-          class="border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-1 text-xs focus:ring-2 focus:ring-primary-500 outline-none" />
+        <UInput type="date" name="min-date" v-model="minDate" @change="load()" size="sm" />
         <span>To:</span>
-        <input type="date" v-model="maxDate" @change="load()"
-          class="border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-gray-200 px-2 py-1 text-xs focus:ring-2 focus:ring-primary-500 outline-none" />
+        <UInput type="date" name="max-date" v-model="maxDate" @change="load()" size="sm" />
       </div>
-      <span v-if="data?.fetched_at" class="text-xs text-gray-400 dark:text-gray-500 ml-auto">
-        Fetched: {{ new Date(data.fetched_at).toLocaleString() }}
+      <UButton @click="load(true)" :disabled="isLoading" :loading="isLoading" icon="i-heroicons-arrow-path">
+        {{ isLoading ? 'Loading…' : 'Refresh' }}
+      </UButton>
+      <span v-if="currentData?.fetched_at" class="text-xs text-gray-400 dark:text-gray-400 ml-auto">
+        Fetched: {{ new Date(currentData.fetched_at).toLocaleString() }}
       </span>
     </div>
 
-    <!-- Pipeline tabs -->
-    <div v-if="pipelineNames.length" class="flex flex-wrap gap-1 mb-4 border-b border-gray-200 dark:border-gray-700">
-      <button
-        @click="activeTab = 'all'"
-        class="px-3 py-1.5 text-sm font-medium rounded-t-md transition-colors"
-        :class="activeTab === 'all'
-          ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-b-0 border-gray-200 dark:border-gray-700'
-          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'"
-      >All</button>
-      <button
-        v-for="name in pipelineNames"
-        :key="name"
-        @click="activeTab = name"
-        class="px-3 py-1.5 text-sm font-medium rounded-t-md transition-colors"
-        :class="activeTab === name
-          ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-b-0 border-gray-200 dark:border-gray-700'
-          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'"
-      >{{ name }}</button>
-    </div>
+    <!-- Side menus + table -->
+    <div class="flex gap-4">
+      <!-- Side menus -->
+      <div v-if="store.displayProjects.length" class="shrink-0 space-y-4">
+        <!-- Project selector -->
+        <nav class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30">Projects</div>
+          <button
+            v-for="proj in store.displayProjects" :key="proj.id"
+            @click="router.push({ name: 'pipelines', params: { projectId: proj.id } })"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="proj.id === projectId
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-folder" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">{{ proj.project }}</span>
+          </button>
+        </nav>
 
-    <!-- Loading -->
-    <div v-if="store.loadingPipelineRuns && !data" class="flex flex-col items-center py-20">
-      <svg class="animate-spin w-8 h-8 text-primary-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Fetching pipeline runs…</p>
-    </div>
+        <!-- Pipeline filter -->
+        <nav v-if="mode === 'pipelines' && pipelineNames.length" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <button
+            @click="activeFilter = 'all'"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors"
+            :class="activeFilter === 'all'
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 shrink-0" />
+            All pipelines
+          </button>
+          <button
+            v-for="name in pipelineNames" :key="name"
+            @click="activeFilter = name"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="activeFilter === name
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-play-circle" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">{{ name }}</span>
+          </button>
+        </nav>
 
-    <!-- Table -->
-    <div v-else-if="data && filtered.length" class="overflow-x-auto">
-      <table class="w-full text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
-        <thead>
-          <tr class="bg-gray-100 dark:bg-gray-800/60">
-            <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Pipeline</th>
-            <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Result</th>
-            <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Branch</th>
-            <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Triggered by</th>
-            <th class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300">Date/Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(run, i) in filtered" :key="i" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/40">
-            <td class="px-3 py-2 text-gray-700 dark:text-gray-200">{{ run.pipeline_name }}</td>
-            <td class="px-3 py-2">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="resultClass(run.result || run.status)">
-                {{ run.result || run.status }}
-              </span>
-            </td>
-            <td class="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ run.branch }}</td>
-            <td class="px-3 py-2 text-gray-600 dark:text-gray-300">{{ run.requested_by }}</td>
-            <td class="px-3 py-2 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formatDateTime(run.finished_at) }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        <!-- Release definition filter -->
+        <nav v-if="mode === 'releases' && definitionNames.length" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <button
+            @click="activeFilter = 'all'"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors"
+            :class="activeFilter === 'all'
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 shrink-0" />
+            All definitions
+          </button>
+          <button
+            v-for="name in definitionNames" :key="name"
+            @click="activeFilter = name"
+            class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left border-t border-gray-100 dark:border-gray-700 transition-colors"
+            :class="activeFilter === name
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'"
+          >
+            <UIcon name="i-heroicons-rocket-launch" class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">{{ name }}</span>
+          </button>
+        </nav>
+      </div>
 
-    <div v-else-if="data && !filtered.length" class="text-center py-12 text-sm text-gray-400">No pipeline runs match the filter.</div>
-    <div v-else-if="!store.loadingPipelineRuns" class="text-center py-20 text-sm text-gray-400 dark:text-gray-500">No pipeline data available. Click Refresh to fetch.</div>
+      <!-- Content -->
+      <div class="flex-1 min-w-0">
+        <!-- Pipelines content -->
+        <template v-if="mode === 'pipelines'">
+          <div v-if="store.loadingPipelineRuns && !pipelineData" class="flex flex-col items-center py-8">
+            <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
+            <p class="text-sm text-gray-500 dark:text-gray-400">Fetching pipeline runs…</p>
+          </div>
+          <div v-else-if="pipelineData && filteredPipelines.length" class="overflow-x-auto">
+            <UTable :data="filteredPipelines" :columns="pipelineColumns" />
+          </div>
+          <div v-else-if="pipelineData && !filteredPipelines.length" class="text-center py-12 text-sm text-gray-400 dark:text-gray-300">No pipeline runs match the filter.</div>
+          <div v-else-if="!store.loadingPipelineRuns" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No pipeline data available. Click Refresh to fetch.</div>
+        </template>
+
+        <!-- Releases content -->
+        <template v-else>
+          <div v-if="store.loadingReleaseRuns && !releaseData" class="flex flex-col items-center py-8">
+            <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary-500 mb-4 animate-spin" />
+            <p class="text-sm text-gray-500 dark:text-gray-400">Fetching releases…</p>
+          </div>
+          <div v-else-if="releaseData && filteredReleases.length" class="overflow-x-auto">
+            <UTable :data="filteredReleases" :columns="releaseColumns" />
+          </div>
+          <div v-else-if="releaseData && !filteredReleases.length" class="text-center py-12 text-sm text-gray-400 dark:text-gray-300">No releases match the filter.</div>
+          <div v-else-if="!store.loadingReleaseRuns" class="text-center py-20 text-sm text-gray-400 dark:text-gray-400">No release data available. Click Refresh to fetch.</div>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, h } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMonitorStore } from '../stores/monitor.js'
-import { transformPipelineRuns } from '../composables/demoTransform.js'
-import { useCsvExport } from '../composables/useCsvExport.js'
+import { transformPipelineRuns, transformReleaseRuns } from '../composables/demoTransform.js'
 
 const props = defineProps({ projectId: { type: String, required: true } })
 
 const store = useMonitorStore()
-const { exportCsv } = useCsvExport()
+const router = useRouter()
 const tabError = ref('')
 const search = ref('')
 const minDate = ref('')
 const maxDate = ref('')
-const activeTab = ref('all')
+const mode = ref('pipelines')
+const tabItems = [{ label: 'Pipelines', value: 'pipelines', icon: 'i-heroicons-play-circle' }, { label: 'Releases', value: 'releases', icon: 'i-heroicons-rocket-launch' }]
+const activeFilter = ref('all')
 
-const cacheKey = computed(() => `${props.projectId}:${minDate.value}:${maxDate.value}`)
-const data = computed(() => {
-  const raw = store.pipelineRunData[cacheKey.value]
+const isLoading = computed(() => mode.value === 'pipelines' ? store.loadingPipelineRuns : store.loadingReleaseRuns)
+
+// --- Pipeline data ---
+const pipelineCacheKey = computed(() => `${props.projectId}:${minDate.value}:${maxDate.value}`)
+const pipelineData = computed(() => {
+  const raw = store.pipelineRunData[pipelineCacheKey.value]
   return raw ? transformPipelineRuns(raw) : null
 })
 
-const projectLabel = computed(() => {
-  const proj = store.displayProjects.find(p => p.id === props.projectId)
-  return proj ? proj.project : props.projectId
-})
-
 const pipelineNames = computed(() => {
-  if (!data.value?.runs) return []
-  return [...new Set(data.value.runs.map(r => r.pipeline_name))].sort()
+  if (!pipelineData.value?.runs) return []
+  return [...new Set(pipelineData.value.runs.map(r => r.pipeline_name))].sort()
 })
 
-const filtered = computed(() => {
-  if (!data.value?.runs) return []
-  let runs = data.value.runs
-  if (activeTab.value !== 'all') {
-    runs = runs.filter(r => r.pipeline_name === activeTab.value)
+const filteredPipelines = computed(() => {
+  if (!pipelineData.value?.runs) return []
+  let runs = pipelineData.value.runs
+  if (activeFilter.value !== 'all') {
+    runs = runs.filter(r => r.pipeline_name === activeFilter.value)
   }
   if (!search.value.trim()) return runs
   const q = search.value.trim().toLowerCase()
@@ -164,41 +192,124 @@ const filtered = computed(() => {
   )
 })
 
+const pipelineColumns = [
+  { accessorKey: 'pipeline_name', header: 'Pipeline' },
+  {
+    accessorKey: 'result',
+    header: 'Result',
+    cell: ({ row }) => h('span', {
+      class: ['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', resultClass(row.original.result || row.original.status)]
+    }, row.original.result || row.original.status)
+  },
+  { accessorKey: 'branch', header: 'Branch' },
+  { accessorKey: 'requested_by', header: 'Triggered by' },
+  {
+    accessorKey: 'finished_at',
+    header: 'Date/Time',
+    cell: ({ row }) => formatDateTime(row.original.finished_at)
+  },
+]
+
+// --- Release data ---
+const releaseCacheKey = computed(() => `${props.projectId}:${minDate.value}:${maxDate.value}`)
+const releaseData = computed(() => {
+  const raw = store.releaseRunData[releaseCacheKey.value]
+  return raw ? transformReleaseRuns(raw) : null
+})
+
+const definitionNames = computed(() => {
+  if (!releaseData.value?.runs) return []
+  return [...new Set(releaseData.value.runs.map(r => r.definition_name).filter(Boolean))].sort()
+})
+
+const filteredReleases = computed(() => {
+  if (!releaseData.value?.runs) return []
+  let runs = releaseData.value.runs
+  if (activeFilter.value !== 'all') {
+    runs = runs.filter(r => r.definition_name === activeFilter.value)
+  }
+  if (!search.value.trim()) return runs
+  const q = search.value.trim().toLowerCase()
+  return runs.filter(r =>
+    r.release_name.toLowerCase().includes(q) ||
+    r.definition_name?.toLowerCase().includes(q) ||
+    r.status?.toLowerCase().includes(q) ||
+    r.created_by?.toLowerCase().includes(q)
+  )
+})
+
+const releaseColumns = [
+  { accessorKey: 'release_name', header: 'Release' },
+  { accessorKey: 'definition_name', header: 'Definition' },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => h('span', {
+      class: ['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', resultClass(row.original.status)]
+    }, row.original.status)
+  },
+  {
+    accessorKey: 'environments',
+    header: 'Environments',
+    cell: ({ row }) => h('div', { class: 'flex gap-1' },
+      (row.original.environments || []).map(env =>
+        h('span', {
+          key: env.name,
+          class: ['inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', resultClass(env.status)]
+        }, `${env.name}: ${env.status}`)
+      )
+    )
+  },
+  { accessorKey: 'created_by', header: 'Created by' },
+  {
+    accessorKey: 'created_on',
+    header: 'Date/Time',
+    cell: ({ row }) => formatDateTime(row.original.created_on)
+  },
+]
+
+// --- Shared ---
+const currentData = computed(() => mode.value === 'pipelines' ? pipelineData.value : releaseData.value)
+
+const projectLabel = computed(() => {
+  const proj = store.displayProjects.find(p => p.id === props.projectId)
+  return proj ? proj.project : props.projectId
+})
+
+watch(mode, () => {
+  activeFilter.value = 'all'
+  search.value = ''
+  load()
+})
+
 function formatDateTime(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleString()
 }
 
-function exportPipelines() {
-  const items = filtered.value
-  if (!items.length) return
-  const cols = [
-    { key: 'pipeline_name', label: 'Pipeline' },
-    { key: 'result', label: 'Result' },
-    { key: 'branch', label: 'Branch' },
-    { key: 'requested_by', label: 'Triggered By' },
-    { label: 'Date', format: r => r.finish_time || r.queue_time || '' },
-  ]
-  exportCsv(items, cols, `Pipelines_${projectLabel.value}`)
-}
-
 function resultClass(status) {
   const s = (status || '').toLowerCase()
-  if (s === 'succeeded' || s === 'completed') return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-
+  if (s === 'succeeded' || s === 'completed' || s === 'active') return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
   if (s === 'failed' || s === 'rejected') return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
   if (s === 'partiallysucceeded') return 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
-  if (s === 'canceled' || s === 'cancelled') return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-  if (s === 'inprogress' || s === 'queued') return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+  if (s === 'canceled' || s === 'cancelled' || s === 'abandoned') return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+  if (s === 'inprogress' || s === 'notstarted' || s === 'queued' || s === 'notdeployed') return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
   return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
 }
 
 async function load(force = false) {
   tabError.value = ''
-  try { await store.fetchPipelineRuns(props.projectId, minDate.value, maxDate.value, force) }
-  catch (e) { tabError.value = e?.message || 'Failed to fetch pipeline runs' }
+  try {
+    if (mode.value === 'pipelines') {
+      await store.fetchPipelineRuns(props.projectId, minDate.value, maxDate.value, force)
+    } else {
+      await store.fetchReleaseRuns(props.projectId, minDate.value, maxDate.value, force)
+    }
+  } catch (e) {
+    tabError.value = e?.message || `Failed to fetch ${mode.value}`
+  }
 }
 
 onMounted(() => load())
-watch(() => props.projectId, () => { activeTab.value = 'all'; load() })
+watch(() => props.projectId, () => { activeFilter.value = 'all'; load() })
 </script>

@@ -170,6 +170,9 @@ public class DashboardConfig
 
     [JsonPropertyName("audit_rules")]
     public List<AuditRule> AuditRules { get; set; } = [];
+
+    [JsonPropertyName("roadmap")]
+    public RoadmapConfig Roadmap { get; set; } = new();
 }
 
 public class AuditGroupConnection
@@ -199,4 +202,78 @@ public class AuditRule
 
     [JsonPropertyName("enabled")]
     public bool Enabled { get; set; } = true;
+}
+
+// --- Roadmap / Portfolio ---
+
+public class RoadmapLaneConfig
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = "";
+
+    [JsonPropertyName("color")]
+    public string Color { get; set; } = "sky";
+}
+
+public class RoadmapProjectConfig
+{
+    [JsonPropertyName("organization")]
+    public string Organization { get; set; } = "";
+
+    [JsonPropertyName("project")]
+    public string Project { get; set; } = "";
+
+    [JsonPropertyName("project_id")]
+    public string ProjectId { get; set; } = "";
+
+    [JsonPropertyName("work_item_types")]
+    public List<string> WorkItemTypes { get; set; } = ["Epic", "Feature"];
+}
+
+public class RoadmapSprintConfig
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("project_id")]
+    public string ProjectId { get; set; } = "";
+
+    [JsonPropertyName("organization")]
+    public string Organization { get; set; } = "";
+
+    [JsonPropertyName("project")]
+    public string Project { get; set; } = "";
+
+    [JsonPropertyName("team")]
+    public string Team { get; set; } = "";
+
+    [JsonPropertyName("excluded_sprints")]
+    public List<string> ExcludedSprints { get; set; } = [];
+}
+
+public class RoadmapConfig
+{
+    [JsonPropertyName("lanes")]
+    public List<RoadmapLaneConfig> Lanes { get; set; } = [];
+
+    [JsonPropertyName("projects")]
+    public List<RoadmapProjectConfig> Projects { get; set; } = [];
+
+    [JsonPropertyName("column_mode")]
+    public string ColumnMode { get; set; } = "quarters";
+
+    [JsonPropertyName("sprint_configs")]
+    public List<RoadmapSprintConfig> SprintConfigs { get; set; } = [];
+
+    [JsonPropertyName("active_view")]
+    public string ActiveView { get; set; } = "quarters";
+
+    [JsonPropertyName("visible_quarters")]
+    public List<string> VisibleQuarters { get; set; } = [];
+
+    [JsonPropertyName("show_sprint_overlay")]
+    public bool ShowSprintOverlay { get; set; } = false;
 }
